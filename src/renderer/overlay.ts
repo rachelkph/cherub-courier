@@ -22,7 +22,8 @@ const H = 58;
 const canvas = document.getElementById("stage") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 
-let bounds: Bounds = { width: window.innerWidth, height: window.innerHeight, scale: 3 };
+let bounds: Bounds = { width: 0, height: 0, scale: 0 };
+let haveBounds = false; // nothing draws until main sends real bounds
 let images: HTMLImageElement[] = [];
 let masks: Uint8ClampedArray[] = [];
 let x = 40; // CSS px, left edge of sprite
@@ -145,14 +146,19 @@ window.addEventListener("mousedown", (e) => {
 
 window.overlay.onBounds((b) => {
   bounds = b;
+  haveBounds = true;
+  if (!images.length) return; // first draw happens after load
   resize();
   draw();
+  start();
 });
 window.overlay.onVisible((v) => (v ? start() : stop()));
 
 images = await Promise.all(FRAMES.map(load));
 masks = images.map(alphaMask);
-resize();
-start();
+if (haveBounds) {
+  resize();
+  start();
+}
 
 export {};

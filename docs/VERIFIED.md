@@ -43,7 +43,7 @@ Machine: MacBook built-in Retina (1470x956 pt, 2x), macOS 15.6, Electron 45.2.3,
 | Window placement above Dock | PASS | CGWindowList: overlay at y=699, h=198, bottom edge 897 pt = workArea bottom (screen 956, Dock ~59) |
 | Always-on-top level | PASS | CGWindowList layer 1000 (screen-saver level) |
 | Transparent, no frame/shadow | PASS | `screencapture -l` of overlay window alone: ~93% of pixels alpha 0, only sprite pixels opaque, no frame |
-| Pixel-perfect 3x, no smoothing | PASS (visual) | window capture shows hard pixel edges |
+| Pixel-perfect 3x (later changed to 2x), no smoothing | PASS (visual) | window capture shows hard pixel edges |
 | Walks and flips direction | PASS | two captures 1s apart: moving right, facing right; earlier capture moving left, facing left |
 | Menu bar icon exists | PASS | CGWindowList: Electron window at layer 25 in menu bar |
 | CPU while walking | ~5% of one core total (4 processes), RSS ~180-290 MB | `ps` %cpu sampled 3x over 15s |
@@ -51,3 +51,5 @@ Machine: MacBook built-in Retina (1470x956 pt, 2x), macOS 15.6, Electron 45.2.3,
 Notes:
 - npm 11 did not run Electron's postinstall; binary fetched with `node node_modules/electron/install.js`.
 - Full-screen app, Spaces, click-through, Dock left/right/enlarged/auto-hide, and display changes NOT yet verified (need hands-on testing).
+| Rachel: cat visible above Dock over apps | PASS | Rachel screenshot, 2026-11-08; 3x judged too big -> default 2x |
+| 2x scale | PASS | overlay capture: sprite 125 pt wide (63 art px x 2), strip 140 pt high |
