@@ -55,3 +55,19 @@ Notes:
 | 2x scale | PASS | overlay capture: sprite 125 pt wide (63 art px x 2), strip 140 pt high |
 | 1x scale (Rachel: 2x still too big) | PASS | overlay capture: sprite ~62 pt wide, strip 82 pt high |
 | Startup race: bounds push lost before renderer listener | FIXED | at 1x the cat never drew (renderer log: loaded, no bounds received); renderer now pulls bounds via invoke at startup |
+
+## 2026-11-08 — M0 Dock positions (with Rachel's permission; settings backed up and restored)
+Method: `defaults write com.apple.dock ...` + `killall Dock`, wait 5s, compare NSScreen.main.visibleFrame
+(independent of Electron) with the overlay's window-server bounds. Coordinates: top-left origin, screen 1470x956 pt.
+
+| Dock | usable area | overlay | result |
+|---|---|---|---|
+| bottom, default (before tests) | x 0, w 1470, bottom 897 | x 0, w 1470, bottom 897 | PASS |
+| left | x 47, w 1423, bottom 956 | x 47, w 1423, bottom 956 | PASS |
+| right | x 0, w 1423, bottom 956 | x 0, w 1423, bottom 956 | PASS |
+| bottom, tilesize 128 | bottom 889 | bottom 889 | PASS (Dock barely grew: it already spans the full width) |
+| bottom, magnification on | bottom 889 | bottom 889 | PASS for placement; magnified icons are NOT in the usable area, so on hover they overlap the cat |
+| bottom, auto-hide | bottom 956 | bottom 956 | PASS for placement; the revealed Dock appears under the cat (overlay is above Dock level) |
+| restored | bottom 889 | bottom 889 | prefs identical to backup (diff: timestamps/GUIDs only); usable bottom is 889 vs 897 before — Dock restart changed its own layout, cause not determined |
+
+Every change fired Electron `display-metrics-changed` and the overlay re-placed itself within the 5s wait.
