@@ -52,13 +52,17 @@ A pixel-art news cat who delivers your twice-daily headlines — and gets comfie
 - Hide/snooze: menu bar icon with Snooze (1h / until tomorrow), Hide cat, Refresh, Settings, Quit.
 
 ## Popover (click the cat)
-- Anchored above the cat, kept on screen near edges, aware of the Dock position.
-- Header: edition masthead and headline count (no mood line; dropped 2026-11-08). Headline rows grouped by edition (newest first, at most 7 per edition, unread carried over up to 48h): topic label, headline, source name, age.
-- Clicking the cat marks the pile read (paper toss empties it). Click a headline: open the original link in the default browser. No in-app summary.
-- "Group by" switch in the header: **Edition** (default; sections per edition, newest first) or **Topic** (sections per topic in settings order, newest first; older-edition items labelled, e.g. "· this morning"). The choice is remembered in settings.
-- Footer: Refresh, Settings. ("Mark all read" dropped 2026-11-08: clicking the cat already marks the pile read.)
-- Look: newspaper clipping matching the sprite palette; pixel-font masthead (Silkscreen, OFL, bundled), macOS serif headlines, light and dark. Icons: hand-made 5x5 pixel icons at 2px per pixel in the text color, only on topic labels, edition headings (moon/sun) and footer buttons; no icon library. Mockup: https://claude.ai/artifact/RPvxYiLrPD37X7wAsX55fb (private).
+Chosen layout: "Option 1 — topic sections" in the mockup https://claude.ai/artifact/RPvxYiLrPD37X7wAsX55fb (private), decided 2026-11-08.
+- Anchored above the cat, kept on screen near edges, aware of the Dock position. About 380 pt wide; the list scrolls past ~430 pt.
+- Masthead named after the scheduled edition being shown, not the refresh time: first daily edition = "The Morning Edition", second = "The Evening Edition" (a manual refresh or late catch-up keeps the edition's name; only "Fetched <time>" changes). Under it: date and count of new headlines. No mood line.
+- Topic chips under the masthead: All plus one per enabled topic (short label + icon). All shows every section; a topic chip filters to that section. Empty filter shows "Nothing new in <topic> tonight." The chosen chip is remembered.
+- List: one section per topic, in settings order, headed by icon + topic name + count (bold small caps). Rows under a heading have no per-row topic label: headline (serif, max 2 lines) and source. Unread items carried over from earlier editions (up to 48h) sit inside their topic after the new ones, marked "· this morning" (or the edition they came from). No age on new items.
+- At most 7 headlines per edition (max 3 per topic), as in Headline selection.
+- Opened headlines dim. Clicking the cat marks the pile read (paper toss empties it); the popover still lists the headlines. Click a headline: open the original link in the default browser. No in-app summary.
+- Footer: "Fetched <time>", Refresh, Settings. ("Mark all read" dropped 2026-11-08: clicking the cat already marks the pile read.)
+- Look: newspaper clipping matching the sprite palette (cream paper, ink border with stepped pixel corners, stepped tail to the cat); pixel-font masthead (Silkscreen, OFL, bundled), macOS serif headlines, light and dark. Icons: hand-made 5x5 pixel icons at 2px per pixel in the text color, only on topic chips, section headings and footer buttons; no icon library.
 - Paywalled sources get a small "paywall" tag.
+- Superseded 2026-11-08: the Edition/Topic "Group by" switch and per-row topic labels.
 
 ## Settings
 Edition times, topics, keywords, sources (add/remove/test a feed), launch at login, snooze, reset.

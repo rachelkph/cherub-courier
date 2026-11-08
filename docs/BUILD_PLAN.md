@@ -32,8 +32,8 @@ Implement `sources.json` loading and schema validation (local bundled copy plus 
 Acceptance: skipping setup leaves a working app; recommended list requires explicit approval; pasted RSS link works; pasted site without a feed shows the friendly message; local/private addresses rejected; schema validation rejects a broken sources file and falls back.
 
 ## M4 — Popover and read state
-Popover anchored above the cat, Dock-aware, kept on screen. Clicking the cat marks the pile read (paper toss); headline rows open in the default browser; group by edition or topic; Refresh, Settings, paywall tag.
-Acceptance: clicking the cat empties the pile and the popover still lists the headlines; group-by switch regroups and is remembered; no article text stored; popover stays on screen at every screen edge and Dock position.
+Popover anchored above the cat, Dock-aware, kept on screen. Clicking the cat marks the pile read (paper toss); headline rows open in the default browser; topic sections with filter chips (see PRODUCT_SPEC); edition-named masthead; opened headlines dim; Refresh, Settings, paywall tag.
+Acceptance: clicking the cat empties the pile and the popover still lists the headlines; topic chips filter and are remembered; masthead name matches the edition; no article text stored; popover stays on screen at every screen edge and Dock position.
 
 ## M5 — Scheduler, catch-up, startup
 Two editions (8am/6pm local, editable), catch-up after sleep, fetch on launch if stale, time-zone/DST changes, launch at login (asked in onboarding), snooze options.
