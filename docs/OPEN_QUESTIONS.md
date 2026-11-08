@@ -4,7 +4,8 @@
 1. **App name** — undecided. Keep in one constant.
 2. **Center-right / right-leaning news outlet** — Rachel is unsure; add later. The seed list has no confirmed one. The system must work without it.
 3. **Electron vs alternatives** — Electron is a recommendation, not a decision. Confirm in M0.
-4. **Marking items read** — default in this plan: opening the link marks it read. Confirm with Rachel.
+4. **Marking items read** — DECIDED 2026-11-08 (Rachel): clicking the cat marks the headlines in his pile read (paper-toss animation empties the pile); the popover still lists them.
+4b. **Unread carry-over** — DECIDED 2026-11-08 (Claude, Rachel delegated): unread headlines carry over across editions until the cat is clicked, but expire 48h after the edition that delivered them (at most 4 editions). The popover shows everything that was in the pile, grouped by edition, newest first; each edition still has at most 7 headlines.
 5. **Item age window** — proposed 48 hours; confirm.
 6. **When the cat falls asleep** — proposed after more than 2 editions are unread; confirm.
 7. **Sprite look** — Rachel may iterate on the pixel art later. Keep the manifest-driven design so art can be swapped without code changes.
