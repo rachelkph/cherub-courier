@@ -1,0 +1,489 @@
+{
+  "schemaVersion": 1,
+  "lastReviewed": "2026-11-08",
+  "language": "en-US",
+  "readme": "Seed list. Every feed URL is UNVERIFIED: test each one. 'ratings' are third-party ratings with an evidence URL; do not copy rater data into the app until terms are checked, link to the rater instead. No source here is described as unbiased. Add or swap outlets by editing this file.",
+  "topics": [
+    {
+      "id": "us-news",
+      "label": "US news"
+    },
+    {
+      "id": "world-news",
+      "label": "World news"
+    },
+    {
+      "id": "ai-tech",
+      "label": "AI and tech"
+    },
+    {
+      "id": "creative-coding-devtools",
+      "label": "Creative coding and dev tools"
+    },
+    {
+      "id": "business-markets",
+      "label": "Business and markets"
+    },
+    {
+      "id": "science",
+      "label": "Science"
+    },
+    {
+      "id": "film-tv",
+      "label": "Film and TV"
+    },
+    {
+      "id": "music",
+      "label": "Music"
+    },
+    {
+      "id": "gaming",
+      "label": "Gaming"
+    },
+    {
+      "id": "sports",
+      "label": "Sports"
+    },
+    {
+      "id": "culture-books",
+      "label": "Culture and books"
+    },
+    {
+      "id": "design",
+      "label": "Design"
+    }
+  ],
+  "sources": [
+    {
+      "id": "bbc-news-world",
+      "name": "BBC News: World",
+      "topics": [
+        "world-news"
+      ],
+      "feedUrl": "http://feeds.bbci.co.uk/news/world/rss.xml",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": [
+        {
+          "rater": "AllSides",
+          "label": "Center",
+          "asOf": "2026-03",
+          "evidenceUrl": "https://www.allsides.com/blog/google-news-bias-2026-new-data-shows-rising-left-leaning-coverage"
+        }
+      ]
+    },
+    {
+      "id": "bbc-news-top",
+      "name": "BBC News: Top stories",
+      "topics": [
+        "world-news"
+      ],
+      "feedUrl": "https://feeds.bbci.co.uk/news/rss.xml",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": false,
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": [
+        {
+          "rater": "AllSides",
+          "label": "Center",
+          "asOf": "2026-03",
+          "evidenceUrl": "https://www.allsides.com/blog/google-news-bias-2026-new-data-shows-rising-left-leaning-coverage"
+        }
+      ],
+      "note": "Reported live on 2026-09-27 by a third-party feed site."
+    },
+    {
+      "id": "bbc-news-us-canada",
+      "name": "BBC News: US and Canada",
+      "topics": [
+        "us-news"
+      ],
+      "feedUrl": "http://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml",
+      "feedSource": "memory",
+      "verified": false,
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": [
+        {
+          "rater": "AllSides",
+          "label": "Center",
+          "asOf": "2026-03",
+          "evidenceUrl": "https://www.allsides.com/blog/google-news-bias-2026-new-data-shows-rising-left-leaning-coverage"
+        }
+      ],
+      "note": "URL recalled from memory, not found in research. Verify."
+    },
+    {
+      "id": "npr-news",
+      "name": "NPR News",
+      "topics": [
+        "us-news"
+      ],
+      "feedUrl": "https://feeds.npr.org/1001/rss.xml",
+      "feedSource": "memory",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": [],
+      "note": "URL recalled from memory. A third-party article reports several bias monitors list a left lean; no rating evidence URL captured, so none is shown."
+    },
+    {
+      "id": "pbs-newshour",
+      "name": "PBS NewsHour: Headlines",
+      "topics": [
+        "us-news"
+      ],
+      "feedUrl": "https://www.pbs.org/newshour/feeds/rss/headlines",
+      "feedSource": "memory",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": [],
+      "note": "Headlines URL recalled from memory; a politics-only feed (https://www.pbs.org/newshour/feeds/rss/politics) was found in a third-party list. A third-party article reports Ad Fontes places PBS NewsHour among the more reliable sources (reliability is not the same as political bias)."
+    },
+    {
+      "id": "guardian-world",
+      "name": "The Guardian: World",
+      "topics": [
+        "world-news"
+      ],
+      "feedUrl": "https://www.theguardian.com/world/rss",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": [],
+      "note": "No rating captured."
+    },
+    {
+      "id": "nyt-home",
+      "name": "The New York Times: Home page",
+      "topics": [
+        "us-news"
+      ],
+      "feedUrl": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": true,
+      "recommendedDefault": false,
+      "userOptInOnly": true,
+      "unofficialFeed": false,
+      "ratings": [
+        {
+          "rater": "AllSides",
+          "label": "Lean Left",
+          "asOf": "2026-03",
+          "evidenceUrl": "https://www.allsides.com/blog/google-news-bias-2026-new-data-shows-rising-left-leaning-coverage"
+        }
+      ],
+      "note": "Never pre-select. Terms of use for RSS not checked; user-added only."
+    },
+    {
+      "id": "nyt-world",
+      "name": "The New York Times: World",
+      "topics": [
+        "world-news"
+      ],
+      "feedUrl": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": true,
+      "recommendedDefault": false,
+      "userOptInOnly": true,
+      "unofficialFeed": false,
+      "ratings": [
+        {
+          "rater": "AllSides",
+          "label": "Lean Left",
+          "asOf": "2026-03",
+          "evidenceUrl": "https://www.allsides.com/blog/google-news-bias-2026-new-data-shows-rising-left-leaning-coverage"
+        }
+      ],
+      "note": "Never pre-select. Terms of use for RSS not checked; user-added only."
+    },
+    {
+      "id": "reuters-google-news",
+      "name": "Reuters (via Google News search feed)",
+      "topics": [
+        "us-news",
+        "world-news"
+      ],
+      "feedUrl": "https://news.google.com/rss/search?q=when:24h+site:reuters.com&ceid=US:en&hl=en-US&gl=US",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": true,
+      "ratings": [
+        {
+          "rater": "AllSides",
+          "label": "Center",
+          "asOf": "2026-03/04",
+          "evidenceUrl": "https://allsides.com/news-source/reuters"
+        }
+      ],
+      "note": "Reuters has no official RSS (stopped June 2020). Unofficial, undocumented feed; terms unchecked. Off by default."
+    },
+    {
+      "id": "ap-google-news",
+      "name": "Associated Press (via Google News search feed)",
+      "topics": [
+        "us-news",
+        "world-news"
+      ],
+      "feedUrl": "https://news.google.com/rss/search?q=when:24h+site:apnews.com&hl=en-US&gl=US&ceid=US:en",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": true,
+      "ratings": [
+        {
+          "rater": "AllSides",
+          "label": "Lean Left",
+          "asOf": "2026-05",
+          "evidenceUrl": "https://www.allsides.com/news-source/associated-press"
+        }
+      ],
+      "note": "AP's own feeds are unreliable. Unofficial feed; terms unchecked. Off by default."
+    },
+    {
+      "id": "ars-technica-ai",
+      "name": "Ars Technica: AI",
+      "topics": [
+        "ai-tech"
+      ],
+      "feedUrl": "https://arstechnica.com/ai/feed/",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "mit-tech-review-ai",
+      "name": "MIT Technology Review: AI",
+      "topics": [
+        "ai-tech"
+      ],
+      "feedUrl": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "the-verge-ai",
+      "name": "The Verge: AI",
+      "topics": [
+        "ai-tech"
+      ],
+      "feedUrl": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "wired-ai",
+      "name": "WIRED: AI",
+      "topics": [
+        "ai-tech"
+      ],
+      "feedUrl": "https://www.wired.com/feed/tag/ai/latest/rss",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "techcrunch-ai",
+      "name": "TechCrunch: AI",
+      "topics": [
+        "ai-tech"
+      ],
+      "feedUrl": "https://techcrunch.com/category/artificial-intelligence/feed/",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "openai-news",
+      "name": "OpenAI News (lab blog)",
+      "topics": [
+        "ai-tech"
+      ],
+      "feedUrl": "https://openai.com/news/rss.xml",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": [],
+      "note": "Primary-source lab blog. Left off by default; Rachel decides which lab blogs to include (note: the assistant that drafted this list is made by Anthropic)."
+    },
+    {
+      "id": "variety",
+      "name": "Variety",
+      "topics": [
+        "film-tv"
+      ],
+      "feedUrl": "https://variety.com/feed/",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "deadline",
+      "name": "Deadline",
+      "topics": [
+        "film-tv"
+      ],
+      "feedUrl": "https://deadline.com/feed/",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "indiewire",
+      "name": "IndieWire",
+      "topics": [
+        "film-tv"
+      ],
+      "feedUrl": "https://www.indiewire.com/feed/",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "npr-music",
+      "name": "NPR Music",
+      "topics": [
+        "music"
+      ],
+      "feedUrl": "https://feeds.npr.org/1039/rss.xml",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "billboard-news",
+      "name": "Billboard: Music news",
+      "topics": [
+        "music"
+      ],
+      "feedUrl": "https://www.billboard.com/c/music/music-news/feed/",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "pitchfork-best-albums",
+      "name": "Pitchfork: Best new albums",
+      "topics": [
+        "music"
+      ],
+      "feedUrl": "https://pitchfork.com/feed/reviews/best/albums/rss",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "rolling-stone-music",
+      "name": "Rolling Stone: Music news",
+      "topics": [
+        "music"
+      ],
+      "feedUrl": "https://www.rollingstone.com/music/music-news/feed/",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    },
+    {
+      "id": "stereogum",
+      "name": "Stereogum",
+      "topics": [
+        "music"
+      ],
+      "feedUrl": "https://www.stereogum.com/feed",
+      "feedSource": "third-party list",
+      "verified": false,
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "ratings": []
+    }
+  ],
+  "candidates": [
+    {
+      "name": "Center-right or right-leaning US news outlet",
+      "status": "TODO: Rachel to choose later; verify the feed before adding"
+    },
+    {
+      "name": "Wall Street Journal news section",
+      "status": "AllSides rating found (Center) but no feed URL verified; paywalled"
+    }
+  ]
+}
