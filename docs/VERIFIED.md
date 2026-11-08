@@ -80,3 +80,6 @@ Every change fired Electron `display-metrics-changed` and the overlay re-placed 
 | Visible across multiple Spaces/desktops | PASS (Rachel) |
 | Menu bar icon: Hide / Show / Quit | PASS (Rachel) |
 | Over full-screen apps | Rachel does NOT want him there. Changed: no longer joins full-screen Spaces; level lowered from screen-saver (1000) to floating (3, below Dock 20). CGWindowList confirms layer 3. Needs Rachel re-test. |
+| Full-screen hiding, first attempt | FAIL (Rachel: still visible over full-screen Chrome). Reproduced with a throwaway full-screen Electron app + CGWindowList. |
+| Root cause | `app.dock.hide()` (accessory app). Variants: fullscreenable=true -> still visible; Dock icon kept -> hidden; both -> hidden. |
+| Full-screen hiding, fixed (Dock icon kept) | PASS (automated): on screen before, NOT on screen while other app full screen, back after. Needs Rachel re-test with Chrome. |

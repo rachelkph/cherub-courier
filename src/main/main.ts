@@ -130,8 +130,8 @@ ipcMain.on("overlay:cat-clicked", () => console.log("[overlay] cat clicked"));
 
 app.whenReady().then(() => {
   app.setName(APP_NAME);
-  // Accessory (menu bar) app: no Dock icon.
-  app.dock?.hide();
+  // Do not hide the Dock icon: as an accessory app, macOS shows our all-Spaces
+  // window over full-screen apps too, which Rachel does not want (tested 2026-11-08).
   serveAppProtocol();
   createOverlay();
   createTray();
