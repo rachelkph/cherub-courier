@@ -84,3 +84,15 @@ Every change fired Electron `display-metrics-changed` and the overlay re-placed 
 | Root cause | `app.dock.hide()` (accessory app). Variants: fullscreenable=true -> still visible; Dock icon kept -> hidden; both -> hidden. |
 | Full-screen hiding, fixed (Dock icon kept) | PASS (automated): on screen before, NOT on screen while other app full screen, back after. Needs Rachel re-test with Chrome. |
 | Full-screen hiding, Rachel re-test with Chrome | PASS (Rachel). Decision: keep the Dock icon. |
+
+## 2026-11-08 — M0 display changes (with Rachel's permission; session-only mode change, restored)
+Switched the main display's HiDPI mode with CGConfigureDisplayWithDisplayMode(.forSession), waited 5s each.
+
+| mode (pt) | usable area | overlay | result |
+|---|---|---|---|
+| 1470x956 (start) | w 1470, bottom 891 | w 1470, bottom 891 | PASS |
+| 1710x1112 | w 1710, bottom 1042 | w 1710, bottom 1042 | PASS |
+| 1280x832 | w 1280, bottom 775 | w 1280, bottom 775 | PASS |
+| 1470x956 (restored) | w 1470, bottom 891 | w 1470, bottom 891 | PASS; cat still drawn (overlay capture) |
+
+Not tested: physically plugging/unplugging an external display (no second display available in this session).
