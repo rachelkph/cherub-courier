@@ -53,11 +53,11 @@ A pixel-art news cat who delivers your twice-daily headlines — and gets comfie
 
 ## Popover (click the cat)
 - Anchored above the cat, kept on screen near edges, aware of the Dock position.
-- Header: unread count and a short mood line. Headline rows grouped by edition (newest first, at most 7 per edition, unread carried over up to 48h): topic label, headline, source name, age.
+- Header: edition masthead and headline count (no mood line; dropped 2026-11-08). Headline rows grouped by edition (newest first, at most 7 per edition, unread carried over up to 48h): topic label, headline, source name, age.
 - Clicking the cat marks the pile read (paper toss empties it). Click a headline: open the original link in the default browser. No in-app summary.
 - "Group by" switch in the header: **Edition** (default; sections per edition, newest first) or **Topic** (sections per topic in settings order, newest first; older-edition items labelled, e.g. "· this morning"). The choice is remembered in settings.
 - Footer: Refresh, Settings. ("Mark all read" dropped 2026-11-08: clicking the cat already marks the pile read.)
-- Look: newspaper clipping matching the sprite palette; pixel-font masthead (Silkscreen, OFL, bundled), macOS serif headlines, light and dark. Mockup: https://claude.ai/artifact/RPvxYiLrPD37X7wAsX55fb (private).
+- Look: newspaper clipping matching the sprite palette; pixel-font masthead (Silkscreen, OFL, bundled), macOS serif headlines, light and dark. Icons: hand-made 5x5 pixel icons at 2px per pixel in the text color, only on topic labels, edition headings (moon/sun) and footer buttons; no icon library. Mockup: https://claude.ai/artifact/RPvxYiLrPD37X7wAsX55fb (private).
 - Paywalled sources get a small "paywall" tag.
 
 ## Settings
