@@ -71,3 +71,12 @@ Method: `defaults write com.apple.dock ...` + `killall Dock`, wait 5s, compare N
 | restored | bottom 889 | bottom 889 | prefs identical to backup (diff: timestamps/GUIDs only); usable bottom is 889 vs 897 before — Dock restart changed its own layout, cause not determined |
 
 Every change fired Electron `display-metrics-changed` and the overlay re-placed itself within the 5s wait.
+
+## 2026-11-08 — M0 hands-on checks (Rachel)
+| check | result |
+|---|---|
+| Click-through: clicks reach apps behind the cat | PASS (Rachel) |
+| Hover stops the cat; click makes him hop | PASS (Rachel) |
+| Visible across multiple Spaces/desktops | PASS (Rachel) |
+| Menu bar icon: Hide / Show / Quit | PASS (Rachel) |
+| Over full-screen apps | Rachel does NOT want him there. Changed: no longer joins full-screen Spaces; level lowered from screen-saver (1000) to floating (3, below Dock 20). CGWindowList confirms layer 3. Needs Rachel re-test. |

@@ -9,7 +9,7 @@ Also decide Electron vs. alternatives based on what you see (Tauri or native Swi
 Acceptance checks (record results):
 - [ ] Transparent with no visible window frame or shadow.
 - [ ] Click-through everywhere except the cat's own pixels; the user can still click apps underneath.
-- [ ] Stays visible over a full-screen app (test Safari or Terminal full screen).
+- [ ] Hidden over a full-screen app, reappears when leaving full screen (test Safari or Terminal full screen). Changed 2026-11-08: Rachel does not want the cat over full-screen apps.
 - [ ] Behaves across multiple Spaces/desktops (decide: visible on all Spaces).
 - [ ] Position correct with the Dock at the bottom, on the side, enlarged, and auto-hidden (recompute from the usable display area).
 - [ ] Handles display changes (unplug/replug, resolution change) without losing the cat.

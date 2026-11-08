@@ -74,9 +74,11 @@ function createOverlay(): void {
       sandbox: true,
     },
   });
-  // 'screen-saver' level plus visibleOnFullScreen keeps the cat above full-screen apps.
-  overlay.setAlwaysOnTop(true, "screen-saver");
-  overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  // 'floating' sits above normal windows but below the Dock, so a revealed or
+  // magnified Dock covers the cat. Not joining full-screen Spaces hides the cat
+  // over full-screen apps (Rachel's decision, 2026-11-08).
+  overlay.setAlwaysOnTop(true, "floating");
+  overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
   overlay.setIgnoreMouseEvents(true, { forward: true });
 
   // No navigation or new windows, ever.
@@ -128,7 +130,7 @@ ipcMain.on("overlay:cat-clicked", () => console.log("[overlay] cat clicked"));
 
 app.whenReady().then(() => {
   app.setName(APP_NAME);
-  // Accessory app: no Dock icon, and lets the overlay join full-screen Spaces.
+  // Accessory (menu bar) app: no Dock icon.
   app.dock?.hide();
   serveAppProtocol();
   createOverlay();

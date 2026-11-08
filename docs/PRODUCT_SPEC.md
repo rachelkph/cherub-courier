@@ -47,7 +47,7 @@ A pixel-art news cat who delivers your twice-daily headlines — and gets comfie
 | Pile layers | Unread count | `pile/pile_1..5.png`: 1–2 unread = 1, 3–4 = 2, 5–6 = 3, 7–8 = 4, 9+ = 5 |
 | Paper toss | When opening/clearing | `fx/paper_roll.png` |
 - Walks along the bottom edge of the main display, above the Dock; compute the position from the display's usable area (Dock can be at the side, enlarged, or auto-hidden).
-- Overlay window: transparent, borderless, always on top, click-through everywhere except the cat's own pixels. Test over full-screen apps and multiple Spaces (see M0).
+- Overlay window: transparent, borderless, always on top, click-through everywhere except the cat's own pixels. Visible on every normal desktop/Space; hidden over full-screen apps (decided 2026-11-08). Sits below the Dock's window level so a revealed or magnified Dock covers him.
 - Hide/snooze: menu bar icon with Snooze (1h / until tomorrow), Hide cat, Refresh, Settings, Quit.
 
 ## Popover (click the cat)
