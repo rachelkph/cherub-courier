@@ -1,0 +1,20 @@
+{
+  "name": "newscat",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A pixel-art news cat that delivers twice-daily headlines on macOS.",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json && node scripts/copy-static.mjs",
+    "dev": "npm run build && electron .",
+    "lint": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.renderer.json --noEmit",
+    "test": "node --test",
+    "check-feeds": "node scripts/check-feeds.mjs"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "electron": "^45.2.3",
+    "typescript": "^7.0.2"
+  }
+}
