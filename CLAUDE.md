@@ -28,7 +28,7 @@ Rachel is a software engineer (Python-strong, JavaScript fine). She wants direct
 ## Engineering conventions
 - Language: TypeScript. Framework: Electron (recommended default; confirm in Milestone 0, see BUILD_PLAN). 
 - Tests are required for: feed parsing (RSS 2.0 and Atom, malformed input), deduplication, headline selection, scheduler/catch-up, source-list schema validation. Use fixture feeds checked into `test/fixtures/`.
-- Pixel art: render with `image-rendering: pixelated` at integer scale (default 2x; 3x was too big on a 1470pt-wide MacBook screen, decided 2026-11-08). Never smooth or non-integer scale.
+- Pixel art: render with `image-rendering: pixelated` at integer scale (default 1x = 63x58 pt; 3x and 2x were too big on a 1470pt-wide MacBook screen, decided 2026-11-08). Never smooth or non-integer scale.
 - Keep sprite and behavior data-driven from `assets/manifest.json`.
 - Commands you should keep working: `npm run dev`, `npm test`, `npm run lint`, `npm run build`.
 - Write a short `README.md` and keep `docs/` up to date when decisions change.

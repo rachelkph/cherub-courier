@@ -7,6 +7,7 @@ declare global {
     overlay: {
       setInteractive(interactive: boolean): void;
       catClicked(): void;
+      getBounds(): Promise<Bounds>;
       onBounds(cb: (b: Bounds) => void): void;
       onVisible(cb: (visible: boolean) => void): void;
     };
@@ -23,7 +24,6 @@ const canvas = document.getElementById("stage") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 
 let bounds: Bounds = { width: 0, height: 0, scale: 0 };
-let haveBounds = false; // nothing draws until main sends real bounds
 let images: HTMLImageElement[] = [];
 let masks: Uint8ClampedArray[] = [];
 let x = 40; // CSS px, left edge of sprite
@@ -146,19 +146,17 @@ window.addEventListener("mousedown", (e) => {
 
 window.overlay.onBounds((b) => {
   bounds = b;
-  haveBounds = true;
   if (!images.length) return; // first draw happens after load
   resize();
   draw();
-  start();
 });
 window.overlay.onVisible((v) => (v ? start() : stop()));
 
-images = await Promise.all(FRAMES.map(load));
+const [initialBounds, loaded] = await Promise.all([window.overlay.getBounds(), Promise.all(FRAMES.map(load))]);
+bounds = initialBounds;
+images = loaded;
 masks = images.map(alphaMask);
-if (haveBounds) {
-  resize();
-  start();
-}
+resize();
+start();
 
 export {};

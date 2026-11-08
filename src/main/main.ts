@@ -42,11 +42,16 @@ function overlayBounds(): Electron.Rectangle {
   };
 }
 
+function rendererBounds() {
+  const b = overlayBounds();
+  return { width: b.width, height: b.height, scale: SPRITE_SCALE };
+}
+
 function placeOverlay(reason: string): void {
   if (!overlay) return;
   const b = overlayBounds();
   overlay.setBounds(b);
-  overlay.webContents.send("overlay:bounds", { width: b.width, height: b.height, scale: SPRITE_SCALE });
+  overlay.webContents.send("overlay:bounds", rendererBounds());
   console.log(`[overlay] placed (${reason})`, b);
 }
 
@@ -77,6 +82,10 @@ function createOverlay(): void {
   // No navigation or new windows, ever.
   overlay.webContents.on("will-navigate", (e) => e.preventDefault());
   overlay.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+
+  // Surface renderer logs and errors in the terminal during development.
+  overlay.webContents.on("console-message", (e) => console.log(`[renderer:${e.level}] ${e.message}`));
+  overlay.webContents.on("render-process-gone", (_e, d) => console.log("[renderer] gone", d));
 
   overlay.loadURL("app://newscat/renderer/index.html");
   overlay.once("ready-to-show", () => {
@@ -113,6 +122,8 @@ function createTray(): void {
 ipcMain.on("overlay:set-interactive", (_e, interactive: unknown) => {
   overlay?.setIgnoreMouseEvents(interactive !== true, { forward: true });
 });
+// The renderer pulls bounds at startup; pushed updates can arrive before its listener exists.
+ipcMain.handle("overlay:get-bounds", () => rendererBounds());
 ipcMain.on("overlay:cat-clicked", () => console.log("[overlay] cat clicked"));
 
 app.whenReady().then(() => {

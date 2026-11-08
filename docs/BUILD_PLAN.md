@@ -19,7 +19,7 @@ Stop and report. If any item fails, say so plainly and propose options.
 
 ## M1 — Cat engine
 Data-driven animation from `assets/manifest.json`: walk (with direction flip), loaf idle, blink/tail-flick scheduling, sleep with floating z, pile layers 1–5, wake-on-click sequence, paper toss.
-Acceptance: a dev panel (hidden, dev-only) can set "unread count" and "edition age" and the correct states/piles appear; pixel-perfect at the configured integer scale (default 2x) with no smoothing; sprite bottom row sits on the walking baseline.
+Acceptance: a dev panel (hidden, dev-only) can set "unread count" and "edition age" and the correct states/piles appear; pixel-perfect at the configured integer scale (default 1x) with no smoothing; sprite bottom row sits on the walking baseline.
 
 ## M2 — Feed engine (no UI)
 Fetch + parse RSS 2.0 and Atom, normalize to `{headline, source, link, publishedAt, topic}`, dedupe, select (newest first, max 3 per topic, 7 total), persist locally.

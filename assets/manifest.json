@@ -1,6 +1,6 @@
 {
   "facing": "right (flip horizontally in the app for left)",
-  "scale_note": "draw at integer scales (default 2x) with image-rendering: pixelated",
+  "scale_note": "draw at integer scales (default 1x) with image-rendering: pixelated",
   "states": {
     "walk": {
       "frames": [
