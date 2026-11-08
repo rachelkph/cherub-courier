@@ -83,3 +83,4 @@ Every change fired Electron `display-metrics-changed` and the overlay re-placed 
 | Full-screen hiding, first attempt | FAIL (Rachel: still visible over full-screen Chrome). Reproduced with a throwaway full-screen Electron app + CGWindowList. |
 | Root cause | `app.dock.hide()` (accessory app). Variants: fullscreenable=true -> still visible; Dock icon kept -> hidden; both -> hidden. |
 | Full-screen hiding, fixed (Dock icon kept) | PASS (automated): on screen before, NOT on screen while other app full screen, back after. Needs Rachel re-test with Chrome. |
+| Full-screen hiding, Rachel re-test with Chrome | PASS (Rachel). Decision: keep the Dock icon. |
