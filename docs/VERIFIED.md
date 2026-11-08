@@ -1,0 +1,36 @@
+# Verification log
+
+Every check actually run, with date and result. Unchecked claims stay in OPEN_QUESTIONS.md.
+
+## 2026-11-08 — Seed feed liveness (`node scripts/check-feeds.mjs`)
+One GET per feed from Rachel's Mac, honest User-Agent, 500 ms between requests.
+"OK" = HTTP 200, parses as RSS/Atom (regex check), >0 items, newest item <= 72h old.
+
+| id | result | format | items | newest | ETag | Last-Modified | notes |
+|---|---|---|---|---|---|---|---|
+| bbc-news-world | OK | RSS | 27 | 0h | no | no | http redirects to https; https URL works directly |
+| bbc-news-top | OK | RSS | 25 | 0h | no | no | |
+| bbc-news-us-canada | OK | RSS | 29 | 18h | no | no | was "memory" URL; now verified. http -> https |
+| npr-news | OK | RSS | 10 | 2h | no | no | was "memory" URL; now verified |
+| pbs-newshour | OK | RSS | 20 | 0h | yes | yes | was "memory" URL; now verified |
+| guardian-world | OK | RSS | 45 | 0h | yes | no | |
+| nyt-home | OK | RSS | 13 | 1h | no | no | user opt-in only (unchanged) |
+| nyt-world | OK | RSS | 56 | 0h | no | no | user opt-in only (unchanged) |
+| reuters-google-news | OK | RSS | 100 | 1h | no | no | unofficial; terms still unchecked; off by default |
+| ap-google-news | OK | RSS | 100 | 1h | no | no | unofficial; terms still unchecked; off by default |
+| ars-technica-ai | OK | RSS | 20 | 49h | yes | yes | newest item already outside a 48h window |
+| mit-tech-review-ai | OK | RSS | 10 | 57h | yes | yes | outside a 48h window |
+| the-verge-ai | OK | Atom | 10 | 1h | yes | no | only Atom feed in the seed set |
+| wired-ai | OK | RSS | 10 | 7h | no | no | |
+| techcrunch-ai | OK | RSS | 20 | 21h | yes | yes | |
+| openai-news | OK | RSS | 1368 | 59h | no | no | whole archive in one feed (large download every fetch, no conditional GET) |
+| variety | OK | RSS | 10 | 0h | yes | yes | |
+| deadline | OK | RSS | 12 | 0h | yes | yes | |
+| indiewire | OK | RSS | 12 | 0h | yes | yes | |
+| npr-music | OK | RSS | 10 | 21h | no | no | |
+| billboard-news | OK | RSS | 10 | 15h | yes | yes | |
+| pitchfork-best-albums | STALE | RSS | 30 | 110h | no | no | works, but low cadence; rarely inside a 48h window |
+| rolling-stone-music | OK | RSS | 10 | 4h | yes | yes | |
+| stereogum | OK | RSS | 40 | 1h | yes | no | redirects www -> apex |
+
+Not checked here: feed terms of use, paywall status, item content quality, sustained availability.
