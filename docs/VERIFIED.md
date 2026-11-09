@@ -122,3 +122,28 @@ CPU, % of one core, all 4 Electron processes, measured from cumulative CPU time 
 Findings: cost is per redraw, not per window area (300 pt-wide window: 8.4% vs 8.8% full width).
 Tuning: adaptive tick cadence from the engine, dirty-rect redraw, walk moves 2 px per 140 ms frame
 (was 1 px / 70 ms; same speed), z's move every 200 ms.
+
+## 2026-11-08 — M2 feed engine
+`npm test`: 61 tests pass (29 new for feeds), `npm run lint` clean. Fixtures in `test/fixtures/`.
+
+| acceptance item | result | how |
+|---|---|---|
+| RSS 2.0, RSS 1.0 (RDF), Atom parse | PASS | fixtures: CDATA, relative links, xml:base, guid permalinks, alternate vs enclosure links, published vs updated, EST/+0000/ISO dates |
+| Malformed XML / HTML page / empty body do not crash | PASS | FeedParseError, recorded as that feed's error |
+| HTML stripped, entities decoded, invisible/bidi characters removed, length capped | PASS | sanitize tests + fixture with entity-escaped `<script>` |
+| DOCTYPE entities never expanded | PASS | billion-laughs fixture parses in <1s with no expansion |
+| Unsafe links dropped: javascript:, data:, file:, credentials, localhost, private IPs, .local, bare hostnames, cloud metadata IP | PASS | sanitize + parse tests |
+| Duplicates removed (URL normalization, near-identical, same story reworded) | PASS | threshold tests incl. a real BBC/NPR pair |
+| Selection: newest first, max 3/topic, 7 total, topics with <3 items, 48h window, future dates, previously delivered excluded | PASS | selectEdition tests |
+| Conditional GET (ETag / Last-Modified), 304 reuses cached entries | PASS | fake-network test |
+| Back-off 15m doubling to 24h; Retry-After; 404/410 = gone for 24h; 30 min minimum refetch | PASS | fake-network tests |
+| Redirects: manual, max 5, every hop + resolved IP must be public; only 301/308 remembered | PASS | fake-network tests |
+| Size cap 5 MB (declared and streamed); 15 s timeout | PASS (size); timeout path covered by the network-error test only |
+| Bad feed isolated from good feeds; 2 s spacing per host, 4 hosts in parallel | PASS | fetchAll test |
+| Persist locally: atomic write, 0600, re-sanitized on load, corrupt file set aside | PASS | store test |
+| Live: 15 recommended seed feeds -> edition | PASS | `node scripts/fetch-edition.ts`: 15/15 fetched, 7 headlines, 2.3-2.4 s |
+| Live in the app: Dev > Fetch edition now -> state.json (0600) -> pile | PASS | NEWSCAT_DEV_FETCH=1: 7 headlines, 4-layer pile captured |
+
+Found live, then fixed: the same Nvidia story from BBC and NPR, reworded, passed the near-identical rule (Jaccard 0.64). Added the "same story" rule (>= 5 shared words covering >= 75% of the shorter headline).
+
+Not verified: behavior behind a proxy (Node's fetch ignores macOS proxy settings); timeout against a real slow server.

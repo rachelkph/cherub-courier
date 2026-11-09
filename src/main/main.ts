@@ -1,7 +1,12 @@
 import { app, BrowserWindow, ipcMain, Menu, nativeImage, net, protocol, screen, Tray } from "electron";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { APP_NAME, OVERLAY_HEIGHT, SPRITE_SCALE } from "../shared/config";
+import { APP_NAME, OVERLAY_HEIGHT, SPRITE_SCALE } from "../shared/config.ts";
+import { realDeps } from "./feeds/client.ts";
+import { buildEdition } from "./feeds/edition.ts";
+import { DEFAULT_TOPICS, recommendedSources } from "./feeds/seed.ts";
+import { loadState, saveState } from "./feeds/store.ts";
 
 const ROOT = path.join(__dirname, "..", "..");
 // app://newscat/<path> serves only these two directories.
@@ -115,6 +120,31 @@ function createOverlay(): void {
   });
 }
 
+// Dev only until the scheduler (M5): fetch an edition now and show it as the pile.
+let fetching = false;
+async function devFetchEdition(): Promise<void> {
+  if (fetching) return;
+  fetching = true;
+  try {
+    const statePath = path.join(app.getPath("userData"), "state.json");
+    const seed = JSON.parse(readFileSync(path.join(ROOT, "data", "sources.seed.json"), "utf8"));
+    const now = Date.now();
+    const out = await buildEdition(
+      { sources: recommendedSources(seed), topics: DEFAULT_TOPICS, keywords: [], slot: new Date(now).getHours() < 18 ? "morning" : "evening", scheduledFor: now, force: true },
+      await loadState(statePath),
+      realDeps,
+    );
+    await saveState(statePath, out.state);
+    console.log(`[feeds] ${out.edition.id}: ${out.edition.items.length} headlines`);
+    for (const f of out.feeds) if (f.error) console.log(`[feeds] ${f.id}: ${f.result} ${f.error}`);
+    setCatState({ unread: out.edition.items.length, editionAge: 0 });
+  } catch (e) {
+    console.error("[feeds] edition failed", e);
+  } finally {
+    fetching = false;
+  }
+}
+
 function devMenu(): Electron.MenuItemConstructorOptions[] {
   if (app.isPackaged) return [];
   return [
@@ -122,6 +152,8 @@ function devMenu(): Electron.MenuItemConstructorOptions[] {
     {
       label: "Dev",
       submenu: [
+        { label: "Fetch edition now", click: () => void devFetchEdition() },
+        { type: "separator" },
         {
           label: "Unread headlines",
           submenu: [0, 1, 3, 5, 7, 9, 12].map((n) => ({
@@ -190,6 +222,7 @@ app.whenReady().then(() => {
   serveAppProtocol();
   createOverlay();
   createTray();
+  if (!app.isPackaged && process.env.NEWSCAT_DEV_FETCH === "1") void devFetchEdition();
   for (const ev of ["display-added", "display-removed", "display-metrics-changed"] as const) {
     screen.on(ev as "display-added", () => placeOverlay(ev));
   }

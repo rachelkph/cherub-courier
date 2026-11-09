@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!DOCTYPE lolz [
+  <!ENTITY lol "lol">
+  <!ENTITY lol1 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">
+  <!ENTITY lol2 "&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;">
+  <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">
+]>
+<rss version="2.0"><channel><title>Bomb</title>
+  <item><title>Before &lol3; after</title><link>https://bomb.example.com/1</link><pubDate>Sun, 08 Nov 2026 10:00:00 GMT</pubDate></item>
+</channel></rss>

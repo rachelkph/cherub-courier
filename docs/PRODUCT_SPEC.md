@@ -30,11 +30,15 @@ A pixel-art news cat who delivers your twice-daily headlines — and gets comfie
 - Offline: keep the last edition, retry later with back-off, never show an error popup unprompted.
 
 ## Headline selection (no AI)
-1. Gather items from all enabled sources within the age window.
-2. Drop duplicates (same URL, or near-identical normalized headlines by word overlap; document the threshold and test it).
-3. Apply user keywords as a filter/boost within a topic if any are set (document behavior; keep it simple).
-4. Sort newest first. Take at most 3 per topic, then fill to 7 total with the newest remaining items (still max 3 per topic).
-5. Store only: headline, source name, link, published time, topic.
+1. Gather items from all enabled sources within the age window (48h; items dated more than 1h in the future are dropped).
+2. Skip items already delivered in an earlier edition (remembered 7 days), so the evening edition never repeats the morning's.
+3. Drop duplicates, keeping the newest: same normalized URL (tracking parameters, www, fragment, trailing slash ignored), or headlines that are near-identical (word-set Jaccard >= 0.8) or the same story reworded (>= 5 shared words covering >= 75% of the shorter headline). Stopwords ignored; headlines under 4 words must match exactly. Thresholds and examples are tested in `test/feeds.test.ts`.
+4. Keywords **boost, they do not filter**: within a topic, headlines containing a keyword (whole word, case-insensitive) come first. A topic is never emptied because nothing matched. (Decided by Claude 2026-11-08; Rachel to confirm.)
+5. Fill the edition: first the best headline of each topic (topics with the newest headlines first), so a quiet topic is not crowded out; then the newest remaining, never more than 3 per topic, up to 7 total. (This is how "take at most 3 per topic, then fill to 7" is interpreted; Rachel to confirm.)
+6. Store only: headline, source name, link, published time, topic, paywall flag.
+
+## Feed fetching
+Honest User-Agent; conditional GET; 15 s timeout; 5 MB cap; at most 200 entries per feed; one request at a time per host with 2 s spacing, 4 hosts in parallel; a feed is not refetched within 30 min, even on Refresh; errors back off from 15 min doubling to 24 h, honoring Retry-After; 404/410 marks a feed "gone" and waits 24 h. http feeds try https first. Redirects are followed manually (max 5) and every hop, including its resolved IP, must be public.
 
 ## Cat states (assets in `assets/`)
 | State | When | Sprites |

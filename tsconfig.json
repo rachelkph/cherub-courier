@@ -11,7 +11,9 @@
     "types": [
       "node"
     ],
-    "erasableSyntaxOnly": true
+    "erasableSyntaxOnly": true,
+    "rewriteRelativeImportExtensions": true,
+    "allowImportingTsExtensions": true
   },
   "include": [
     "src/main/**/*.ts",
