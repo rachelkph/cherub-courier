@@ -14,7 +14,7 @@ import { buildView, catInputs, clearPile, markOpened } from "./popover/view.ts";
 import { hidePopover, preparePopover, pushPopoverView, registerPopoverIpc, showPopover, togglePopover } from "./popover/window.ts";
 import { currentEdition, snoozeEnd } from "./schedule.ts";
 import { Scheduler } from "./scheduler.ts";
-import { cleanSettings, defaultSettings, editionSources, loadSettings, type Settings, saveSettings } from "./settings.ts";
+import { cleanSettings, defaultSettings, editionSources, loadSettings, type Settings, saveSettings, topicLabels } from "./settings.ts";
 import { checkLink } from "./sources/discover.ts";
 import { cleanRemoteCache, loadSources } from "./sources/load.ts";
 import type { SourcesFile } from "./sources/schema.ts";
@@ -268,7 +268,7 @@ function snooze(until: number): void {
 const clock = (t: number) => new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 function popoverView() {
-  const labels = new Map(sourcesFile.topics.map((t) => [t.id, t.label]));
+  const labels = topicLabels(settings, sourcesFile);
   return buildView(state, {
     now: Date.now(),
     topics: settings.topics.map((id) => ({ id, label: labels.get(id) ?? id })),

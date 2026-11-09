@@ -1,7 +1,7 @@
 // Data for the setup screens, and validation of what they send back. Pure.
 
 import { cleanKeywords } from "../feeds/select.ts";
-import { type CustomSource, customSourceId, defaultSettings, MAX_CUSTOM_SOURCES, type Settings } from "../settings.ts";
+import { cleanCustomTopics, type CustomSource, customSourceId, defaultSettings, MAX_CUSTOM_SOURCES, type Settings } from "../settings.ts";
 import type { SourcesFile } from "../sources/schema.ts";
 
 export type SourceView = {
@@ -19,7 +19,7 @@ export type OnboardingModel = {
   topics: { id: string; label: string; recommendedCount: number }[];
   defaultTopics: string[];
   sources: SourceView[];
-  settings: Pick<Settings, "topics" | "keywords" | "approvedSourceIds" | "editionTimes" | "launchAtLogin"> & {
+  settings: Pick<Settings, "topics" | "customTopics" | "keywords" | "approvedSourceIds" | "editionTimes" | "launchAtLogin"> & {
     customSources: { feedUrl: string; name: string; topic: string }[];
   };
 };
@@ -41,6 +41,7 @@ export function buildModel(file: SourcesFile, settings: Settings): OnboardingMod
     sources,
     settings: {
       topics: settings.topics,
+      customTopics: settings.customTopics,
       keywords: settings.keywords,
       approvedSourceIds: settings.approvedSourceIds,
       editionTimes: settings.editionTimes,
@@ -57,12 +58,22 @@ const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 // The setup window is our code, but its messages are still checked: only known
 // topics and sources, only pasted feeds that were verified, sane times.
+// The user's own topics arrive as { key, label }; `key` is what the page used for
+// that topic in `topics` and `customSources` (it does not compute our ids).
 export function applyFinish(payload: unknown, file: SourcesFile, prev: Settings, verified: VerifiedFeeds): Settings {
   const p = (typeof payload === "object" && payload !== null ? payload : {}) as Record<string, unknown>;
-  const topicIds = new Set(file.topics.map((t) => t.id));
   const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
-  let topics = [...new Set(list(p.topics))].filter((t) => topicIds.has(t));
+  const sent = (Array.isArray(p.customTopics) ? p.customTopics : []).filter((t): t is Record<string, unknown> => typeof t === "object" && t !== null && typeof t.key === "string");
+  const customTopics = cleanCustomTopics(sent, file);
+  const keyToId = new Map<string, string>(file.topics.map((t) => [t.id, t.id]));
+  for (const t of sent) {
+    const own = cleanCustomTopics([t], file)[0];
+    if (own && customTopics.some((c) => c.id === own.id)) keyToId.set(t.key as string, own.id);
+  }
+  const resolve = (key: string) => keyToId.get(key);
+
+  let topics = [...new Set(list(p.topics).map(resolve).filter((t): t is string => t !== undefined))];
   if (topics.length === 0) topics = defaultSettings().topics;
   const picked = new Set(topics);
 
@@ -73,8 +84,9 @@ export function applyFinish(payload: unknown, file: SourcesFile, prev: Settings,
   const customSources: CustomSource[] = [];
   for (const c of Array.isArray(p.customSources) ? p.customSources : []) {
     if (typeof c !== "object" || c === null || customSources.length >= MAX_CUSTOM_SOURCES) continue;
-    const { feedUrl, topic } = c as Record<string, unknown>;
-    if (typeof feedUrl !== "string" || typeof topic !== "string" || !picked.has(topic)) continue;
+    const { feedUrl, topic: key } = c as Record<string, unknown>;
+    const topic = typeof key === "string" ? resolve(key) : undefined;
+    if (typeof feedUrl !== "string" || topic === undefined || !picked.has(topic)) continue;
     const ok = verified.get(feedUrl) ?? prev.customSources.find((x) => x.feedUrl === feedUrl);
     if (!ok || customSources.some((x) => x.feedUrl === feedUrl)) continue;
     const name = "title" in ok ? ok.title : ok.name;
@@ -90,6 +102,7 @@ export function applyFinish(payload: unknown, file: SourcesFile, prev: Settings,
     ...prev,
     onboarded: true,
     topics,
+    customTopics: customTopics.filter((t) => picked.has(t.id)), // a topic you unpick is forgotten
     keywords,
     approvedSourceIds,
     customSources,

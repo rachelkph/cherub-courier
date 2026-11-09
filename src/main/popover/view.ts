@@ -145,11 +145,12 @@ export function buildView(
     dateLabel: new Date(edition.scheduledFor).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
     countLabel: pile.length > 0 ? `${count} new` : `${count} headline${count === 1 ? "" : "s"}`,
     // Chips only for topics with headlines here (plus the selected one), so none lead nowhere.
+    // Built-in topics get a short name; the user's own keep the name they typed.
     chips: [
       { id: "all", label: "All" },
       ...opts.topics
         .filter((t) => t.id === filter || sections.some((s) => s.topic === t.id))
-        .map((t) => ({ id: t.id, label: SHORT[t.id] ?? t.label.split(" ")[0] })),
+        .map((t) => ({ id: t.id, label: SHORT[t.id] ?? t.label })),
     ],
     filter,
     sections: filter === "all" ? sections : sections.filter((s) => s.topic === filter),

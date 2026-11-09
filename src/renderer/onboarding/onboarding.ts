@@ -17,6 +17,7 @@ type Model = {
   sources: SourceView[];
   settings: {
     topics: string[];
+    customTopics: { id: string; label: string }[];
     keywords: string[];
     approvedSourceIds: string[];
     editionTimes: { morning: string; evening: string };
@@ -48,6 +49,9 @@ const model = await window.setup.model();
 const state = {
   step: 1,
   topics: new Set(model.settings.topics.length ? model.settings.topics : model.defaultTopics),
+  // Topics the user typed. `key` stands for the topic in this page; main assigns the real id.
+  customTopics: model.settings.customTopics.map((t) => ({ key: t.id, label: t.label })),
+  newTopic: { value: "", error: "" },
   keywords: model.settings.keywords.join(", "),
   mode: "recommended" as "recommended" | "custom",
   checked: new Set<string>(model.settings.approvedSourceIds),
@@ -83,8 +87,12 @@ function clock(hhmm: string): string {
   return new Date(2000, 0, 1, hh, mm).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-const label = (id: string) => model.topics.find((t) => t.id === id)?.label ?? id;
-const pickedTopics = () => model.topics.filter((t) => state.topics.has(t.id)).map((t) => t.id);
+const MAX_CUSTOM_TOPICS = 10;
+const MAX_TOPIC_LABEL = 24;
+const allTopics = () => [...model.topics.map((t) => ({ key: t.id, label: t.label, own: false })), ...state.customTopics.map((t) => ({ ...t, own: true }))];
+const label = (key: string) => allTopics().find((t) => t.key === key)?.label ?? key;
+const isOwn = (key: string) => state.customTopics.some((t) => t.key === key);
+const pickedTopics = () => allTopics().filter((t) => state.topics.has(t.key)).map((t) => t.key);
 const TOTAL = 5;
 
 function frame(title: string, body: Node[], foot: Node[]): HTMLElement {
@@ -131,23 +139,49 @@ function welcome(): HTMLElement {
   );
 }
 
+function addTopic(): void {
+  const text = state.newTopic.value.replace(/\s+/g, " ").trim();
+  if (!text) return;
+  const existing = allTopics().find((t) => t.label.toLowerCase() === text.toLowerCase());
+  if (existing) {
+    state.topics.add(existing.key); // typing a topic that exists just picks it
+    state.newTopic = { value: "", error: "" };
+  } else if (text.length > MAX_TOPIC_LABEL) state.newTopic.error = `Keep it to ${MAX_TOPIC_LABEL} characters or fewer.`;
+  else if (state.customTopics.length >= MAX_CUSTOM_TOPICS) state.newTopic.error = `You can add up to ${MAX_CUSTOM_TOPICS} of your own topics.`;
+  else {
+    const key = `new:${text.toLowerCase()}`;
+    state.customTopics.push({ key, label: text });
+    state.topics.add(key);
+    state.newTopic = { value: "", error: "" };
+  }
+  render();
+  (document.getElementById("new-topic") as HTMLInputElement | null)?.focus();
+}
+
 function topics(): HTMLElement {
-  const chips = model.topics.map((t) =>
+  const chips = allTopics().map((t) =>
     h(
       "button",
       {
         class: "chip",
         type: "button",
-        "aria-pressed": String(state.topics.has(t.id)),
+        "aria-pressed": String(state.topics.has(t.key)),
         onclick: () => {
-          if (state.topics.has(t.id)) state.topics.delete(t.id);
-          else state.topics.add(t.id);
+          if (state.topics.has(t.key)) state.topics.delete(t.key);
+          else state.topics.add(t.key);
           render();
         },
       },
       t.label,
     ),
   );
+  const own = h("input", { type: "text", id: "new-topic", value: state.newTopic.value, maxlength: String(MAX_TOPIC_LABEL + 10), placeholder: "e.g. Formula 1", "aria-describedby": "new-topic-help" });
+  own.addEventListener("input", () => {
+    state.newTopic.value = own.value;
+  });
+  own.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") addTopic();
+  });
   const kw = h("input", { type: "text", id: "keywords", value: state.keywords, placeholder: "e.g. synthesizers, open source", "aria-describedby": "kw-help" });
   kw.addEventListener("input", () => {
     state.keywords = kw.value;
@@ -157,6 +191,11 @@ function topics(): HTMLElement {
     [
       h("p", {}, "Choose what you want to hear about. You can change this later."),
       h("div", { class: "chips", role: "group", "aria-label": "Topics" }, ...chips),
+      h("label", { class: "field", for: "new-topic" }, "Add your own topic (optional)"),
+      h("div", { class: "paste" }, own, h("button", { type: "button", onclick: () => addTopic() }, "Add")),
+      state.newTopic.error
+        ? h("p", { class: "result", id: "new-topic-help", role: "alert" }, state.newTopic.error)
+        : h("p", { class: "note", id: "new-topic-help" }, "On the next screen, paste a site or feed link for it."),
       h("label", { class: "field", for: "keywords" }, "Add keywords (optional)"),
       kw,
       h("p", { class: "note", id: "kw-help" }, "Keywords move matching stories to the top within their topic, from the sources you pick. They never hide other stories and don't find new sources. Separate them with commas."),
@@ -304,7 +343,17 @@ function sources(): HTMLElement {
       "div",
       {},
       h("h2", { class: "topic" }, label(t)),
-      ...(list.length ? list.map(sourceRow) : [h("div", { class: "empty" }, `No ${state.mode === "recommended" ? "recommended " : ""}sources for ${label(t)} yet. Paste a feed link below to add one.`)]),
+      ...(list.length
+        ? list.map(sourceRow)
+        : [
+            h(
+              "div",
+              { class: "empty" },
+              isOwn(t)
+                ? `Paste a site or feed link below to get ${label(t)} headlines.`
+                : `No ${state.mode === "recommended" ? "recommended " : ""}sources for ${label(t)} yet. Paste a feed link below to add one.`,
+            ),
+          ]),
     );
   });
   const approveLabel = state.mode === "recommended" ? "Approve these sources" : "Use these sources";
@@ -376,6 +425,7 @@ function meet(): HTMLElement {
 async function finish(): Promise<void> {
   const out = await window.setup.finish({
     topics: pickedTopics(),
+    customTopics: state.customTopics.filter((t) => state.topics.has(t.key)),
     keywords: state.keywords,
     approvedSourceIds: [...state.checked],
     customSources: state.custom.map(({ feedUrl, topic }) => ({ feedUrl, topic })),

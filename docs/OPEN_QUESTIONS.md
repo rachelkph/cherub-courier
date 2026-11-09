@@ -23,6 +23,11 @@ Rachel plans to replace the cat with a **news boy cycling along the Dock**. His 
 - **First version number.** Proposed 0.1.0 for the first public release.
 - **Sprite licensing blocks a public DMG** (see Unverified facts): the art ships inside the app.
 
+## Custom topics and AI (2026-11-08)
+- **User-named topics — DECIDED (Rachel):** setup has "Add your own topic". A named topic is only a label: it gets headlines only from feeds the user pastes for it, and nothing checks that a feed fits its topic (the feed's name and latest headline are shown before adding). Max 10, 24 characters each; typing a built-in name just picks that topic; unpicking one forgets it and its feeds. The "add your own" tag on empty built-in topics was removed.
+- **AI — OPEN, not planned for v1.** Cloud model (e.g. Claude Haiku 4.5, about $1/$5 per million input/output tokens, check current pricing): roughly $1 per user per year to sort headlines, but the API key cannot ship in the app, so it needs each user's own key or a server Rachel runs, and topics and headlines would leave the Mac (breaks the privacy promise and "no AI"). On-device (Apple Natural Language, or Foundation Models on macOS 26 with Apple Intelligence): $0 and private, needs a small Swift helper; can judge whether a feed fits a topic but cannot find new sources. Revisit for v2.
+- **More topics than headlines.** An edition holds 7 headlines; with 8 or more topics picked, at least one topic gets nothing in each edition (the newest topics win the first pass). Consider raising the limit with the topic count, or rotating which topics lead.
+
 ## Unverified facts (test before relying on them)
 - **Feed URLs in `data/sources.json`:** all 24 verified live on 2026-11-08 (see docs/VERIFIED.md). Re-check periodically (`npm run check-feeds`; weekly CI planned for M7).
 - **Reuters and AP have no official RSS.** Reuters stopped its public feeds in June 2020; AP's feeds are unreliable and apnews.com blocks automated tools (per third-party reports). The Google News search-feed workaround is unofficial and undocumented; its terms of use have not been checked. Treat these as optional, off by default.

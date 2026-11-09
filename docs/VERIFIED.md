@@ -224,3 +224,12 @@ Tooling: electron-builder 26.18.0 (pinned, dev only). `npm audit`: one moderate 
 | Gatekeeper on ad-hoc build | rejected, as expected | `spctl --assess --type execute` -> rejected |
 | Signed + notarized build, clean-Mac Gatekeeper test | NOT RUN | needs Rachel's Developer ID certificate and notarytool profile (docs/RELEASE.md) |
 | Launch at login | NOT RUN | only applies to a packaged build; not registered from a throwaway build to avoid adding a login item to Rachel's Mac. Test with the first signed build |
+
+## 2026-11-08 — User-named topics
+Unit tests (113 pass): named topic saved with a stable id; its pasted feed becomes an edition source; survives save/reload and re-running setup; unpicking forgets it and its feeds; a built-in name, a 25-character name, HTML, bidi characters, duplicates and an 11th topic are refused; the popover shows its section and a full-name chip.
+Live, on a copy of Rachel's data (dev build, debug port 9412, closed afterwards):
+- Topics screen: "  Formula   1 " -> chip "Formula 1", selected; a 31-character name -> "Keep it to 24 characters or fewer."; "SCIENCE" -> picks the built-in Science.
+- Sources screen: Formula 1 section says "Paste a site or feed link below to get Formula 1 headlines."; pasting https://feeds.bbci.co.uk/sport/formula1/rss.xml -> "Feed works: BBC Sport", latest headline shown; added under Formula 1.
+- Finish: settings.json has customTopics [{own-u9f113, "Formula 1"}] and the feed under it. The existing evening edition was already full (7), so nothing was added to it; after clearing editions in the copy, a fresh fetch included "F1: Chequered Flag" (BBC Sport) under Formula 1.
+- Popover view: chips All, US, World, AI, Film, Music, Formula 1; a Formula 1 section with 1 headline. (Read through the page's view call; not screenshotted.)
+- Rachel's real data files: modification times unchanged. Her app restarted on the new build afterwards.

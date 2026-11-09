@@ -6,7 +6,9 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import type { Deps } from "../src/main/feeds/client.ts";
 import { applyFinish, applySkip, buildModel } from "../src/main/onboarding/model.ts";
-import { cleanSettings, defaultSettings, editionSources, loadSettings } from "../src/main/settings.ts";
+import { emptyState } from "../src/main/feeds/store.ts";
+import { buildView } from "../src/main/popover/view.ts";
+import { cleanSettings, customTopicId, defaultSettings, editionSources, loadSettings, MAX_CUSTOM_TOPICS, topicLabels } from "../src/main/settings.ts";
 import { checkLink, feedLinks, NO_FEED_MESSAGE, normalizeInput } from "../src/main/sources/discover.ts";
 import { loadSources, REMOTE_CHECK_MS } from "../src/main/sources/load.ts";
 import { parseSourcesFile, type SourcesFile } from "../src/main/sources/schema.ts";
@@ -215,6 +217,69 @@ describe("settings and setup", () => {
     assert.deepEqual(s.customSources.map((c) => [c.name, c.topic]), [["Pasted Blog", "music"]]);
     assert.deepEqual(s.editionTimes, { morning: "07:30", evening: "18:00" });
     assert.deepEqual(s.topics, ["music"]);
+  });
+
+  it("your own topic: named in setup, fed by a pasted feed, shown with its full name", () => {
+    const verified = new Map([["https://f1.example.com/feed.xml", { title: "F1 Blog" }]]);
+    const s = applyFinish(
+      {
+        topics: ["us-news", "new:formula 1", "new:knitting"],
+        customTopics: [
+          { key: "new:formula 1", label: "  Formula   1 " },
+          { key: "new:knitting", label: "Knitting" },
+          { key: "new:gone", label: "Not picked" },
+          { key: "new:science", label: "science" }, // repeats a built-in: refused
+          { key: "new:long", label: "x".repeat(25) },
+        ],
+        customSources: [
+          { feedUrl: "https://f1.example.com/feed.xml", topic: "new:formula 1" },
+          { feedUrl: "https://f1.example.com/feed.xml", topic: "new:gone" },
+        ],
+      },
+      file,
+      defaultSettings(),
+      verified,
+    );
+    const f1 = customTopicId("Formula 1");
+    assert.deepEqual(s.customTopics, [
+      { id: f1, label: "Formula 1" },
+      { id: customTopicId("Knitting"), label: "Knitting" },
+    ]);
+    assert.deepEqual(s.topics, ["us-news", f1, customTopicId("Knitting")]);
+    assert.deepEqual(s.customSources.map((c) => [c.name, c.topic]), [["F1 Blog", f1]]);
+    assert.deepEqual(editionSources(s, file).map((x) => x.topics), [[f1]]);
+    assert.equal(customTopicId("formula 1"), f1, "same name, same topic");
+
+    // Survives a save and reload, and re-running setup keeps it under the same id.
+    const reloaded = cleanSettings(JSON.parse(JSON.stringify(s)), file);
+    assert.deepEqual(reloaded.customTopics, s.customTopics);
+    assert.deepEqual(reloaded.customSources, s.customSources);
+    const model = buildModel(file, reloaded);
+    const again = applyFinish({ topics: model.settings.topics, customTopics: model.settings.customTopics.map((t) => ({ key: t.id, label: t.label })), customSources: model.settings.customSources }, file, reloaded, new Map());
+    assert.deepEqual(again.customSources, s.customSources);
+
+    // Unpicking it forgets the topic and its feeds.
+    const dropped = applyFinish({ topics: ["us-news"], customTopics: [{ key: f1, label: "Formula 1" }], customSources: [{ feedUrl: "https://f1.example.com/feed.xml", topic: f1 }] }, file, reloaded, new Map());
+    assert.deepEqual(dropped.customTopics, []);
+    assert.deepEqual(dropped.customSources, []);
+
+    // The popover: its own section and a chip with the full name.
+    const labels = topicLabels(s, file);
+    const item = { headline: "Grand Prix result", link: "https://f1.example.com/1", publishedAt: T - 3600_000, source: "F1 Blog", sourceId: "x", topic: f1, paywall: false, addedAt: T - 60_000 };
+    const state = { ...emptyState(), editions: [{ id: "e", slot: "evening" as const, scheduledFor: T - 600_000, fetchedAt: T - 60_000, items: [item] }] };
+    const view = buildView(state, { now: T, topics: s.topics.map((id) => ({ id, label: labels.get(id) ?? id })), filter: "all", editionTimes: s.editionTimes, hasSources: true, refreshing: false, clock: () => "6 PM" });
+    assert.deepEqual(view.sections.map((x) => x.label), ["Formula 1"]);
+    assert.ok(view.chips.some((c) => c.id === f1 && c.label === "Formula 1"));
+  });
+
+  it("cleans tampered custom topics", () => {
+    const many = Array.from({ length: 15 }, (_, i) => ({ label: `Topic ${i}` }));
+    const s = cleanSettings({ customTopics: [{ label: "<b>Chess</b>" }, { label: "chess" }, { label: "\u202eevil" }, { label: "" }, 42, ...many], topics: [customTopicId("Chess"), "own-forged"] }, file);
+    assert.equal(s.customTopics[0].label, "Chess");
+    assert.equal(s.customTopics.filter((t) => t.label.toLowerCase() === "chess").length, 1);
+    assert.ok(s.customTopics.every((t) => !/[\u202e<>]/.test(t.label) && t.label.length > 0));
+    assert.ok(s.customTopics.length <= MAX_CUSTOM_TOPICS);
+    assert.deepEqual(s.topics, [customTopicId("Chess")], "unknown topic ids dropped");
   });
 
   it("cleans a tampered settings file", async () => {
