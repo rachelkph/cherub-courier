@@ -184,3 +184,19 @@ Live checks ran a test instance on a copy of Rachel's data (`NEWSCAT_USER_DATA`)
 | Pile survives restarts and expires after 48h | PASS (unit) | relaunch on real data restored the 7-headline pile |
 
 Not verified live: opening a headline in the browser (would open Rachel's browser during a test; covered by code review: only links already in stored editions, https only, via shell.openExternal), dimming after opening (unit-tested), dark mode, VoiceOver.
+
+## 2026-11-08 — M5 scheduler, catch-up, startup
+`npm test`: 111 tests pass (9 new, fake clock + fake timers; DST and time zone tests set `TZ`). Lint clean.
+
+| acceptance item | result | how |
+|---|---|---|
+| Edition fires on time | PASS | fake clock: runs at exactly 08:00 and 18:00, nothing in between (checks every <= 15 min) |
+| Missed edition fires on wake | PASS | wake at 10:30 after missing 08:00 -> one run; a second wake does not run again; sleeping through two editions -> only the latest |
+| Fetch on launch if the last fetch is > 6 h old | PASS | launch/wake only; periodic checks never count as stale |
+| DST / time-zone change recomputes | PASS | US spring-forward (8 Mar 2026) and fall-back (1 Nov 2026) keep 08:00/18:00 local; LA -> Tokyo switch runs the Tokyo 18:00 edition within 15 min. Mutation check: with a 4 h re-check interval the time-zone test fails, so it really tests the interval. |
+| Offline: keep last edition, retry with back-off, no error popup | PASS (unit) | retries at +5, +15, +30, +60 min, immediately on wake; in the app a run where every feed fails saves nothing and returns "failed". Not exercised live (would need the Mac offline). |
+| Snooze suppresses the cat but not fetching | PASS (live) | test copy with snoozeUntil = now + 1 h and yesterday's edition: on launch the scheduler ran the catch-up (`start: fetching (due, evening edition)`, 7 headlines saved) while the window server showed no cat window |
+| Launch at login | done in M3 | applied only in packaged builds (M6) |
+
+Snooze options: 1 hour, or until the next morning edition time. Saved in settings.json (survives restarts). Menu shows "Snoozed until …" and "Wake the cat now".
+Wake events: Electron powerMonitor `resume` and `unlock-screen` trigger a check.

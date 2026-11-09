@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, protocol, screen, shell, Tray } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, powerMonitor, protocol, screen, shell, Tray } from "electron";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -12,7 +12,8 @@ import { applyFinish, applySkip, buildModel, type VerifiedFeeds } from "./onboar
 import { closeOnboarding, openOnboarding, registerOnboardingIpc } from "./onboarding/window.ts";
 import { buildView, catInputs, clearPile, markOpened } from "./popover/view.ts";
 import { hidePopover, isPopoverVisible, preparePopover, pushPopoverView, registerPopoverIpc, showPopover } from "./popover/window.ts";
-import { currentEdition } from "./schedule.ts";
+import { currentEdition, snoozeEnd } from "./schedule.ts";
+import { Scheduler } from "./scheduler.ts";
 import { cleanSettings, defaultSettings, editionSources, loadSettings, type Settings, saveSettings } from "./settings.ts";
 import { checkLink } from "./sources/discover.ts";
 import { cleanRemoteCache, loadSources } from "./sources/load.ts";
@@ -128,8 +129,8 @@ function createOverlay(): void {
 
   overlay.loadURL("app://newscat/renderer/index.html");
   overlay.once("ready-to-show", () => {
-    overlay?.showInactive();
     placeOverlay("initial");
+    applyVisibility(); // shows the cat unless hidden or snoozed
   });
 }
 
@@ -180,26 +181,77 @@ async function saveAndShow(next: State): Promise<void> {
   pushPopoverView(popoverView());
 }
 
-async function fetchEdition(force: boolean): Promise<void> {
-  if (fetching) return;
+// "failed" = every feed errored (offline): nothing is saved, so the edition is
+// retried rather than recorded as delivered-and-empty. Never shown as an error.
+async function fetchEdition(force: boolean): Promise<"ok" | "failed"> {
+  if (fetching) return "ok";
   const sources = editionSources(settings, sourcesFile);
   if (sources.length === 0) {
     console.log("[feeds] no approved sources; nothing to fetch");
-    return;
+    return "ok";
   }
   fetching = true;
   try {
     const now = Date.now();
     const { slot, scheduledFor } = currentEdition(now, settings.editionTimes);
     const out = await buildEdition({ sources, topics: settings.topics, keywords: settings.keywords, slot, scheduledFor, force }, state, realDeps);
-    console.log(`[feeds] ${out.edition.id}: ${out.edition.items.length} headlines from ${sources.length} sources`);
     for (const f of out.feeds) if (f.error) console.log(`[feeds] ${f.id}: ${f.result} ${f.error}`);
+    if (out.feeds.every((f) => f.result === "error")) {
+      console.log(`[feeds] ${out.edition.id}: every feed failed; not saved, will retry`);
+      return "failed";
+    }
+    console.log(`[feeds] ${out.edition.id}: ${out.edition.items.length} headlines from ${sources.length} sources`);
     await saveAndShow(out.state);
+    return "ok";
   } catch (e) {
     console.error("[feeds] edition failed", e);
+    return "failed";
   } finally {
     fetching = false;
   }
+}
+
+const scheduler = new Scheduler({
+  now: () => Date.now(),
+  setTimer: (fn, ms) => setTimeout(fn, ms),
+  clearTimer: (h) => clearTimeout(h as NodeJS.Timeout),
+  times: () => settings.editionTimes,
+  newestEditionFor: () => (state.editions.length ? Math.max(...state.editions.map((e) => e.scheduledFor)) : null),
+  lastFetchAt: () => (state.editions.length ? Math.max(...state.editions.map((e) => e.fetchedAt)) : null),
+  run: () => fetchEdition(false),
+  log: (m) => console.log(m),
+});
+
+// --- hide and snooze -------------------------------------------------------------
+
+let hiddenByUser = false;
+let snoozeTimer: NodeJS.Timeout | undefined;
+
+// The cat is shown unless the user hid him or he is snoozed. Snoozing hides him;
+// editions are still fetched, and the pile is there when he comes back.
+function applyVisibility(): void {
+  clearTimeout(snoozeTimer);
+  const now = Date.now();
+  const snoozed = settings.snoozeUntil > now;
+  if (snoozed) snoozeTimer = setTimeout(applyVisibility, Math.min(settings.snoozeUntil - now + 500, 2 ** 31 - 1));
+  else if (settings.snoozeUntil !== 0) {
+    settings = { ...settings, snoozeUntil: 0 };
+    void saveSettings(dataPaths().settings, settings);
+  }
+  const visible = !hiddenByUser && !snoozed;
+  if (overlay) {
+    if (visible && !overlay.isVisible()) overlay.showInactive();
+    if (!visible && overlay.isVisible()) overlay.hide();
+    overlay.webContents.send("overlay:visible", visible);
+  }
+  if (!visible) hidePopover();
+  rebuildTrayMenu();
+}
+
+function snooze(until: number): void {
+  settings = { ...settings, snoozeUntil: until };
+  void saveSettings(dataPaths().settings, settings);
+  applyVisibility();
 }
 
 // --- popover -------------------------------------------------------------------
@@ -289,7 +341,7 @@ registerOnboardingIpc({
     await saveSettings(dataPaths().settings, settings);
     applyLoginItem();
     const fetchingNow = editionSources(settings, sourcesFile).length > 0;
-    if (fetchingNow) void fetchEdition(true);
+    if (fetchingNow) void fetchEdition(true).then(() => scheduler.check("settings"));
     return { fetching: fetchingNow };
   },
   skip: async () => {
@@ -354,20 +406,36 @@ function devMenu(): Electron.MenuItemConstructorOptions[] {
   ];
 }
 
+function snoozeMenu(): Electron.MenuItemConstructorOptions[] {
+  if (settings.snoozeUntil > Date.now()) {
+    const until = new Date(settings.snoozeUntil);
+    const sameDay = until.toDateString() === new Date().toDateString();
+    const when = `${sameDay ? "" : "tomorrow "}${clock(settings.snoozeUntil)}`;
+    return [{ label: `Snoozed until ${when}`, enabled: false }, { label: "Wake the cat now", click: () => snooze(0) }];
+  }
+  return [
+    {
+      label: "Snooze",
+      submenu: [
+        { label: "For 1 hour", click: () => snooze(snoozeEnd("hour", Date.now(), settings.editionTimes)) },
+        { label: "Until tomorrow morning", click: () => snooze(snoozeEnd("tomorrow", Date.now(), settings.editionTimes)) },
+      ],
+    },
+  ];
+}
+
 function rebuildTrayMenu(): void {
   if (!tray) return;
-  const visible = overlay?.isVisible() ?? false;
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
-        label: visible ? "Hide cat" : "Show cat",
+        label: hiddenByUser ? "Show cat" : "Hide cat",
         click: () => {
-          if (visible) overlay?.hide();
-          else overlay?.showInactive();
-          overlay?.webContents.send("overlay:visible", !visible);
-          rebuildTrayMenu();
+          hiddenByUser = !hiddenByUser;
+          applyVisibility();
         },
       },
+      ...snoozeMenu(),
       { type: "separator" },
       { label: "Set up…", click: () => openOnboarding(__dirname) },
       { label: "Reset everything…", click: () => void resetEverything() },
@@ -408,6 +476,15 @@ app.whenReady().then(async () => {
   preparePopover(__dirname);
   // Unread headlines expire after 48h and the cat gets sleepier as editions pass.
   setInterval(updateCat, 10 * 60_000);
+  applyVisibility();
+  // Editions at the user's times, catch-up after sleep, and a fetch on launch if stale.
+  void scheduler.start();
+  for (const ev of ["resume", "unlock-screen"] as const) {
+    powerMonitor.on(ev as "resume", () => {
+      updateCat();
+      void scheduler.check("wake");
+    });
+  }
   // Check for a newer sources list in the background; used from the next launch or setup.
   void loadSourcesList(true)
     .then(() => {

@@ -27,7 +27,10 @@ A pixel-art news cat who delivers your twice-daily headlines — and gets comfie
 - **Catch-up:** if the Mac was asleep or the app was closed at an edition time, fetch when it wakes/launches and deliver that edition.
 - Also fetch on launch if the last fetch was more than about 6 hours ago.
 - Manual "Refresh" button inside the popover.
-- Offline: keep the last edition, retry later with back-off, never show an error popup unprompted.
+- Offline: keep the last edition, retry later with back-off (5, 15, 30, 60 min; immediately on wake), never show an error popup unprompted. A run where every feed fails saves nothing, so it is retried instead of recorded as an empty edition.
+- If the Mac sleeps through several editions, only the latest is delivered on wake.
+- Re-checks at least every 15 minutes, so a time-zone change is followed within 15 minutes.
+- Snooze: 1 hour, or until the next morning edition. Hides the cat; editions are still fetched and the pile is there when he returns. Saved across restarts.
 
 ## Headline selection (no AI)
 1. Gather items from all enabled sources within the age window (48h; items dated more than 1h in the future are dropped).
