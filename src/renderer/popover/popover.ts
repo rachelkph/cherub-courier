@@ -105,8 +105,15 @@ function render(v: View): void {
   card.replaceChildren(header, list, footer);
   list.scrollTop = scroll;
   root.style.setProperty("--list-max", `${LIST_MAX}px`);
-  requestAnimationFrame(() => window.popover.height(frame.getBoundingClientRect().height));
+  reportHeight();
 }
+
+// Measured synchronously (reading the size forces layout): a hidden page gets no
+// animation frames, so a requestAnimationFrame here would never reopen the popover.
+function reportHeight(): void {
+  window.popover.height(frame.getBoundingClientRect().height);
+}
+void document.fonts.ready.then(reportHeight);
 
 window.popover.onShow((v) => {
   render(v);

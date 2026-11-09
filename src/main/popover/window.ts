@@ -125,10 +125,6 @@ export function hidePopover(): void {
   pendingShow = false;
 }
 
-export function isPopoverVisible(): boolean {
-  return win?.isVisible() ?? false;
-}
-
 export function pushPopoverView(view: View): void {
   if (win && ready) win.webContents.send("popover:update", view);
 }

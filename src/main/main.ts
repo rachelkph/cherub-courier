@@ -11,7 +11,7 @@ import { emptyState, loadState, readJsonOrSetAside, type State, saveState, write
 import { applyFinish, applySkip, buildModel, type VerifiedFeeds } from "./onboarding/model.ts";
 import { closeOnboarding, openOnboarding, registerOnboardingIpc } from "./onboarding/window.ts";
 import { buildView, catInputs, clearPile, markOpened } from "./popover/view.ts";
-import { hidePopover, isPopoverVisible, preparePopover, pushPopoverView, registerPopoverIpc, showPopover } from "./popover/window.ts";
+import { hidePopover, preparePopover, pushPopoverView, registerPopoverIpc, showPopover } from "./popover/window.ts";
 import { currentEdition, snoozeEnd } from "./schedule.ts";
 import { Scheduler } from "./scheduler.ts";
 import { cleanSettings, defaultSettings, editionSources, loadSettings, type Settings, saveSettings } from "./settings.ts";
@@ -312,10 +312,10 @@ registerPopoverIpc({
   visibility: (visible) => overlay?.webContents.send("popover:visible", visible),
 });
 
-// Click with no pile: open or close the popover.
+// Click with no pile: show the popover (again, if it is already open). Esc or a
+// click elsewhere closes it.
 ipcMain.on("cat:clicked", (e, box: unknown) => {
   if (e.sender !== overlay?.webContents) return;
-  if (isPopoverVisible()) return hidePopover();
   const cat = catOnScreen(box);
   if (cat) showPopover(__dirname, cat);
 });

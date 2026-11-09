@@ -200,3 +200,9 @@ Not verified live: opening a headline in the browser (would open Rachel's browse
 
 Snooze options: 1 hour, or until the next morning edition time. Saved in settings.json (survives restarts). Menu shows "Snoozed until …" and "Wake the cat now".
 Wake events: Electron powerMonitor `resume` and `unlock-screen` trigger a check.
+
+## 2026-11-08 — Fix: popover did not reopen after closing (reported by Rachel)
+Reproduced on a copy of Rachel's data: open -> Esc -> click the cat -> popover stayed hidden.
+Root cause: the popover page reported its height inside requestAnimationFrame; once the window had been hidden the page is `visibilityState: hidden` and gets no animation frames (confirmed: "rAF did NOT fire within 1s"), so main never received the height and never showed the window. The first open only worked because the page had not been hidden yet.
+Fix: measure synchronously after rendering (plus once when the web font loads). Also: clicking the cat while the popover is open now keeps it open (re-anchored) instead of toggling it closed; Esc or clicking elsewhere closes it.
+Verified: open, Esc, click -> visible; click while open -> visible; 5 Esc/click cycles -> visible every time.
