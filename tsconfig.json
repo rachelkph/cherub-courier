@@ -8,7 +8,13 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "erasableSyntaxOnly": true
   },
-  "include": ["src/main/**/*.ts", "src/shared/**/*.ts"]
+  "include": [
+    "src/main/**/*.ts",
+    "src/shared/**/*.ts"
+  ]
 }

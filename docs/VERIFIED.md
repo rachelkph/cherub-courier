@@ -96,3 +96,29 @@ Switched the main display's HiDPI mode with CGConfigureDisplayWithDisplayMode(.f
 | 1470x956 (restored) | w 1470, bottom 891 | w 1470, bottom 891 | PASS; cat still drawn (overlay capture) |
 
 Not tested: physically plugging/unplugging an external display (no second display available in this session).
+
+## 2026-11-08 — M1 cat engine
+`npm test`: 32 tests pass (manifest validation, unread->pile mapping, walk/loaf/sleep rules, timelines,
+toss plan, CatEngine with a fake clock). `npm run lint` (Biome + tsc) clean; Biome confirmed to flag a probe file.
+
+| check | result | how |
+|---|---|---|
+| Cat-on-pile layout matches the artist's reference renders | PASS, 0 differing pixels | test composites loaf_idle_a / sleep_0 on piles 1-5 and diffs against preview/cat_on_pile_N.png and sleep_on_pile_N.png |
+| Sprite sizes match manifest; pile = 56 wide, 8/layer + 2 | PASS | test reads PNG headers |
+| Bottom row of every walk/loaf/sleep frame has pixels; stack bottom = strip bottom | PASS | tests + live captures (opaque bottom row = last row of the strip) |
+| Nothing leaves the 110 art-px strip (5-layer pile + z's, wake hop, paper toss) | PASS | test sweeps 0-6s in each phase |
+| Live: walk / loaf on pile 3 / sleep on pile 5 with z's | PASS (visual) | NEWSCAT_DEV_STATE + overlay window capture |
+| Click: wake -> paper toss -> pile empties -> walk; delivered reported once | PASS (engine test); NOT yet seen live | needs Rachel to click |
+| Dev menu (tray > Dev) sets unread / edition age | NOT verified live | needs Rachel |
+
+CPU, % of one core, all 4 Electron processes, measured from cumulative CPU time over 20s (1x scale, Retina):
+
+| state | before tuning | after |
+|---|---|---|
+| walk | 7.8-8.8% | 5.0% |
+| loaf | 2.2% | 1.8% |
+| sleep (z's) | 6.8% | 4.3% |
+
+Findings: cost is per redraw, not per window area (300 pt-wide window: 8.4% vs 8.8% full width).
+Tuning: adaptive tick cadence from the engine, dirty-rect redraw, walk moves 2 px per 140 ms frame
+(was 1 px / 70 ms; same speed), z's move every 200 ms.

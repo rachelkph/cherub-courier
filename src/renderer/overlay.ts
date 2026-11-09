@@ -1,36 +1,39 @@
-// M0 spike: one walking sprite with per-pixel hit testing. Replaced by the
-// manifest-driven cat engine in M1.
+// Draws the cat engine's sprites on the transparent overlay strip and hit-tests
+// the cursor against their pixels so clicks pass through everywhere else.
+
+import { CatEngine, type Sizes, type Sprite } from "./engine/cat.ts";
+import { parseManifest, spritePaths } from "./engine/manifest.ts";
 
 type Bounds = { width: number; height: number; scale: number };
+type CatState = { unread: number; editionAge: number };
 declare global {
   interface Window {
     overlay: {
       setInteractive(interactive: boolean): void;
-      catClicked(): void;
       getBounds(): Promise<Bounds>;
       onBounds(cb: (b: Bounds) => void): void;
       onVisible(cb: (visible: boolean) => void): void;
+      getCatState(): Promise<CatState>;
+      onCatState(cb: (s: CatState) => void): void;
+      delivered(): void;
     };
   }
 }
 
-const FRAMES = ["walk_0", "walk_1", "walk_2", "walk_3"].map((f) => `app://newscat/assets/walk/${f}.png`);
-const FRAME_MS = 140;
-const STEP_MS = 70; // move one art pixel per step; two steps per frame
-const W = 63;
-const H = 58;
+const ASSETS = "app://newscat/assets/";
 
 const canvas = document.getElementById("stage") as HTMLCanvasElement;
-const ctx = canvas.getContext("2d")!;
+const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-let bounds: Bounds = { width: 0, height: 0, scale: 0 };
-let images: HTMLImageElement[] = [];
-let masks: Uint8ClampedArray[] = [];
-let x = 40; // CSS px, left edge of sprite
-let dir: 1 | -1 = 1;
-let frame = 0;
-let step = 0;
-let hop = 0; // art px above baseline
+const images = new Map<string, HTMLImageElement>();
+const masks = new Map<string, Uint8ClampedArray>();
+let bounds: Bounds = { width: 0, height: 0, scale: 1 };
+let engine: CatEngine | undefined;
+let sprites: Sprite[] = [];
+let lastKey = "";
+// Area drawn last frame, in art px, so a redraw only clears what changed.
+let lastBox: Box | null = null;
+type Box = { x0: number; y0: number; x1: number; y1: number };
 let mouse: { x: number; y: number } | null = null;
 let interactive = false;
 let timer: number | undefined;
@@ -40,15 +43,19 @@ function load(src: string): Promise<HTMLImageElement> {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`failed to load ${src}`));
-    img.src = src;
+    img.src = ASSETS + src;
   });
 }
 
 function alphaMask(img: HTMLImageElement): Uint8ClampedArray {
   const c = new OffscreenCanvas(img.width, img.height);
-  const g = c.getContext("2d")!;
+  const g = c.getContext("2d") as OffscreenCanvasRenderingContext2D;
   g.drawImage(img, 0, 0);
   return g.getImageData(0, 0, img.width, img.height).data;
+}
+
+function strip() {
+  return { width: Math.floor(bounds.width / bounds.scale), height: Math.floor(bounds.height / bounds.scale) };
 }
 
 function resize(): void {
@@ -57,71 +64,101 @@ function resize(): void {
   canvas.style.height = `${bounds.height}px`;
   canvas.width = Math.round(bounds.width * dpr);
   canvas.height = Math.round(bounds.height * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // One art pixel = scale CSS px = scale * dpr device px; always an integer.
+  ctx.setTransform(dpr * bounds.scale, 0, 0, dpr * bounds.scale, 0, 0);
   ctx.imageSmoothingEnabled = false;
-  x = Math.min(x, bounds.width - W * bounds.scale);
+  lastKey = "";
+  lastBox = null;
 }
 
-function spriteTop(): number {
-  return bounds.height - (H + hop) * bounds.scale;
+function boxOf(list: Sprite[]): Box | null {
+  let box: Box | null = null;
+  for (const s of list) {
+    const img = images.get(s.sprite) as HTMLImageElement;
+    const b = { x0: s.x, y0: s.y, x1: s.x + img.width, y1: s.y + img.height };
+    box = box ? { x0: Math.min(box.x0, b.x0), y0: Math.min(box.y0, b.y0), x1: Math.max(box.x1, b.x1), y1: Math.max(box.y1, b.y1) } : b;
+  }
+  return box;
 }
 
-// Is the CSS point over an opaque pixel of the current frame?
+function draw(): void {
+  const key = sprites.map((s) => `${s.sprite}@${s.x},${s.y},${s.flip}`).join("|");
+  if (key === lastKey) return;
+  lastKey = key;
+  const next = boxOf(sprites);
+  // Clear and redraw only the union of the old and new sprite areas.
+  const parts = [lastBox, next].filter((b): b is Box => b !== null);
+  lastBox = next;
+  if (parts.length === 0) return;
+  const dirty = parts.reduce((a, b) => ({ x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) }));
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(dirty.x0, dirty.y0, dirty.x1 - dirty.x0, dirty.y1 - dirty.y0);
+  ctx.clip();
+  ctx.clearRect(dirty.x0, dirty.y0, dirty.x1 - dirty.x0, dirty.y1 - dirty.y0);
+  for (const s of sprites) {
+    const img = images.get(s.sprite) as HTMLImageElement;
+    if (s.flip) {
+      ctx.save();
+      ctx.translate(s.x + img.width, s.y);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, s.x, s.y);
+    }
+  }
+  ctx.restore();
+}
+
+// Is the CSS point over an opaque pixel of the cat or its pile?
 function hit(px: number, py: number): boolean {
-  const s = bounds.scale;
-  let ax = Math.floor((px - x) / s);
-  const ay = Math.floor((py - spriteTop()) / s);
-  if (ax < 0 || ay < 0 || ax >= W || ay >= H) return false;
-  if (dir === -1) ax = W - 1 - ax;
-  return masks[frame][(ay * W + ax) * 4 + 3] > 0;
+  const ax = Math.floor(px / bounds.scale);
+  const ay = Math.floor(py / bounds.scale);
+  for (const s of sprites) {
+    if (!s.hit) continue;
+    const img = images.get(s.sprite) as HTMLImageElement;
+    let lx = ax - s.x;
+    const ly = ay - s.y;
+    if (lx < 0 || ly < 0 || lx >= img.width || ly >= img.height) continue;
+    if (s.flip) lx = img.width - 1 - lx;
+    if ((masks.get(s.sprite) as Uint8ClampedArray)[(ly * img.width + lx) * 4 + 3] > 0) return true;
+  }
+  return false;
 }
 
 function updateInteractive(): void {
   const next = mouse !== null && hit(mouse.x, mouse.y);
   if (next !== interactive) {
     interactive = next;
+    engine?.setHovered(next);
     window.overlay.setInteractive(next);
   }
 }
 
-function draw(): void {
-  const s = bounds.scale;
-  ctx.clearRect(0, 0, bounds.width, bounds.height);
-  ctx.save();
-  if (dir === -1) {
-    ctx.translate(x + W * s, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(images[frame], 0, spriteTop(), W * s, H * s);
-  } else {
-    ctx.drawImage(images[frame], x, spriteTop(), W * s, H * s);
-  }
-  ctx.restore();
-}
+let running = false;
 
 function tick(): void {
-  // Stand still while hovered so the cat is clickable.
-  if (!interactive) {
-    const s = bounds.scale;
-    x += dir * s;
-    if (x <= 0 || x >= bounds.width - W * s) {
-      dir = dir === 1 ? -1 : 1;
-      x = Math.max(0, Math.min(x, bounds.width - W * s));
-    }
-    step++;
-    if (step * STEP_MS >= FRAME_MS) {
-      step = 0;
-      frame = (frame + 1) % FRAMES.length;
-    }
-  }
+  if (!engine) return;
+  const frame = engine.tick(performance.now());
+  sprites = frame.sprites;
+  if (frame.delivered) window.overlay.delivered();
   draw();
   updateInteractive();
+  if (running) {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(tick, frame.cadenceMs);
+  }
 }
 
 function start(): void {
-  if (timer === undefined) timer = window.setInterval(tick, STEP_MS);
+  if (running) return;
+  running = true;
+  tick();
 }
 function stop(): void {
-  if (timer !== undefined) window.clearInterval(timer);
+  running = false;
+  window.clearTimeout(timer);
   timer = undefined;
 }
 
@@ -134,29 +171,38 @@ window.addEventListener("mouseleave", () => {
   updateInteractive();
 });
 window.addEventListener("mousedown", (e) => {
-  if (!hit(e.clientX, e.clientY)) return;
-  window.overlay.catClicked();
-  hop = 5;
-  draw();
-  window.setTimeout(() => {
-    hop = 0;
-    draw();
-  }, 150);
+  if (!engine || !hit(e.clientX, e.clientY)) return;
+  engine.click(performance.now());
+  tick();
 });
 
+// Listen before any await so updates sent while loading are not lost.
+let latestState: CatState | null = null;
 window.overlay.onBounds((b) => {
   bounds = b;
-  if (!images.length) return; // first draw happens after load
+  if (!engine) return;
+  engine.setStrip(strip());
   resize();
-  draw();
+  tick();
+});
+window.overlay.onCatState((s) => {
+  latestState = s;
+  engine?.setInputs(s);
 });
 window.overlay.onVisible((v) => (v ? start() : stop()));
 
-const [initialBounds, loaded] = await Promise.all([window.overlay.getBounds(), Promise.all(FRAMES.map(load))]);
-bounds = initialBounds;
-images = loaded;
-masks = images.map(alphaMask);
+const manifest = parseManifest(await (await fetch(`${ASSETS}manifest.json`)).json());
+const [initialBounds, initialState] = await Promise.all([
+  window.overlay.getBounds(),
+  window.overlay.getCatState(),
+  ...spritePaths(manifest).map(async (p) => images.set(p, await load(p))),
+]);
+for (const [p, img] of images) masks.set(p, alphaMask(img));
+const sizes: Sizes = Object.fromEntries([...images].map(([p, img]) => [p, [img.width, img.height]]));
+
+if (bounds.width === 0) bounds = initialBounds;
+engine = new CatEngine(manifest, sizes, strip(), performance.now());
+engine.setInputs(latestState ?? initialState);
+
 resize();
 start();
-
-export {};

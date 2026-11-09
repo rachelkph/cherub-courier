@@ -31,4 +31,5 @@ Rachel is a software engineer (Python-strong, JavaScript fine). She wants direct
 - Pixel art: render with `image-rendering: pixelated` at integer scale (default 1x = 63x58 pt; 3x and 2x were too big on a 1470pt-wide MacBook screen, decided 2026-11-08). Never smooth or non-integer scale.
 - Keep sprite and behavior data-driven from `assets/manifest.json`.
 - Commands you should keep working: `npm run dev`, `npm test`, `npm run lint`, `npm run build`.
+- Lint is Biome + `tsc --noEmit` (typescript-eslint does not support TypeScript 7, checked 2026-11-08). Tests run TypeScript sources directly with Node's type stripping, so source files must use erasable syntax only (no enums, namespaces, or parameter properties) and import siblings with `.ts` extensions.
 - Write a short `README.md` and keep `docs/` up to date when decisions change.

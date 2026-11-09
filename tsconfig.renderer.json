@@ -7,8 +7,16 @@
     "rootDir": "src/renderer",
     "strict": true,
     "skipLibCheck": true,
-    "lib": ["ES2022", "DOM"],
-    "types": []
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [],
+    "rewriteRelativeImportExtensions": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true
   },
-  "include": ["src/renderer/**/*.ts"]
+  "include": [
+    "src/renderer/**/*.ts"
+  ]
 }
