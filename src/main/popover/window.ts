@@ -24,6 +24,7 @@ let handlers: PopoverHandlers | null = null;
 let anchorCat: Rect | null = null; // the cat, in screen points
 let ready = false;
 let pendingShow = false;
+let blurHiddenAt = 0; // when it last closed because it lost focus
 
 function fromPopover(e: IpcMainEvent | IpcMainInvokeEvent): boolean {
   return win !== null && e.sender === win.webContents && (e.senderFrame?.url ?? "").startsWith("app://newscat/renderer/popover/");
@@ -91,7 +92,10 @@ function create(preloadDir: string): BrowserWindow {
   w.webContents.on("will-navigate", (e) => e.preventDefault());
   w.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   w.webContents.on("console-message", (e) => console.log(`[popover:${e.level}] ${e.message}`));
-  w.on("blur", () => hidePopover());
+  w.on("blur", () => {
+    if (w.isVisible()) blurHiddenAt = Date.now();
+    hidePopover();
+  });
   w.on("closed", () => {
     win = null;
     ready = false;
@@ -123,6 +127,14 @@ export function hidePopover(): void {
     handlers?.visibility(false);
   }
   pendingShow = false;
+}
+
+// A click on the cat toggles the popover. A real click can make the popover lose
+// focus (closing it) just before the click reaches us; treat that as "close".
+export const TOGGLE_GRACE_MS = 400;
+export function togglePopover(preloadDir: string, cat: Rect): void {
+  if (win?.isVisible()) hidePopover();
+  else if (Date.now() - blurHiddenAt >= TOGGLE_GRACE_MS) showPopover(preloadDir, cat);
 }
 
 export function pushPopoverView(view: View): void {
