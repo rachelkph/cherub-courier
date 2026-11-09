@@ -24,6 +24,7 @@ Rate key claims `[Certain]`, `[Likely]`, `[Guessing]`. The feed URLs in `data/so
 
 ## How to work with Rachel
 Rachel is a software engineer (Python-strong, JavaScript fine). She wants direct feedback, flaws first, no filler praise. Challenge ideas that conflict with the spec instead of silently building them. Prefer small, reviewable commits. Explain non-obvious decisions in one or two sentences.
+Push to `origin main` (github.com/rachelkph/news-sprite, public) after each milestone is done and committed (Rachel, 2026-11-08). Never commit or push sprite art (`assets/` image folders are gitignored; license of the current art is unchecked).
 
 ## Engineering conventions
 - Language: TypeScript. Framework: Electron (recommended default; confirm in Milestone 0, see BUILD_PLAN). 
