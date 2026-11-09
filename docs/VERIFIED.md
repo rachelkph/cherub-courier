@@ -238,3 +238,10 @@ Live, on a copy of Rachel's data (dev build, debug port 9412, closed afterwards)
 - Selection: every topic with news gets one headline even past 7 (new test: 12 topics -> 12 headlines, one each; Refresh of a full edition adds the one topic that had none). Mutation check: with the old rule the test fails (113 pass, 1 fail).
 - User-named topics: the 10-topic cap is gone from setup (settings files are cut at 100 only as damage control).
 - Scroll: the setup page rebuilt itself on every action, resetting the scroll to the top. Now a re-render on the same screen keeps the scroll position, focus moves without scrolling, and an added feed is scrolled into view. Live on a copy of Rachel's data (debug port 9412, closed afterwards), the sources list scrolled to the bottom (scrollTop 1598): pasted "pitchfork.com" -> 1700 (found the Pitchfork feed), chose Music -> 1700 (focus on "Add feed"), Add feed -> 1635 with the new "Pitchfork · Music" row fully visible and focus back in the paste box.
+
+## 2026-11-09 — "Can't find a feed" for hollywoodreporter.com (reported by Rachel)
+Root cause: the page's `<head>` is ~300 KB of inline styles/scripts; its feed link is at byte ~283,000, past the 200 KB we scanned. Now the whole `<head>` is scanned (minus script/style blocks; the page is capped at 2 MB). Test: a link 360 KB into the head is found; one inside a script is ignored.
+Survey of 15 news sites with the app's own link check: before 11/15, after 13/15.
+- No advertised feed, found by trying the usual addresses: arstechnica.com (/feed/), polygon.com (/feed/).
+- npr.org timed out: www.npr.org hung on our User-Agent. Bisected with curl: the phrase "fetches only feeds its user subscribed to" is what it blocks; "NewsCat/0.1 (macOS desktop RSS reader; +https://github.com/rachelkph/news-sprite)" gets 200. User-Agent changed to that; all 24 bundled feeds still fetch and parse with it (24/24).
+- Still not found: vulture.com (feed lives at feeds.feedburner.com/nymag/vulture) and espn.com (www.espn.com/espn/rss/news). Pasting those links directly works.

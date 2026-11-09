@@ -9,7 +9,7 @@ import { applyFinish, applySkip, buildModel } from "../src/main/onboarding/model
 import { emptyState } from "../src/main/feeds/store.ts";
 import { buildView } from "../src/main/popover/view.ts";
 import { cleanSettings, customTopicId, defaultSettings, editionSources, loadSettings, MAX_CUSTOM_TOPICS, topicLabels } from "../src/main/settings.ts";
-import { checkLink, feedLinks, NO_FEED_MESSAGE, normalizeInput } from "../src/main/sources/discover.ts";
+import { COMMON_FEED_PATHS, checkLink, feedLinks, NO_FEED_MESSAGE, normalizeInput } from "../src/main/sources/discover.ts";
 import { loadSources, REMOTE_CHECK_MS } from "../src/main/sources/load.ts";
 import { parseSourcesFile, type SourcesFile } from "../src/main/sources/schema.ts";
 
@@ -154,7 +154,18 @@ describe("checkLink (pasted links)", () => {
   it("says so when a site has no feed (no scraping)", async () => {
     const { deps, calls } = fake({ "https://plain.example.com/": () => new Response("<html><head><title>x</title></head><body><a href='/rss'>rss</a></body></html>", { status: 200, headers: { "content-type": "text/html" } }) });
     assert.deepEqual(await checkLink("https://plain.example.com/", deps), { kind: "none", message: NO_FEED_MESSAGE });
-    assert.deepEqual(calls, ["https://plain.example.com/"], "did not follow links in the page body");
+    assert.deepEqual(calls, ["https://plain.example.com/", ...COMMON_FEED_PATHS.map((p) => `https://plain.example.com${p}`)], "only the usual feed addresses; did not follow links in the page body");
+  });
+
+  it("tries the usual feed addresses when a page advertises none", async () => {
+    const { deps, calls } = fake({
+      "https://news.example.com/": () => new Response("<html><head><title>x</title></head><body></body></html>", { status: 200, headers: { "content-type": "text/html" } }),
+      "https://news.example.com/feed/": () => new Response("<html>soft 404</html>", { status: 200, headers: { "content-type": "text/html" } }),
+      "https://news.example.com/rss/index.xml": () => new Response(RSS, { status: 200 }),
+    });
+    const out = await checkLink("news.example.com", deps);
+    assert.equal(out.kind === "feed" && out.feedUrl, "https://news.example.com/rss/index.xml");
+    assert.equal(calls.length, 3, "stops at the first feed");
   });
 
   it("rejects local, private and non-web addresses", async () => {
@@ -170,6 +181,13 @@ describe("checkLink (pasted links)", () => {
     const { deps } = fake({});
     const out = await checkLink("https://down.example.com/feed", deps);
     assert.equal(out.kind, "none");
+  });
+
+  it("finds a feed link deep in a large <head>, and ignores ones inside scripts", () => {
+    const filler = `<style>${".a{color:red}".repeat(30_000)}</style>`; // ~360 KB
+    const html = `<!doctype html><html><head>${filler}<script>var s='<link rel="alternate" type="application/rss+xml" href="/fake.xml">';</script><link rel="alternate" type="application/rss+xml" href="/feed/rss/" /></head><body></body></html>`;
+    assert.ok(html.indexOf("/feed/rss/") > 300_000);
+    assert.deepEqual(feedLinks(html, "https://site.example.com/"), ["https://site.example.com/feed/rss/"]);
   });
 
   it("parses feed link tags in any attribute order and quoting", () => {

@@ -10,6 +10,9 @@ import { isPrivateHost, plainText, safeFeedUrl } from "../feeds/sanitize.ts";
 export const NO_FEED_MESSAGE = "We couldn't find a feed for this site.";
 export const MAX_PAGE_BYTES = 2 * 1024 * 1024;
 export const MAX_CANDIDATES = 3;
+// Where sites usually keep their feed, tried in order when a page advertises none
+// (e.g. Ars Technica: /feed/, Polygon: /rss/index.xml).
+export const COMMON_FEED_PATHS = ["/feed/", "/rss/index.xml", "/rss.xml", "/feed.xml", "/rss/", "/atom.xml", "/index.xml"];
 
 export type LinkCheck =
   | { kind: "feed"; feedUrl: string; title: string; latestHeadline: string | null; discovered: boolean }
@@ -24,8 +27,12 @@ export function normalizeInput(input: string): string | null {
   return safeFeedUrl(withScheme);
 }
 
+// Feed links live in <head>, which can be hundreds of KB of inline scripts and
+// styles (The Hollywood Reporter's link sits ~280 KB in), so scan all of it
+// (the page is already capped at MAX_PAGE_BYTES), minus script and style blocks.
 export function feedLinks(html: string, pageUrl: string): string[] {
-  const head = html.slice(0, 200_000);
+  const end = html.search(/<\/head\s*>/i);
+  const head = (end === -1 ? html : html.slice(0, end)).replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, " ");
   const out: string[] = [];
   for (const m of head.matchAll(/<link\b[^>]*>/gi)) {
     const tag = m[0];
@@ -93,12 +100,15 @@ export async function checkLink(input: string, deps: Deps): Promise<LinkCheck> {
   }
 
   if (!looksLikeHtml(res.body, res.contentType)) return { kind: "none", message: NO_FEED_MESSAGE };
-  for (const candidate of feedLinks(res.body, res.finalUrl).slice(0, MAX_CANDIDATES)) {
+  const advertised = feedLinks(res.body, res.finalUrl).slice(0, MAX_CANDIDATES);
+  const origin = new URL(res.finalUrl).origin;
+  const guesses = COMMON_FEED_PATHS.map((p) => `${origin}${p}`).filter((u) => !advertised.includes(u));
+  for (const candidate of [...advertised, ...guesses]) {
     try {
       const found = await tryFeed(candidate, deps, true);
       if (found) return found;
     } catch {
-      // try the next advertised feed
+      // try the next one
     }
   }
   return { kind: "none", message: NO_FEED_MESSAGE };

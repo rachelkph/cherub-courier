@@ -23,7 +23,7 @@ Rules for the recommended screen:
 
 Pasted links:
 - If the link is a feed, validate it (fetch, parse, show the latest headline as proof).
-- If it is a site, try feed auto-discovery (`<link rel="alternate" type="application/rss+xml|atom+xml">`). If none found, show: "We couldn't find a feed for this site." No scraping.
+- If it is a site, try feed auto-discovery (`<link rel="alternate" type="application/rss+xml|atom+xml">`, anywhere in `<head>`), then the usual feed addresses on that site (`/feed/`, `/rss/index.xml`, `/rss.xml`, `/feed.xml`, `/rss/`, `/atom.xml`, `/index.xml`). If none is a feed, show: "We couldn't find a feed for this site." No scraping: links in the page body are never followed.
 - Only fetch from the user's machine. Reject non-http(s) and local/private addresses.
 
 ## Screen 4 — Schedule and startup
