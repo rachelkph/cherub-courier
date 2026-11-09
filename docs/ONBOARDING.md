@@ -7,7 +7,7 @@ Short intro, shows the cat walking. Button: Get started.
 
 ## Screen 2 — Pick topics
 Fixed list (chips): US news, world news, AI and tech, creative coding and dev tools, business and markets, science, film and TV, music, gaming, sports, culture and books, design.
-- Optional field: "Add keywords" (free text, comma separated). Explain clearly: keywords filter stories from the sources you pick; they do not find new sources.
+- Optional field: "Add keywords" (free text, comma separated). Explain clearly: keywords move matching stories to the top within their topic, from the sources you pick; they never hide other stories and do not find new sources. (Changed from "filter" 2026-11-08 to match the confirmed boost behavior.)
 - Default if skipped: US news, world news, AI and tech.
 
 ## Screen 3 — Choose sources

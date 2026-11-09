@@ -11,6 +11,12 @@
 7. **Sprite look** — Rachel may iterate on the pixel art later. Keep the manifest-driven design so art can be swapped without code changes.
 8. **Opt-in topics beyond the first five** — only US news, world news, AI and tech, film and TV, and music have researched seed sources. The others are empty placeholders.
 
+## Planned art change (told 2026-11-08, no assets yet)
+Rachel plans to replace the cat with a **news boy cycling along the Dock**. His **satchel grows** as unread news accumulates, until he is **covered in a pile of newspapers**. Implications when the art arrives:
+- "walk" becomes a cycling loop; the loaf/sleep-on-pile states and the separate pile sprites likely become satchel-size stages and a final "buried" state, still driven by the unread count.
+- Keep the engine data-driven from `assets/manifest.json` and keep unread -> stage mapping in data, so the change is mostly new sprites and a manifest edit, plus engine work where states differ (no pile under him; the click animation will need new art).
+- Name: "NewsCat" is still a placeholder (APP_NAME in `src/shared/config.ts`).
+
 ## Unverified facts (test before relying on them)
 - **Every feed URL in `data/sources.seed.json`.** URLs came from third-party lists. Some were not found in any source and are marked `"feedSource": "memory"`.
 - **Reuters and AP have no official RSS.** Reuters stopped its public feeds in June 2020; AP's feeds are unreliable and apnews.com blocks automated tools (per third-party reports). The Google News search-feed workaround is unofficial and undocumented; its terms of use have not been checked. Treat these as optional, off by default.
