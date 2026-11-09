@@ -9,16 +9,21 @@
     "dev": "npm run build && electron .",
     "lint": "biome lint && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.renderer.json --noEmit",
     "test": "node --test \"test/**/*.test.ts\"",
-    "check-feeds": "node scripts/check-feeds.mjs"
+    "check-feeds": "node scripts/check-feeds.mjs",
+    "dist": "npm run build && electron-builder --mac",
+    "dist:adhoc": "npm run build && electron-builder --mac -c.mac.identity=- -c.mac.hardenedRuntime=false -c.mac.notarize=false -c.dmg.sign=false",
+    "release": "bash scripts/release.sh"
   },
   "license": "UNLICENSED",
   "devDependencies": {
     "@biomejs/biome": "2.6.6",
     "@types/node": "^22.20.5",
     "electron": "^45.2.3",
+    "electron-builder": "26.18.0",
     "typescript": "^7.0.2"
   },
   "dependencies": {
     "fast-xml-parser": "5.12.0"
-  }
+  },
+  "productName": "NewsCat"
 }

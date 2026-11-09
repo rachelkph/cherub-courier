@@ -26,8 +26,17 @@ const SERVED_DIRS: Record<string, string> = {
   assets: path.join(ROOT, "assets"),
 };
 
+// A packaged app refuses to run with a debugging port open (it would let any local
+// process drive the app). Development builds use one for testing.
+if (app.isPackaged && (app.commandLine.hasSwitch("remote-debugging-port") || app.commandLine.hasSwitch("remote-debugging-pipe"))) {
+  app.exit(1);
+}
+
 // Dev only: run against a separate data folder (testing without touching real data).
 if (!app.isPackaged && process.env.NEWSCAT_USER_DATA) app.setPath("userData", process.env.NEWSCAT_USER_DATA);
+
+// One cat at a time: a second launch (with the same data folder) just quits.
+if (!app.requestSingleInstanceLock()) app.exit(0);
 
 protocol.registerSchemesAsPrivileged([
   { scheme: "app", privileges: { standard: true, secure: true, supportFetchAPI: true } },

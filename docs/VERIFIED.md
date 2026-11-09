@@ -207,3 +207,20 @@ Root cause: the popover page reported its height inside requestAnimationFrame; o
 Fix: measure synchronously after rendering (plus once when the web font loads). Also: clicking the cat while the popover is open now keeps it open (re-anchored) instead of toggling it closed; Esc or clicking elsewhere closes it.
 Verified: open, Esc, click -> visible; click while open -> visible; 5 Esc/click cycles -> visible every time.
 Follow-up (Rachel): clicking the cat should close the popover when it is open, i.e. toggle. Implemented with a 400 ms grace: if a real click first takes focus from the popover (closing it on blur), the same click is not treated as "open again". Verified with synthetic clicks: 6 clicks alternate visible/hidden; Esc then click reopens. A real mouse click (focus change) was not simulated; Rachel to confirm.
+
+## 2026-11-08 — M6 packaging (everything that does not need Rachel's Apple credentials)
+Tooling: electron-builder 26.18.0 (pinned, dev only). `npm audit`: one moderate advisory (minimatch ReDoS) inside electron-builder's build-time dependencies; it only processes our own config globs, not shipped. No signing identity in the keychain yet (`security find-identity -v -p codesigning`: 0 identities).
+
+| Check | Result | How |
+|---|---|---|
+| Universal DMG builds | PASS | `npm run dist:adhoc` -> `out/NewsCat-0.0.1.dmg`, 225 MB; `lipo -archs`: x86_64 arm64 |
+| App contents | PASS | `asar list`: only package.json, dist/, data/sources.json, assets/ (no preview art, no src/test/docs); prod node_modules = fast-xml-parser + strnum |
+| Fuses | PASS | `@electron/fuses read`: RunAsNode, NODE_OPTIONS, --inspect, file-protocol extra privileges off; asar integrity validation + only-load-from-asar on |
+| Launches packaged, art loads from asar | PASS | ran `out/mac-universal/NewsCat.app` and the copy inside the mounted DMG with `--user-data-dir=<scratch copy>`; window server showed a "NewsCat" 1470x110 window; screenshot showed the cat walking |
+| Real data untouched | PASS | mtimes of Rachel's settings/state/sources-cache unchanged across the runs |
+| Single instance | PASS | second launch with the same data folder exited (0) within 5 s; first kept running |
+| Debug port refused | PASS | `--remote-debugging-port=9411`: process exited (1), port never listened |
+| Ad-hoc + hardened runtime | FAIL as expected | dyld: "different Team IDs" (library validation). Ad-hoc test builds turn hardened runtime off; real builds keep it on with a Developer ID |
+| Gatekeeper on ad-hoc build | rejected, as expected | `spctl --assess --type execute` -> rejected |
+| Signed + notarized build, clean-Mac Gatekeeper test | NOT RUN | needs Rachel's Developer ID certificate and notarytool profile (docs/RELEASE.md) |
+| Launch at login | NOT RUN | only applies to a packaged build; not registered from a throwaway build to avoid adding a login item to Rachel's Mac. Test with the first signed build |

@@ -17,6 +17,12 @@ Rachel plans to replace the cat with a **news boy cycling along the Dock**. His 
 - Keep the engine data-driven from `assets/manifest.json` and keep unread -> stage mapping in data, so the change is mostly new sprites and a manifest edit, plus engine work where states differ (no pile under him; the click animation will need new art).
 - Name: "NewsCat" is still a placeholder (APP_NAME in `src/shared/config.ts`).
 
+## Release (M6) — open
+- **App icon.** None yet; the build uses Electron's default icon. Needs a 1024x1024 icon (`build/icon.icns` or an Icon Composer `.icon`). It would likely reuse the character art, so it waits on the art/licensing decision.
+- **Universal vs. per-chip DMGs.** Currently one universal DMG (225 MB). Separate Apple-silicon and Intel DMGs would be about half each, but users must pick the right one.
+- **First version number.** Proposed 0.1.0 for the first public release.
+- **Sprite licensing blocks a public DMG** (see Unverified facts): the art ships inside the app.
+
 ## Unverified facts (test before relying on them)
 - **Feed URLs in `data/sources.json`:** all 24 verified live on 2026-11-08 (see docs/VERIFIED.md). Re-check periodically (`npm run check-feeds`; weekly CI planned for M7).
 - **Reuters and AP have no official RSS.** Reuters stopped its public feeds in June 2020; AP's feeds are unreliable and apnews.com blocks automated tools (per third-party reports). The Google News search-feed workaround is unofficial and undocumented; its terms of use have not been checked. Treat these as optional, off by default.

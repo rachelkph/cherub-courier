@@ -66,6 +66,7 @@ export function openOnboarding(preloadDir: string): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      spellcheck: false, // URL and keyword fields
     },
   });
   win.webContents.on("will-navigate", (e) => e.preventDefault());

@@ -1,0 +1,38 @@
+# Packaging for macOS. Signing and notarization credentials are never stored here:
+# the signing identity comes from Rachel's login keychain, and notarization reads the
+# notarytool keychain profile named in APPLE_KEYCHAIN_PROFILE (see docs/RELEASE.md).
+appId: io.github.rachelkph.newscat
+productName: NewsCat
+copyright: Copyright © 2026 Rachel Pham
+directories:
+  output: out
+  buildResources: build
+files:
+  - package.json
+  - dist/**
+  - data/sources.json
+  - assets/**
+  - "!assets/preview/**"
+asar: true
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  grantFileProtocolExtraPrivileges: false
+mac:
+  category: public.app-category.news
+  target:
+    - target: dmg
+      arch: universal
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  notarize: true
+  minimumSystemVersion: "12.0"
+dmg:
+  sign: true # notarized and stapled by scripts/release.sh
+  artifactName: NewsCat-${version}.dmg
