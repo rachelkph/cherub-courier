@@ -1,13 +1,18 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, protocol, screen, Tray } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, protocol, screen, shell, Tray } from "electron";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { APP_NAME, OVERLAY_HEIGHT, SOURCES_REMOTE_URL, SPRITE_SCALE } from "../shared/config.ts";
 import { realDeps } from "./feeds/client.ts";
 import { buildEdition } from "./feeds/edition.ts";
-import { loadState, readJsonOrSetAside, saveState, writeJsonAtomic } from "./feeds/store.ts";
+import { safeUrl } from "./feeds/sanitize.ts";
+import { urlKey } from "./feeds/select.ts";
+import { emptyState, loadState, readJsonOrSetAside, type State, saveState, writeJsonAtomic } from "./feeds/store.ts";
 import { applyFinish, applySkip, buildModel, type VerifiedFeeds } from "./onboarding/model.ts";
 import { closeOnboarding, openOnboarding, registerOnboardingIpc } from "./onboarding/window.ts";
+import { buildView, catInputs, clearPile, markOpened } from "./popover/view.ts";
+import { hidePopover, isPopoverVisible, preparePopover, pushPopoverView, registerPopoverIpc, showPopover } from "./popover/window.ts";
+import { currentEdition } from "./schedule.ts";
 import { cleanSettings, defaultSettings, editionSources, loadSettings, type Settings, saveSettings } from "./settings.ts";
 import { checkLink } from "./sources/discover.ts";
 import { cleanRemoteCache, loadSources } from "./sources/load.ts";
@@ -19,6 +24,9 @@ const SERVED_DIRS: Record<string, string> = {
   renderer: path.join(ROOT, "dist", "renderer"),
   assets: path.join(ROOT, "assets"),
 };
+
+// Dev only: run against a separate data folder (testing without touching real data).
+if (!app.isPackaged && process.env.NEWSCAT_USER_DATA) app.setPath("userData", process.env.NEWSCAT_USER_DATA);
 
 protocol.registerSchemesAsPrivileged([
   { scheme: "app", privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -138,6 +146,7 @@ function dataPaths() {
 
 let sourcesFile: SourcesFile;
 let settings: Settings;
+let state: State = emptyState(); // editions, read state, feed caches (state.json)
 const verifiedFeeds: VerifiedFeeds = new Map(); // pasted feeds checked this session
 
 async function loadSourcesList(allowNetwork: boolean): Promise<void> {
@@ -157,6 +166,20 @@ function applyLoginItem(): void {
 // --- editions (fetched on demand until the scheduler in M5) -------------------------
 
 let fetching = false;
+let refreshing = false;
+
+// The cat shows what is stored: unread pile size and how old it is.
+function updateCat(): void {
+  setCatState(catInputs(state, Date.now()));
+}
+
+async function saveAndShow(next: State): Promise<void> {
+  state = next;
+  await saveState(dataPaths().state, state);
+  updateCat();
+  pushPopoverView(popoverView());
+}
+
 async function fetchEdition(force: boolean): Promise<void> {
   if (fetching) return;
   const sources = editionSources(settings, sourcesFile);
@@ -167,21 +190,90 @@ async function fetchEdition(force: boolean): Promise<void> {
   fetching = true;
   try {
     const now = Date.now();
-    const out = await buildEdition(
-      { sources, topics: settings.topics, keywords: settings.keywords, slot: new Date(now).getHours() < 18 ? "morning" : "evening", scheduledFor: now, force },
-      await loadState(dataPaths().state),
-      realDeps,
-    );
-    await saveState(dataPaths().state, out.state);
+    const { slot, scheduledFor } = currentEdition(now, settings.editionTimes);
+    const out = await buildEdition({ sources, topics: settings.topics, keywords: settings.keywords, slot, scheduledFor, force }, state, realDeps);
     console.log(`[feeds] ${out.edition.id}: ${out.edition.items.length} headlines from ${sources.length} sources`);
     for (const f of out.feeds) if (f.error) console.log(`[feeds] ${f.id}: ${f.result} ${f.error}`);
-    setCatState({ unread: out.edition.items.length, editionAge: 0 });
+    await saveAndShow(out.state);
   } catch (e) {
     console.error("[feeds] edition failed", e);
   } finally {
     fetching = false;
   }
 }
+
+// --- popover -------------------------------------------------------------------
+
+const clock = (t: number) => new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+function popoverView() {
+  const labels = new Map(sourcesFile.topics.map((t) => [t.id, t.label]));
+  return buildView(state, {
+    now: Date.now(),
+    topics: settings.topics.map((id) => ({ id, label: labels.get(id) ?? id })),
+    filter: settings.popoverFilter,
+    editionTimes: settings.editionTimes,
+    hasSources: editionSources(settings, sourcesFile).length > 0,
+    refreshing,
+    clock,
+  });
+}
+
+// The overlay sends the cat's box in its own CSS px; convert to screen points.
+function catOnScreen(box: unknown): { x: number; y: number; width: number; height: number } | null {
+  if (!overlay || typeof box !== "object" || box === null) return null;
+  const b = box as Record<string, unknown>;
+  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const [x, y, width, height] = [n(b.x), n(b.y), n(b.width), n(b.height)];
+  if (x === null || y === null || width === null || height === null) return null;
+  const o = overlay.getBounds();
+  return { x: o.x + x, y: o.y + y, width, height };
+}
+
+registerPopoverIpc({
+  view: popoverView,
+  open: (key) => {
+    const item = state.editions.flatMap((e) => e.items).find((i) => urlKey(i.link) === key);
+    const link = item ? safeUrl(item.link) : null;
+    if (!link) return;
+    void shell.openExternal(link);
+    void saveAndShow(markOpened(state, key, Date.now()));
+  },
+  filter: (id) => {
+    settings = cleanSettings({ ...settings, popoverFilter: id }, sourcesFile);
+    void saveSettings(dataPaths().settings, settings);
+    pushPopoverView(popoverView());
+  },
+  refresh: () => {
+    if (refreshing) return;
+    refreshing = true;
+    pushPopoverView(popoverView());
+    void fetchEdition(true).finally(() => {
+      refreshing = false;
+      pushPopoverView(popoverView());
+    });
+  },
+  settings: () => {
+    hidePopover();
+    openOnboarding(__dirname);
+  },
+  visibility: (visible) => overlay?.webContents.send("popover:visible", visible),
+});
+
+// Click with no pile: open or close the popover.
+ipcMain.on("cat:clicked", (e, box: unknown) => {
+  if (e.sender !== overlay?.webContents) return;
+  if (isPopoverVisible()) return hidePopover();
+  const cat = catOnScreen(box);
+  if (cat) showPopover(__dirname, cat);
+});
+// Click with a pile: after the paper toss, the pile is read and the popover opens.
+ipcMain.on("cat:delivered", (e, box: unknown) => {
+  if (e.sender !== overlay?.webContents) return;
+  void saveAndShow(clearPile(state, Date.now()));
+  const cat = catOnScreen(box);
+  if (cat) showPopover(__dirname, cat);
+});
 
 // --- setup window ------------------------------------------------------------
 
@@ -223,6 +315,8 @@ async function resetEverything(): Promise<void> {
   await Promise.all([p.state, p.settings, p.sourcesCache].map((f) => rm(f, { force: true })));
   verifiedFeeds.clear();
   settings = defaultSettings();
+  state = emptyState();
+  hidePopover();
   applyLoginItem();
   setCatState({ unread: 0, editionAge: 0 });
   openOnboarding(__dirname);
@@ -297,20 +391,23 @@ ipcMain.on("overlay:set-interactive", (_e, interactive: unknown) => {
 // The renderer pulls bounds at startup; pushed updates can arrive before its listener exists.
 ipcMain.handle("overlay:get-bounds", () => rendererBounds());
 ipcMain.handle("cat:get-state", () => catState);
-// The renderer reports the click after the paper toss finishes: the pile is read.
-ipcMain.on("cat:delivered", () => setCatState({ unread: 0, editionAge: 0 }));
+
 
 app.whenReady().then(async () => {
   app.setName(APP_NAME);
   // Do not hide the Dock icon: as an accessory app, macOS shows our all-Spaces
   // window over full-screen apps too, which Rachel does not want (tested 2026-11-08).
-  catState = devStartState() ?? catState;
   serveAppProtocol();
   await loadSourcesList(false);
   settings = await loadSettings(dataPaths().settings, sourcesFile);
+  state = await loadState(dataPaths().state);
+  catState = devStartState() ?? catInputs(state, Date.now());
   createOverlay();
   createTray();
   if (!settings.onboarded) openOnboarding(__dirname);
+  preparePopover(__dirname);
+  // Unread headlines expire after 48h and the cat gets sleepier as editions pass.
+  setInterval(updateCat, 10 * 60_000);
   // Check for a newer sources list in the background; used from the next launch or setup.
   void loadSourcesList(true)
     .then(() => {

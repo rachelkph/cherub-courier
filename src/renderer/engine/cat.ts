@@ -41,6 +41,7 @@ export class CatEngine {
   private x = 40;
   private facing: 1 | -1 = 1;
   private hovered = false;
+  private paused = false; // popover open: stand still so it stays anchored
   private lastStepAt: number;
   private steps = 0;
   private phase: Phase = { kind: "idle" };
@@ -75,6 +76,18 @@ export class CatEngine {
 
   setHovered(hovered: boolean): void {
     this.hovered = hovered;
+  }
+
+  setPaused(paused: boolean): void {
+    this.paused = paused;
+  }
+
+  // The cat's own sprite box (not the pile or effects), for anchoring the popover.
+  catBox(sprites: Sprite[]): { x: number; y: number; width: number; height: number } | null {
+    const cat = sprites.filter((s) => s.hit && !this.m.pile.files.includes(s.sprite)).at(-1);
+    if (!cat) return null;
+    const [w, h] = this.size(cat.sprite);
+    return { x: cat.x, y: cat.y, width: w, height: h };
   }
 
   isBusy(): boolean {
@@ -147,7 +160,7 @@ export class CatEngine {
     if (n > 0) {
       this.lastStepAt += n * b.walkStepMs;
       if (n > 1000) n = 1000; // after a long pause, do not replay every step
-      if (!this.hovered) {
+      if (!this.hovered && !this.paused) {
         for (let i = 0; i < n; i++) {
           this.x += this.facing * b.walkStepPx;
           const maxX = this.stripW - this.catW();

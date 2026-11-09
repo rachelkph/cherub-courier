@@ -12,12 +12,14 @@ import type { Candidate } from "./select.ts";
 
 export const SCHEMA_VERSION = 1;
 
+export type EditionItem = Candidate & { addedAt: number }; // when it joined the edition (Refresh can add later)
+
 export type Edition = {
   id: string; // e.g. "2026-11-08-evening"
   slot: "morning" | "evening";
   scheduledFor: number; // the edition time it belongs to
   fetchedAt: number;
-  items: Candidate[];
+  items: EditionItem[];
 };
 
 export type State = {
@@ -25,10 +27,13 @@ export type State = {
   feeds: Record<string, FeedCache>;
   editions: Edition[];
   delivered: { key: string; at: number }[]; // urlKeys of everything ever put in an edition (pruned)
+  pileClearedAt: number; // the user last clicked the cat (everything added before is read)
+  lastPile: string[]; // urlKeys that were in the pile at that click, so the popover can still list them
+  opened: { key: string; at: number }[]; // headlines the user opened (shown dimmed)
 };
 
 export function emptyState(): State {
-  return { schemaVersion: SCHEMA_VERSION, feeds: {}, editions: [], delivered: [] };
+  return { schemaVersion: SCHEMA_VERSION, feeds: {}, editions: [], delivered: [], pileClearedAt: 0, lastPile: [], opened: [] };
 }
 
 type Obj = Record<string, unknown>;
@@ -44,14 +49,14 @@ function cleanEntry(v: unknown): ParsedEntry | null {
   return headline && link && Number.isFinite(publishedAt) ? { headline, link, publishedAt } : null;
 }
 
-function cleanItem(v: unknown): Candidate | null {
+function cleanItem(v: unknown, fetchedAt: number): EditionItem | null {
   const e = cleanEntry(v);
   if (!e || !isObj(v)) return null;
   const source = plainText(v.source, 80);
   const sourceId = str(v.sourceId);
   const topic = str(v.topic);
   if (!source || !sourceId || !topic) return null;
-  return { ...e, source, sourceId, topic, paywall: v.paywall === true };
+  return { ...e, source, sourceId, topic, paywall: v.paywall === true, addedAt: num(v.addedAt, fetchedAt) };
 }
 
 function cleanFeed(v: unknown): FeedCache | null {
@@ -83,13 +88,24 @@ export function cleanState(raw: unknown): State {
   }
   const editions = (Array.isArray(raw.editions) ? raw.editions : []).flatMap((e): Edition[] => {
     if (!isObj(e) || typeof e.id !== "string" || (e.slot !== "morning" && e.slot !== "evening")) return [];
-    const items = Array.isArray(e.items) ? e.items.map(cleanItem).filter((i): i is Candidate => i !== null) : [];
-    return [{ id: e.id, slot: e.slot, scheduledFor: num(e.scheduledFor), fetchedAt: num(e.fetchedAt), items }];
+    const fetchedAt = num(e.fetchedAt);
+    const items = Array.isArray(e.items) ? e.items.map((i) => cleanItem(i, fetchedAt)).filter((i): i is EditionItem => i !== null) : [];
+    return [{ id: e.id, slot: e.slot, scheduledFor: num(e.scheduledFor), fetchedAt, items }];
   });
   const delivered = (Array.isArray(raw.delivered) ? raw.delivered : []).flatMap((d) =>
     isObj(d) && typeof d.key === "string" ? [{ key: d.key, at: num(d.at) }] : [],
   );
-  return { schemaVersion: SCHEMA_VERSION, feeds, editions, delivered };
+  const keyed = (v: unknown) =>
+    (Array.isArray(v) ? v : []).flatMap((d) => (isObj(d) && typeof d.key === "string" ? [{ key: d.key, at: num(d.at) }] : []));
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    feeds,
+    editions,
+    delivered,
+    pileClearedAt: num(raw.pileClearedAt),
+    lastPile: Array.isArray(raw.lastPile) ? raw.lastPile.filter((k): k is string => typeof k === "string").slice(0, 200) : [],
+    opened: keyed(raw.opened),
+  };
 }
 
 export async function loadState(path: string, now = Date.now()): Promise<State> {

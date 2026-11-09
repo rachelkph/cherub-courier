@@ -22,6 +22,7 @@ export type Settings = {
   customSources: CustomSource[]; // feeds the user pasted (checked when added)
   editionTimes: { morning: string; evening: string }; // "HH:MM", local time
   launchAtLogin: boolean;
+  popoverFilter: string; // "all" or a topic id: the popover's selected chip
 };
 
 // What a fresh install (or "skip setup") gets: default topics, but no sources,
@@ -36,6 +37,7 @@ export function defaultSettings(): Settings {
     customSources: [],
     editionTimes: { morning: "08:00", evening: "18:00" },
     launchAtLogin: true,
+    popoverFilter: "all",
   };
 }
 
@@ -82,6 +84,7 @@ export function cleanSettings(raw: unknown, sources: SourcesFile): Settings {
       evening: typeof times.evening === "string" && HHMM.test(times.evening) ? times.evening : d.editionTimes.evening,
     },
     launchAtLogin: typeof raw.launchAtLogin === "boolean" ? raw.launchAtLogin : d.launchAtLogin,
+    popoverFilter: typeof raw.popoverFilter === "string" && (raw.popoverFilter === "all" || topics.includes(raw.popoverFilter)) ? raw.popoverFilter : "all",
   };
 }
 

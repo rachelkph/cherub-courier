@@ -10,5 +10,8 @@ contextBridge.exposeInMainWorld("overlay", {
   onVisible: (cb: (visible: boolean) => void) => ipcRenderer.on("overlay:visible", (_e, v) => cb(v === true)),
   getCatState: (): Promise<CatState> => ipcRenderer.invoke("cat:get-state"),
   onCatState: (cb: (s: CatState) => void) => ipcRenderer.on("cat:state", (_e, s) => cb(s)),
-  delivered: () => ipcRenderer.send("cat:delivered"),
+  // The cat's box in CSS px inside the overlay window, so main can anchor the popover.
+  clicked: (box: { x: number; y: number; width: number; height: number }) => ipcRenderer.send("cat:clicked", box),
+  delivered: (box: { x: number; y: number; width: number; height: number }) => ipcRenderer.send("cat:delivered", box),
+  onPopoverVisible: (cb: (visible: boolean) => void) => ipcRenderer.on("popover:visible", (_e, v) => cb(v === true)),
 });

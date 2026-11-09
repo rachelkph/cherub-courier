@@ -59,11 +59,12 @@ Honest User-Agent; conditional GET; 15 s timeout; 5 MB cap; at most 200 entries 
 Chosen layout: "Option 1 — topic sections" in the mockup https://claude.ai/artifact/RPvxYiLrPD37X7wAsX55fb (private), decided 2026-11-08.
 - Anchored above the cat, kept on screen near edges, aware of the Dock position. About 380 pt wide; the list scrolls past ~430 pt.
 - Masthead named after the scheduled edition being shown, not the refresh time: first daily edition = "The Morning Edition", second = "The Evening Edition" (a manual refresh or late catch-up keeps the edition's name; only "Fetched <time>" changes). Under it: date and count of new headlines. No mood line.
-- Topic chips under the masthead: All plus one per enabled topic (short label + icon). All shows every section; a topic chip filters to that section. Empty filter shows "Nothing new in <topic> tonight." The chosen chip is remembered.
+- Topic chips under the masthead: All plus one per enabled topic that has headlines in the popover (short label + icon); a topic with nothing in it gets no chip, so no chip leads to an empty list. All shows every section; a topic chip filters to that section. Empty filter shows "Nothing new in <topic> tonight." The chosen chip is remembered.
 - List: one section per topic, in settings order, headed by icon + topic name + count (bold small caps). Rows under a heading have no per-row topic label: headline (serif, max 2 lines) and source. Unread items carried over from earlier editions (up to 48h) sit inside their topic after the new ones, marked "· this morning" (or the edition they came from). No age on new items.
 - At most 7 headlines per edition (max 3 per topic), as in Headline selection.
 - Opened headlines dim. Clicking the cat marks the pile read (paper toss empties it); the popover still lists the headlines. Click a headline: open the original link in the default browser. No in-app summary.
-- Footer: "Fetched <time>", Refresh, Settings. ("Mark all read" dropped 2026-11-08: clicking the cat already marks the pile read.)
+- Footer: "Fetched <time>", Refresh, Settings. Refresh adds new headlines to the current edition up to its limits (7 total, 3 per topic); a full edition only updates "Fetched". Settings opens the setup window until a separate Settings screen exists.
+- Closes on Esc or when clicking anywhere else. The cat stands still while it is open. ("Mark all read" dropped 2026-11-08: clicking the cat already marks the pile read.)
 - Look: newspaper clipping matching the sprite palette (cream paper, ink border with stepped pixel corners, stepped tail to the cat); pixel-font masthead (Silkscreen, OFL, bundled), macOS serif headlines, light and dark. Icons: hand-made 5x5 pixel icons at 2px per pixel in the text color, only on topic chips, section headings and footer buttons; no icon library.
 - Paywalled sources get a small "paywall" tag.
 - Superseded 2026-11-08: the Edition/Topic "Group by" switch and per-row topic labels.

@@ -397,7 +397,7 @@ describe("store", () => {
     assert.deepEqual(await loadState(path), emptyState());
 
     const s = emptyState();
-    s.editions.push({ id: "e1", slot: "evening", scheduledFor: T, fetchedAt: T, items: [cand({ headline: "kept headline here" })] });
+    s.editions.push({ id: "e1", slot: "evening", scheduledFor: T, fetchedAt: T, items: [{ ...cand({ headline: "kept headline here" }), addedAt: T }] });
     await saveState(path, s);
     assert.equal((await stat(path)).mode & 0o777, 0o600);
     assert.deepEqual(await loadState(path), s);

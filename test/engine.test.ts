@@ -144,6 +144,18 @@ describe("CatEngine", art, () => {
     assert.equal(c.x, b.x);
   });
 
+  it("stands still while paused (popover open) and reports its own box", () => {
+    const e = make();
+    const a = cat(e.tick(0).sprites);
+    e.setPaused(true);
+    const b = cat(e.tick(1400).sprites);
+    assert.equal(b.x, a.x);
+    e.setInputs({ unread: 5, editionAge: 0 });
+    const sprites = e.tick(1500).sprites;
+    const box = e.catBox(sprites);
+    assert.deepEqual(box, { x: cat(sprites).x, y: cat(sprites).y, width: 63, height: 42 }, "the loafing cat, not the pile");
+  });
+
   it("turns around at the edge and flips", () => {
     const e = make();
     e.tick(0);

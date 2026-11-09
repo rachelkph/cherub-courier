@@ -6,6 +6,7 @@ import { parseManifest, spritePaths } from "./engine/manifest.ts";
 
 type Bounds = { width: number; height: number; scale: number };
 type CatState = { unread: number; editionAge: number };
+type CatBox = { x: number; y: number; width: number; height: number };
 declare global {
   interface Window {
     overlay: {
@@ -15,7 +16,9 @@ declare global {
       onVisible(cb: (visible: boolean) => void): void;
       getCatState(): Promise<CatState>;
       onCatState(cb: (s: CatState) => void): void;
-      delivered(): void;
+      clicked(box: CatBox): void;
+      delivered(box: CatBox): void;
+      onPopoverVisible(cb: (visible: boolean) => void): void;
     };
   }
 }
@@ -142,7 +145,10 @@ function tick(): void {
   if (!engine) return;
   const frame = engine.tick(performance.now());
   sprites = frame.sprites;
-  if (frame.delivered) window.overlay.delivered();
+  if (frame.delivered) {
+    const box = catBoxCss();
+    if (box) window.overlay.delivered(box);
+  }
   draw();
   updateInteractive();
   if (running) {
@@ -170,10 +176,24 @@ window.addEventListener("mouseleave", () => {
   mouse = null;
   updateInteractive();
 });
+// The cat's own box in CSS px (art px times scale), for anchoring the popover.
+function catBoxCss(): CatBox | null {
+  const b = engine?.catBox(sprites);
+  if (!b) return null;
+  const s = bounds.scale;
+  return { x: b.x * s, y: b.y * s, width: b.width * s, height: b.height * s };
+}
+
 window.addEventListener("mousedown", (e) => {
   if (!engine || !hit(e.clientX, e.clientY)) return;
-  engine.click(performance.now());
+  // With a pile: wake, toss the papers, then main opens the popover (on "delivered").
+  // Without one: hop, and open (or close) the popover right away.
+  const result = engine.click(performance.now());
   tick();
+  if (result === "hop") {
+    const box = catBoxCss();
+    if (box) window.overlay.clicked(box);
+  }
 });
 
 // Listen before any await so updates sent while loading are not lost.
@@ -190,6 +210,7 @@ window.overlay.onCatState((s) => {
   engine?.setInputs(s);
 });
 window.overlay.onVisible((v) => (v ? start() : stop()));
+window.overlay.onPopoverVisible((v) => engine?.setPaused(v));
 
 const manifest = parseManifest(await (await fetch(`${ASSETS}manifest.json`)).json());
 const [initialBounds, initialState] = await Promise.all([

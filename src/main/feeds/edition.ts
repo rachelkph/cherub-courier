@@ -4,7 +4,7 @@
 import { type Deps, emptyCache, fetchAll, type FetchOutcome } from "./client.ts";
 import { safeFeedUrl } from "./sanitize.ts";
 import { type Candidate, cleanKeywords, DEFAULTS, selectEdition, urlKey } from "./select.ts";
-import type { Edition, State } from "./store.ts";
+import type { Edition, EditionItem, State } from "./store.ts";
 
 export type Source = {
   id: string;
@@ -61,18 +61,26 @@ export async function buildEdition(req: EditionRequest, state: State, deps: Deps
   });
 
   const delivered = state.delivered.filter((d) => now - d.at < DELIVERED_TTL_MS);
-  const items = selectEdition(candidates, {
+  // Refreshing an edition adds to it, within the same per-edition limits.
+  const id = editionId(req.slot, req.scheduledFor);
+  const existing = state.editions.find((e) => e.id === id)?.items ?? [];
+  const taken = new Map<string, number>();
+  for (const i of existing) taken.set(i.topic, (taken.get(i.topic) ?? 0) + 1);
+  const added: EditionItem[] = selectEdition(candidates, {
     now,
     ...DEFAULTS,
+    total: Math.max(0, DEFAULTS.total - existing.length),
     keywords: cleanKeywords(req.keywords),
     exclude: new Set(delivered.map((d) => d.key)),
-  });
+    taken,
+  }).map((i) => ({ ...i, addedAt: now }));
+  const items = [...existing, ...added];
 
-  const edition: Edition = { id: editionId(req.slot, req.scheduledFor), slot: req.slot, scheduledFor: req.scheduledFor, fetchedAt: now, items };
+  const edition: Edition = { id, slot: req.slot, scheduledFor: req.scheduledFor, fetchedAt: now, items };
   const editions = [...state.editions.filter((e) => e.id !== edition.id && now - e.fetchedAt < EDITION_TTL_MS), edition];
 
   return {
-    state: { ...state, feeds, editions, delivered: [...delivered, ...items.map((i) => ({ key: urlKey(i.link), at: now }))] },
+    state: { ...state, feeds, editions, delivered: [...delivered, ...added.map((i) => ({ key: urlKey(i.link), at: now }))] },
     edition,
     feeds: sources.map((s) => {
       const o = outcomes.get(s.id);

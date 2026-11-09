@@ -18,6 +18,7 @@ export type SelectOptions = {
   total: number; // max headlines per edition (7)
   keywords: string[]; // boost, see keywordMatch
   exclude: Set<string>; // urlKeys already delivered in earlier editions
+  taken?: Map<string, number>; // headlines per topic already in this edition (Refresh adds to it)
 };
 
 export const DEFAULTS = { windowHours: 48, perTopic: 3, total: 7 } as const;
@@ -144,14 +145,14 @@ export function selectEdition(candidates: Candidate[], opts: SelectOptions): Can
   }
 
   const picked: Candidate[] = [];
-  const count = new Map<string, number>();
+  const count = new Map<string, number>(opts.taken ?? []);
   const take = (c: Candidate) => {
     picked.push(c);
     count.set(c.topic, (count.get(c.topic) ?? 0) + 1);
   };
 
   const leaders = [...byTopic.values()].map((l) => l[0]).sort((a, b) => b.publishedAt - a.publishedAt);
-  for (const c of leaders) if (picked.length < opts.total && opts.perTopic > 0) take(c);
+  for (const c of leaders) if (picked.length < opts.total && (count.get(c.topic) ?? 0) < opts.perTopic) take(c);
 
   // Fill in each topic's own order (keyword matches first), interleaved newest first.
   const queues = new Map([...byTopic].map(([t, l]) => [t, l.filter((c) => !picked.includes(c))]));

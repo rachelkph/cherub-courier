@@ -165,3 +165,22 @@ Live checks drove the real setup window through Chromium's DevTools protocol (lo
 | Settings saved owner-only, re-validated on load | PASS | settings.json 0600; tampered file test |
 
 Not verified live: "Reset everything…" (native dialog; code path only), start-at-login (only applied in packaged builds; M6), rater link opening in the browser, dark mode of the setup window, VoiceOver.
+
+## 2026-11-08 — M4 popover and read state
+`npm test`: 102 tests pass (14 new: pile/unread/carry-over, popover view, edition names, Refresh merge, anchoring at edges, engine pause). Lint clean.
+Live checks ran a test instance on a copy of Rachel's data (`NEWSCAT_USER_DATA`), driven through the localhost DevTools port.
+
+| acceptance item | result | how |
+|---|---|---|
+| Clicking the cat empties the pile; the popover still lists the headlines | PASS | click on the pile -> wake + paper toss -> state.json pileClearedAt set, lastPile = 7 -> popover "7 headlines" (was "7 new") |
+| Click with no pile opens the popover | PASS | click on the walking cat -> popover opened, masthead focused |
+| Topic chips filter and are remembered | PASS | Music chip -> only the Music section; settings.json popoverFilter = "music" |
+| Masthead name matches the edition | PASS | "The Evening Edition" for an 18:00 edition; unit tests for 2 AM = last night's evening edition |
+| Popover stays on screen at every edge and Dock position | PASS (unit) / PASS (live, left edge) | anchor tests: center, left/right edge with tail over the cat, side Dock, short screen; live: cat at x=40 -> popover clamped to 8 pt, tail at 64 pt |
+| Resizes to content, keeps its bottom on the cat | PASS | 634 pt with 7 headlines, 279 pt after filtering to one |
+| Refresh | PASS | "Refreshing…" -> fetched 12 sources -> "Fetched" time updated; added nothing because the edition already had its 7 |
+| Esc / click elsewhere closes | PASS (Esc) | window server shows no popover window after Esc; blur-to-close not exercised live |
+| No article text stored | PASS | state.json holds headline, source, link, times, topic, paywall flag only |
+| Pile survives restarts and expires after 48h | PASS (unit) | relaunch on real data restored the 7-headline pile |
+
+Not verified live: opening a headline in the browser (would open Rachel's browser during a test; covered by code review: only links already in stored editions, https only, via shell.openExternal), dimming after opening (unit-tested), dark mode, VoiceOver.

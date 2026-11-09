@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; img-src 'self'; style-src 'self'; font-src 'self'"
+    />
+    <title>Headlines</title>
+    <link rel="stylesheet" href="popover.css" />
+  </head>
+  <body>
+    <div id="frame">
+      <div class="border">
+        <div class="card" id="card" role="dialog" aria-labelledby="masthead"></div>
+      </div>
+      <svg class="tail" id="tail" width="16" height="8" viewBox="0 0 16 8" shape-rendering="crispEdges" aria-hidden="true">
+        <rect class="b" x="0" y="0" width="16" height="2"></rect>
+        <rect class="p" x="2" y="0" width="12" height="2"></rect>
+        <rect class="b" x="2" y="2" width="12" height="2"></rect>
+        <rect class="p" x="4" y="2" width="8" height="2"></rect>
+        <rect class="b" x="4" y="4" width="8" height="2"></rect>
+        <rect class="p" x="6" y="4" width="4" height="2"></rect>
+        <rect class="b" x="6" y="6" width="4" height="2"></rect>
+      </svg>
+    </div>
+    <script type="module" src="popover.js"></script>
+  </body>
+</html>
