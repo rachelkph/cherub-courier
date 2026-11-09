@@ -122,9 +122,10 @@ export function cleanKeywords(raw: string[]): string[] {
 // 1. keep items inside the age window (and not far in the future), not delivered before
 // 2. drop duplicates
 // 3. per topic: keyword matches first, then newest
-// 4. one headline from each topic first (most recent topics first) so small topics
-//    are not crowded out, then fill to `total` with the newest remaining, never
-//    more than `perTopic` from one topic
+// 4. every topic with news gets its best headline, even past `total`, so no
+//    subscribed topic is crowded out (decided by Rachel 2026-11-08: no limit on
+//    topics); then fill to `total` with the newest remaining, never more than
+//    `perTopic` from one topic
 // Returned newest first.
 export function selectEdition(candidates: Candidate[], opts: SelectOptions): Candidate[] {
   const oldest = opts.now - opts.windowHours * 3600 * 1000;
@@ -152,7 +153,10 @@ export function selectEdition(candidates: Candidate[], opts: SelectOptions): Can
   };
 
   const leaders = [...byTopic.values()].map((l) => l[0]).sort((a, b) => b.publishedAt - a.publishedAt);
-  for (const c of leaders) if (picked.length < opts.total && (count.get(c.topic) ?? 0) < opts.perTopic) take(c);
+  for (const c of leaders) {
+    const n = count.get(c.topic) ?? 0;
+    if (n === 0 || (picked.length < opts.total && n < opts.perTopic)) take(c);
+  }
 
   // Fill in each topic's own order (keyword matches first), interleaved newest first.
   const queues = new Map([...byTopic].map(([t, l]) => [t, l.filter((c) => !picked.includes(c))]));

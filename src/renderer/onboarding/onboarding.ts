@@ -87,7 +87,6 @@ function clock(hhmm: string): string {
   return new Date(2000, 0, 1, hh, mm).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-const MAX_CUSTOM_TOPICS = 10;
 const MAX_TOPIC_LABEL = 24;
 const allTopics = () => [...model.topics.map((t) => ({ key: t.id, label: t.label, own: false })), ...state.customTopics.map((t) => ({ ...t, own: true }))];
 const label = (key: string) => allTopics().find((t) => t.key === key)?.label ?? key;
@@ -147,7 +146,6 @@ function addTopic(): void {
     state.topics.add(existing.key); // typing a topic that exists just picks it
     state.newTopic = { value: "", error: "" };
   } else if (text.length > MAX_TOPIC_LABEL) state.newTopic.error = `Keep it to ${MAX_TOPIC_LABEL} characters or fewer.`;
-  else if (state.customTopics.length >= MAX_CUSTOM_TOPICS) state.newTopic.error = `You can add up to ${MAX_CUSTOM_TOPICS} of your own topics.`;
   else {
     const key = `new:${text.toLowerCase()}`;
     state.customTopics.push({ key, label: text });
@@ -155,7 +153,7 @@ function addTopic(): void {
     state.newTopic = { value: "", error: "" };
   }
   render();
-  (document.getElementById("new-topic") as HTMLInputElement | null)?.focus();
+  (document.getElementById("new-topic") as HTMLInputElement | null)?.focus({ preventScroll: true });
 }
 
 function topics(): HTMLElement {
@@ -253,7 +251,7 @@ function pasteBox(): HTMLElement {
     state.pasted.topic = "";
     state.pasted.busy = false;
     render();
-    (document.getElementById("paste") as HTMLInputElement | null)?.focus();
+    (document.getElementById("paste") as HTMLInputElement | null)?.focus({ preventScroll: true });
   };
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") void check();
@@ -273,6 +271,7 @@ function pasteBox(): HTMLElement {
     select.addEventListener("change", () => {
       state.pasted.topic = select.value;
       render();
+      (document.querySelector("#paste-result .add button") as HTMLButtonElement | null)?.focus({ preventScroll: true });
     });
     result = h(
       "div",
@@ -292,6 +291,8 @@ function pasteBox(): HTMLElement {
               state.custom.push({ feedUrl: r.feedUrl, name: r.title, topic: state.pasted.topic });
               state.pasted = { value: "", busy: false, result: null, topic: "" };
               render();
+              [...document.querySelectorAll(".row.own")].at(-1)?.scrollIntoView({ block: "nearest" });
+              (document.getElementById("paste") as HTMLInputElement | null)?.focus({ preventScroll: true });
             },
           },
           already ? "Added" : "Add feed",
@@ -309,7 +310,7 @@ function pasteBox(): HTMLElement {
     ...state.custom.map((c, i) =>
       h(
         "div",
-        { class: "row" },
+        { class: "row own" },
         h("span", { class: "name" }, c.name),
         h("span", { class: "desc" }, ` · ${label(c.topic)}`),
         h("span", { class: "spacer" }),
@@ -441,10 +442,17 @@ async function skip(): Promise<void> {
   await window.setup.close();
 }
 
+// Re-rendering the same screen keeps its scroll position (e.g. while adding a
+// feed at the bottom of the sources list); moving to another screen starts at the top.
+let renderedStep = 0;
 function render(): void {
   if (state.step !== 1) window.clearInterval(catTimer);
   const screens = [welcome, topics, sources, schedule, meet];
+  const scroll = state.step === renderedStep ? (app.querySelector(".body")?.scrollTop ?? 0) : 0;
   app.replaceChildren(screens[state.step - 1]());
+  renderedStep = state.step;
+  const body = app.querySelector(".body");
+  if (body) body.scrollTop = scroll;
 }
 
 render();

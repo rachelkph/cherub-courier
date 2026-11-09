@@ -13,12 +13,12 @@ A pixel-art news cat who delivers your twice-daily headlines — and gets comfie
 | Area | Decision |
 |---|---|
 | Data | Everything on the user's computer. No server, no accounts, no tracking, no AI. |
-| Topics | Fixed list of about 12, plus up to 10 topics the user names (fed only by feeds they paste; decided 2026-11-08), plus user-typed keywords (no AI). |
+| Topics | Fixed list of about 12, plus any number of topics the user names (fed only by feeds they paste; decided 2026-11-08), plus user-typed keywords (no AI). |
 | Keywords | Filter/boost only within feeds the user already subscribes to. No keyword-to-feed discovery in v1. |
 | Sources | Curated list plus user-pasted RSS or site links. |
 | Learning | None. Settings only. Nothing tracked. |
 | Freshness | Two editions per day: 8am and 6pm local, changeable in settings. |
-| Selection | Newest first, **max 3 headlines per topic**, **7 headlines max** per edition (proposed default window: items from the last 48 hours). |
+| Selection | Newest first, **max 3 headlines per topic**, **7 headlines** per edition, except that every subscribed topic with news always gets one (so more than 7 topics means more than 7 headlines) (proposed default window: items from the last 48 hours). |
 | Click | Small popover anchored above the cat. |
 | Launch at login | Asked during setup, default on. |
 
@@ -37,7 +37,7 @@ A pixel-art news cat who delivers your twice-daily headlines — and gets comfie
 2. Skip items already delivered in an earlier edition (remembered 7 days), so the evening edition never repeats the morning's. (Confirmed by Rachel 2026-11-08.)
 3. Drop duplicates, keeping the newest: same normalized URL (tracking parameters, www, fragment, trailing slash ignored), or headlines that are near-identical (word-set Jaccard >= 0.8) or the same story reworded (>= 5 shared words covering >= 75% of the shorter headline). Stopwords ignored; headlines under 4 words must match exactly. Thresholds and examples are tested in `test/feeds.test.ts`.
 4. Keywords **boost, they do not filter**: within a topic, headlines containing a keyword (whole word, case-insensitive) come first. A topic is never emptied because nothing matched. (Confirmed by Rachel 2026-11-08.)
-5. Fill the edition: first the best headline of each topic (topics with the newest headlines first), so a quiet topic is not crowded out; then the newest remaining, never more than 3 per topic, up to 7 total. (Confirmed by Rachel 2026-11-08.)
+5. Fill the edition: first the best headline of every topic that has news, even past 7, so no subscribed topic is crowded out (no limit on topics: Rachel, 2026-11-08); then the newest remaining, never more than 3 per topic, up to 7 total. Refresh also adds the best headline of any topic that has none in the edition yet.
 6. Store only: headline, source name, link, published time, topic, paywall flag.
 
 ## Feed fetching

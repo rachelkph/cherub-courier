@@ -10,7 +10,8 @@ import type { SourcesFile } from "./sources/schema.ts";
 export const SETTINGS_SCHEMA_VERSION = 1;
 export const DEFAULT_TOPICS = ["us-news", "world-news", "ai-tech"];
 export const MAX_CUSTOM_SOURCES = 50;
-export const MAX_CUSTOM_TOPICS = 10;
+// No limit on topics for the user (Rachel, 2026-11-08); this only bounds a damaged settings file.
+export const MAX_CUSTOM_TOPICS = 100;
 export const MAX_TOPIC_LABEL = 24;
 
 export type CustomSource = { id: string; name: string; feedUrl: string; topic: string };

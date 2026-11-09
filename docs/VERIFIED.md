@@ -233,3 +233,8 @@ Live, on a copy of Rachel's data (dev build, debug port 9412, closed afterwards)
 - Finish: settings.json has customTopics [{own-u9f113, "Formula 1"}] and the feed under it. The existing evening edition was already full (7), so nothing was added to it; after clearing editions in the copy, a fresh fetch included "F1: Chequered Flag" (BBC Sport) under Formula 1.
 - Popover view: chips All, US, World, AI, Film, Music, Formula 1; a Formula 1 section with 1 headline. (Read through the page's view call; not screenshotted.)
 - Rachel's real data files: modification times unchanged. Her app restarted on the new build afterwards.
+
+## 2026-11-08 — No topic limit; setup kept scrolling to the top (reported by Rachel)
+- Selection: every topic with news gets one headline even past 7 (new test: 12 topics -> 12 headlines, one each; Refresh of a full edition adds the one topic that had none). Mutation check: with the old rule the test fails (113 pass, 1 fail).
+- User-named topics: the 10-topic cap is gone from setup (settings files are cut at 100 only as damage control).
+- Scroll: the setup page rebuilt itself on every action, resetting the scroll to the top. Now a re-render on the same screen keeps the scroll position, focus moves without scrolling, and an added feed is scrolled into view. Live on a copy of Rachel's data (debug port 9412, closed afterwards), the sources list scrolled to the bottom (scrollTop 1598): pasted "pitchfork.com" -> 1700 (found the Pitchfork feed), chose Music -> 1700 (focus on "Add feed"), Add feed -> 1635 with the new "Pitchfork · Music" row fully visible and focus back in the paste box.

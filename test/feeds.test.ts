@@ -196,6 +196,18 @@ describe("selectEdition", () => {
     for (const t of ["us-news", "world-news", "film-tv", "music"]) assert.equal(out.filter((i) => i.topic === t).length, 1, t);
   });
 
+  it("with more than 7 topics, every topic with news still gets a headline", () => {
+    const topics = Array.from({ length: 12 }, (_, i) => `topic-${i}`);
+    const items = topics.flatMap((topic, t) => Array.from({ length: 3 }, (_, i) => cand({ headline: `${phrase(t * 3 + i)} ${topic}`, topic, publishedAt: T - (t * 3 + i) * 60_000 })));
+    const out = selectEdition(items, opts());
+    assert.equal(out.length, 12);
+    for (const t of topics) assert.equal(out.filter((i) => i.topic === t).length, 1, t);
+    // Refreshing a full edition still adds a topic that had nothing yet.
+    const taken = new Map(topics.slice(0, 11).map((t) => [t, 1]));
+    const more = selectEdition(items, { ...opts(), total: 0, taken });
+    assert.deepEqual(more.map((i) => i.topic), ["topic-11"]);
+  });
+
   it("returns fewer than 7 when there is not enough", () => {
     const out = selectEdition([cand({ headline: "only one story here today" })], opts());
     assert.equal(out.length, 1);
