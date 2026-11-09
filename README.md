@@ -31,4 +31,6 @@ Local data lives in `~/Library/Application Support/newscat/` (`settings.json`, `
 The curated source list is `data/sources.json`; a newer copy is fetched from this repo's `main` branch at most once a day.
 
 Sprites and animation timings live in `assets/manifest.json`; swap art there without code changes.
+The sprite PNGs themselves are **not in this repository** (the current placeholder art's license is unchecked, and new art is planned).
+Put them under `assets/` (folders listed in `.gitignore`) to run the app; without them, art-dependent tests are skipped.
 Docs: `docs/PRODUCT_SPEC.md`, `docs/BUILD_PLAN.md`, `docs/VERIFIED.md`.

@@ -4,3 +4,13 @@ out/
 .DS_Store
 *.log
 .env*
+
+# Sprite art is not published (licensing of the current placeholder art is unchecked;
+# new art is planned). The app and its tests expect it on disk; see README.
+assets/walk/
+assets/walk_nobag/
+assets/loaf/
+assets/sleep/
+assets/pile/
+assets/fx/
+assets/preview/

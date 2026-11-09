@@ -12,26 +12,31 @@ const ASSETS = join(import.meta.dirname, "..", "assets");
 const rawManifest = JSON.parse(readFileSync(join(ASSETS, "manifest.json"), "utf8"));
 const m: Manifest = parseManifest(rawManifest);
 const png = (p: string) => readPng(join(ASSETS, p));
-const sizes: Sizes = Object.fromEntries(
-  spritePaths(m).map((p) => {
-    const img = png(p);
-    return [p, [img.width, img.height]];
-  }),
-);
+// Sprite art is not in git (see .gitignore); tests that need it skip without it.
+const HAS_ART = spritePaths(m).every((p) => existsSync(join(ASSETS, p)));
+const art = { skip: HAS_ART ? false : "sprite art not in this checkout (see README)" };
+const sizes: Sizes = HAS_ART
+  ? Object.fromEntries(
+      spritePaths(m).map((p) => {
+        const img = png(p);
+        return [p, [img.width, img.height]];
+      }),
+    )
+  : {};
 const clone = () => structuredClone(rawManifest);
 
 describe("manifest", () => {
-  it("parses the shipped manifest and every sprite exists", () => {
+  it("parses the shipped manifest and every sprite exists", art, () => {
     for (const p of spritePaths(m)) assert.ok(existsSync(join(ASSETS, p)), p);
   });
 
-  it("declared state sizes match the sprite files", () => {
+  it("declared state sizes match the sprite files", art, () => {
     for (const s of [m.states.walk, m.states.walk_nobag, m.states.loaf, m.states.sleep]) {
       for (const f of s.frames) assert.deepEqual(sizes[f], s.size, f);
     }
   });
 
-  it("pile files match width and layer height", () => {
+  it("pile files match width and layer height", art, () => {
     m.pile.files.forEach((f, i) => {
       assert.deepEqual(sizes[f], [m.pile.width, pileHeight(m, i + 1)], f);
     });
@@ -75,7 +80,7 @@ describe("state", () => {
   // The preview images are the artist's reference renders of cat-on-pile.
   for (const [kind, frame] of [["cat_on_pile", "loaf/loaf_idle_a.png"], ["sleep_on_pile", "sleep/sleep_0.png"]] as const) {
     for (let layers = 1; layers <= 5; layers++) {
-      it(`composites ${frame} on pile ${layers} exactly like preview/${kind}_${layers}.png`, () => {
+      it(`composites ${frame} on pile ${layers} exactly like preview/${kind}_${layers}.png`, art, () => {
         const ref = png(`preview/${kind}_${layers}.png`);
         const out = blank(ref.width, ref.height);
         for (const p of stack(m, frame, m.states.loaf.size, layers, 1)) draw(out, png(p.sprite), p.x, p.y, p.flip);
@@ -121,7 +126,7 @@ describe("timeline", () => {
   });
 });
 
-describe("CatEngine", () => {
+describe("CatEngine", art, () => {
   const strip = { width: 400, height: 110 };
   const make = (rng = () => 0.5) => new CatEngine(m, sizes, strip, 0, rng);
   const cat = (sprites: Sprite[]) => sprites.filter((s) => s.hit && !s.sprite.startsWith("pile/")).at(-1) as Sprite;
