@@ -1,0 +1,231 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it } from "node:test";
+import type { Deps } from "../src/main/feeds/client.ts";
+import { applyFinish, applySkip, buildModel } from "../src/main/onboarding/model.ts";
+import { cleanSettings, defaultSettings, editionSources, loadSettings } from "../src/main/settings.ts";
+import { checkLink, feedLinks, NO_FEED_MESSAGE, normalizeInput } from "../src/main/sources/discover.ts";
+import { loadSources, REMOTE_CHECK_MS } from "../src/main/sources/load.ts";
+import { parseSourcesFile, type SourcesFile } from "../src/main/sources/schema.ts";
+
+const BUNDLED = join(import.meta.dirname, "..", "data", "sources.json");
+const raw = () => JSON.parse(readFileSync(BUNDLED, "utf8"));
+const file: SourcesFile = parseSourcesFile(raw());
+const T = Date.parse("2026-11-08T18:00:00Z");
+const RSS = `<rss><channel><title>Pasted Blog</title><item><title>Older post</title><link>https://blog.example.com/1</link><pubDate>Sat, 07 Nov 2026 10:00:00 GMT</pubDate></item><item><title>Newest post</title><link>https://blog.example.com/2</link><pubDate>Sun, 08 Nov 2026 10:00:00 GMT</pubDate></item></channel></rss>`;
+
+function fake(routes: Record<string, () => Response>, opts: { private?: string[] } = {}) {
+  let now = T;
+  const calls: string[] = [];
+  const deps: Deps = {
+    now: () => now,
+    sleep: async () => {},
+    lookup: async (h) => ((opts.private ?? []).includes(h) ? ["10.0.0.7"] : ["93.184.216.34"]),
+    fetch: (async (input: string | URL | Request) => {
+      const url = String(input);
+      calls.push(url);
+      const r = routes[url];
+      if (!r) throw new TypeError("fetch failed");
+      return r();
+    }) as typeof fetch,
+  };
+  return { deps, calls, advance: (ms: number) => (now += ms) };
+}
+
+describe("sources schema", () => {
+  it("accepts the bundled list, and its recommended sources follow the rules", () => {
+    assert.equal(file.sources.length, 24);
+    for (const s of file.sources.filter((x) => x.recommendedDefault)) {
+      assert.notEqual(s.paywall, true, s.id);
+      assert.ok(!s.userOptInOnly && !s.unofficialFeed, s.id);
+      assert.ok(s.feedUrl.startsWith("https://"), s.id);
+    }
+    assert.ok(!file.sources.find((s) => s.id === "nyt-home")?.recommendedDefault);
+  });
+
+  const broken: [string, (d: ReturnType<typeof raw>) => void, RegExp][] = [
+    ["wrong schema version", (d) => { d.schemaVersion = 2; }, /schemaVersion/],
+    ["paywalled source recommended", (d) => { d.sources.find((s: { id: string }) => s.id === "nyt-home").recommendedDefault = true; }, /recommended by default but is paywalled/],
+    ["unofficial source recommended", (d) => { d.sources.find((s: { id: string }) => s.id === "reuters-google-news").recommendedDefault = true; }, /unofficial/],
+    ["unknown topic", (d) => { d.sources[0].topics = ["cooking"]; }, /unknown topic "cooking"/],
+    ["duplicate id", (d) => { d.sources[1].id = d.sources[0].id; }, /duplicates/],
+    ["javascript feed URL", (d) => { d.sources[0].feedUrl = "javascript:alert(1)"; }, /feedUrl/],
+    ["local feed URL", (d) => { d.sources[0].feedUrl = "http://localhost:8080/rss"; }, /feedUrl/],
+    ["bad rating evidence URL", (d) => { d.sources[0].ratings[0].evidenceUrl = "file:///etc/passwd"; }, /evidenceUrl/],
+    ["missing name", (d) => { d.sources[0].name = "   "; }, /name/],
+    ["too-long description", (d) => { d.sources[0].description = "x".repeat(400); }, /description/],
+    ["bad paywall value", (d) => { d.sources[0].paywall = "maybe"; }, /paywall/],
+  ];
+  for (const [name, mutate, err] of broken) {
+    it(`rejects: ${name}`, () => {
+      const d = raw();
+      mutate(d);
+      assert.throws(() => parseSourcesFile(d), err);
+    });
+  }
+
+  it("strips HTML from names", () => {
+    const d = raw();
+    d.sources[0].name = "<b>BBC</b> World";
+    assert.equal(parseSourcesFile(d).sources[0].name, "BBC World");
+  });
+});
+
+describe("loadSources", () => {
+  const URL_ = "https://raw.example.com/sources.json";
+  const newer = () => JSON.stringify({ ...raw(), lastReviewed: "2026-12-01" });
+
+  it("uses a newer valid remote copy, then caches it for a day", async () => {
+    const { deps, calls, advance } = fake({ [URL_]: () => new Response(newer(), { status: 200, headers: { etag: '"r1"' } }) });
+    const first = await loadSources({ bundledPath: BUNDLED, remoteUrl: URL_, remote: undefined, deps, allowNetwork: true });
+    assert.equal(first.origin, "remote");
+    assert.equal(first.file.lastReviewed, "2026-12-01");
+    const again = await loadSources({ bundledPath: BUNDLED, remoteUrl: URL_, remote: first.remote, deps, allowNetwork: true });
+    assert.equal(again.origin, "remote");
+    assert.equal(calls.length, 1, "no second request within a day");
+    advance(REMOTE_CHECK_MS);
+    await loadSources({ bundledPath: BUNDLED, remoteUrl: URL_, remote: first.remote, deps, allowNetwork: true });
+    assert.equal(calls.length, 2);
+  });
+
+  it("falls back to the bundled copy when the remote copy is broken", async () => {
+    const bad = raw();
+    bad.lastReviewed = "2026-12-01";
+    bad.sources[0].feedUrl = "javascript:alert(1)";
+    for (const body of [JSON.stringify(bad), "<html>not json</html>"]) {
+      const { deps } = fake({ [URL_]: () => new Response(body, { status: 200 }) });
+      const out = await loadSources({ bundledPath: BUNDLED, remoteUrl: URL_, remote: undefined, deps, allowNetwork: true });
+      assert.equal(out.origin, "bundled");
+      assert.ok(out.note, "explains why");
+    }
+  });
+
+  it("keeps the last good remote copy when the network fails", async () => {
+    const ok = fake({ [URL_]: () => new Response(newer(), { status: 200 }) });
+    const first = await loadSources({ bundledPath: BUNDLED, remoteUrl: URL_, remote: undefined, deps: ok.deps, allowNetwork: true });
+    const down = fake({});
+    down.advance(REMOTE_CHECK_MS);
+    const out = await loadSources({ bundledPath: BUNDLED, remoteUrl: URL_, remote: first.remote, deps: down.deps, allowNetwork: true });
+    assert.equal(out.origin, "remote");
+    assert.match(out.remote.lastError ?? "", /network/);
+  });
+
+  it("ignores an older remote copy, a 404, and makes no request when off", async () => {
+    const older = fake({ [URL_]: () => new Response(JSON.stringify({ ...raw(), lastReviewed: "2026-01-01" }), { status: 200 }) });
+    assert.equal((await loadSources({ bundledPath: BUNDLED, remoteUrl: URL_, remote: undefined, deps: older.deps, allowNetwork: true })).origin, "bundled");
+    const missing = fake({ [URL_]: () => new Response("", { status: 404 }) });
+    assert.equal((await loadSources({ bundledPath: BUNDLED, remoteUrl: URL_, remote: undefined, deps: missing.deps, allowNetwork: true })).origin, "bundled");
+    const off = fake({});
+    await loadSources({ bundledPath: BUNDLED, remoteUrl: "", remote: undefined, deps: off.deps, allowNetwork: true });
+    await loadSources({ bundledPath: BUNDLED, remoteUrl: URL_, remote: undefined, deps: off.deps, allowNetwork: false });
+    assert.equal(off.calls.length, 0);
+  });
+});
+
+describe("checkLink (pasted links)", () => {
+  it("validates a feed and shows its newest headline", async () => {
+    const { deps } = fake({ "https://blog.example.com/feed.xml": () => new Response(RSS, { status: 200, headers: { "content-type": "application/rss+xml" } }) });
+    assert.deepEqual(await checkLink("https://blog.example.com/feed.xml", deps), {
+      kind: "feed",
+      feedUrl: "https://blog.example.com/feed.xml",
+      title: "Pasted Blog",
+      latestHeadline: "Newest post",
+      discovered: false,
+    });
+  });
+
+  it("discovers a site's advertised feed", async () => {
+    const page = `<!doctype html><html><head><link rel="stylesheet" href="/s.css"><link rel="alternate" type="application/rss+xml" title="Blog" href="/feed.xml"></head><body>hello</body></html>`;
+    const { deps } = fake({
+      "https://blog.example.com/": () => new Response(page, { status: 200, headers: { "content-type": "text/html" } }),
+      "https://blog.example.com/feed.xml": () => new Response(RSS, { status: 200 }),
+    });
+    const out = await checkLink("blog.example.com", deps);
+    assert.equal(out.kind, "feed");
+    assert.equal(out.kind === "feed" && out.discovered, true);
+    assert.equal(out.kind === "feed" && out.feedUrl, "https://blog.example.com/feed.xml");
+  });
+
+  it("says so when a site has no feed (no scraping)", async () => {
+    const { deps, calls } = fake({ "https://plain.example.com/": () => new Response("<html><head><title>x</title></head><body><a href='/rss'>rss</a></body></html>", { status: 200, headers: { "content-type": "text/html" } }) });
+    assert.deepEqual(await checkLink("https://plain.example.com/", deps), { kind: "none", message: NO_FEED_MESSAGE });
+    assert.deepEqual(calls, ["https://plain.example.com/"], "did not follow links in the page body");
+  });
+
+  it("rejects local, private and non-web addresses", async () => {
+    const { deps, calls } = fake({}, { private: ["sneaky.example.com"] });
+    for (const bad of ["http://localhost:3000/feed", "http://192.168.1.10/rss", "file:///etc/passwd", "javascript:alert(1)", "printer.local", "not a url", ""]) {
+      assert.equal((await checkLink(bad, deps)).kind, "invalid", bad);
+    }
+    assert.equal((await checkLink("https://sneaky.example.com/feed", deps)).kind, "invalid", "DNS points to a private address");
+    assert.equal(calls.length, 0, "never connected");
+  });
+
+  it("reports unreachable sites without crashing", async () => {
+    const { deps } = fake({});
+    const out = await checkLink("https://down.example.com/feed", deps);
+    assert.equal(out.kind, "none");
+  });
+
+  it("parses feed link tags in any attribute order and quoting", () => {
+    const html = `<link href='/a.xml' type='application/atom+xml' rel='alternate'><link rel=alternate type=application/rss+xml href=https://cdn.example.com/b.rss><link rel="alternate" type="text/html" href="/c">`;
+    assert.deepEqual(feedLinks(html, "https://site.example.com/blog/"), ["https://site.example.com/a.xml", "https://cdn.example.com/b.rss"]);
+    assert.equal(normalizeInput("example.com/feed"), "https://example.com/feed");
+  });
+});
+
+describe("settings and setup", () => {
+  it("a fresh install has default topics and no sources (nothing fetched without approval)", () => {
+    const d = defaultSettings();
+    assert.deepEqual(d.topics, ["us-news", "world-news", "ai-tech"]);
+    assert.equal(editionSources(d, file).length, 0);
+    assert.equal(editionSources(applySkip(d), file).length, 0);
+    assert.equal(applySkip(d).onboarded, true);
+  });
+
+  it("approving recommended sources makes them the edition's sources, limited to picked topics", () => {
+    const model = buildModel(file, defaultSettings());
+    const recommended = model.sources.filter((s) => s.recommended && s.topics.some((t) => model.defaultTopics.includes(t))).map((s) => s.id);
+    const s = applyFinish({ topics: model.defaultTopics, approvedSourceIds: [...recommended, "variety"], keywords: "synth, , open source" }, file, defaultSettings(), new Map());
+    assert.ok(!s.approvedSourceIds.includes("variety"), "film-tv not picked");
+    assert.deepEqual(editionSources(s, file).map((x) => x.id).sort(), recommended.sort());
+    assert.deepEqual(s.keywords, ["synth", "open source"]);
+    assert.ok(model.topics.find((t) => t.id === "science")?.recommendedCount === 0);
+  });
+
+  it("only accepts pasted feeds that were verified this session", () => {
+    const verified = new Map([["https://blog.example.com/feed.xml", { title: "Pasted Blog" }]]);
+    const s = applyFinish(
+      {
+        topics: ["music"],
+        customSources: [
+          { feedUrl: "https://blog.example.com/feed.xml", topic: "music" },
+          { feedUrl: "https://unchecked.example.com/rss", topic: "music" },
+          { feedUrl: "https://blog.example.com/feed.xml", topic: "not-a-topic" },
+        ],
+        editionTimes: { morning: "07:30", evening: "25:00" },
+      },
+      file,
+      defaultSettings(),
+      verified,
+    );
+    assert.deepEqual(s.customSources.map((c) => [c.name, c.topic]), [["Pasted Blog", "music"]]);
+    assert.deepEqual(s.editionTimes, { morning: "07:30", evening: "18:00" });
+    assert.deepEqual(s.topics, ["music"]);
+  });
+
+  it("cleans a tampered settings file", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "newscat-settings-"));
+    const path = join(dir, "settings.json");
+    await writeFile(path, JSON.stringify({ onboarded: true, topics: ["us-news", "hacking"], approvedSourceIds: ["npr-news", "evil"], customSources: [{ name: "x", feedUrl: "http://127.0.0.1/rss", topic: "us-news" }], editionTimes: { morning: "nope" } }));
+    const s = await loadSettings(path, file);
+    assert.deepEqual(s.topics, ["us-news"]);
+    assert.deepEqual(s.approvedSourceIds, ["npr-news"]);
+    assert.deepEqual(s.customSources, []);
+    assert.equal(s.editionTimes.morning, "08:00");
+    assert.equal(cleanSettings("garbage", file).onboarded, false);
+  });
+});

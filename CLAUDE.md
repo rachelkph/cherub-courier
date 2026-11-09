@@ -20,7 +20,7 @@ Read `docs/PRODUCT_SPEC.md` first, then `docs/BUILD_PLAN.md`. Do not add feature
 Rachel wants every possible cost highlighted. Before you add or recommend anything that could cost money (paid services, subscriptions, paid tools, API usage, domains, certificates, hosting beyond free tiers), stop and write it as `[COST] <item>: <amount, one-time or recurring>, <how sure you are>` and ask for approval. Known: Apple Developer membership is already paid ($99/year). Everything else in v1 should cost $0.
 
 ## Confidence and verification
-Rate key claims `[Certain]`, `[Likely]`, `[Guessing]`. The feed URLs in `data/sources.seed.json` and several facts in `docs/OPEN_QUESTIONS.md` are **unverified** — test every one yourself (curl the feed, check it parses and has recent items) and record results. Never invent a URL, rating, or API behavior; say you don't know and test it.
+Rate key claims `[Certain]`, `[Likely]`, `[Guessing]`. The feed URLs in `data/sources.json` and several facts in `docs/OPEN_QUESTIONS.md` are **unverified** — test every one yourself (curl the feed, check it parses and has recent items) and record results. Never invent a URL, rating, or API behavior; say you don't know and test it.
 
 ## How to work with Rachel
 Rachel is a software engineer (Python-strong, JavaScript fine). She wants direct feedback, flaws first, no filler praise. Challenge ideas that conflict with the spec instead of silently building them. Prefer small, reviewable commits. Explain non-obvious decisions in one or two sentences.

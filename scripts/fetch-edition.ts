@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // Dev check: build one edition from the live seed feeds and print it.
 // usage: node scripts/fetch-edition.ts STATE_FILE [topic,topic,...]
-// Uses recommended sources only; M3 replaces this with the real sources loader.
+// Uses every recommended source in data/sources.json (as if approved).
 import { readFileSync } from "node:fs";
 import { realDeps } from "../src/main/feeds/client.ts";
 import { buildEdition } from "../src/main/feeds/edition.ts";
-import { DEFAULT_TOPICS, recommendedSources } from "../src/main/feeds/seed.ts";
+import { DEFAULT_TOPICS } from "../src/main/settings.ts";
+import { parseSourcesFile } from "../src/main/sources/schema.ts";
 import { loadState, saveState } from "../src/main/feeds/store.ts";
 
 const [statePath, topicArg] = process.argv.slice(2);
@@ -13,9 +14,11 @@ if (!statePath) {
   console.error("usage: node scripts/fetch-edition.ts STATE_FILE [topic,topic,...]");
   process.exit(2);
 }
-const seed = JSON.parse(readFileSync(new URL("../data/sources.seed.json", import.meta.url), "utf8"));
+const file = parseSourcesFile(JSON.parse(readFileSync(new URL("../data/sources.json", import.meta.url), "utf8")));
 const topics = topicArg ? topicArg.split(",") : DEFAULT_TOPICS;
-const sources = recommendedSources(seed);
+const sources = file.sources
+  .filter((s) => s.recommendedDefault)
+  .map((s) => ({ id: s.id, name: s.name, feedUrl: s.feedUrl, topics: s.topics, paywall: s.paywall === true }));
 
 const now = Date.now();
 const slot = new Date(now).getHours() < 18 ? "morning" : "evening";

@@ -18,7 +18,7 @@ Rachel plans to replace the cat with a **news boy cycling along the Dock**. His 
 - Name: "NewsCat" is still a placeholder (APP_NAME in `src/shared/config.ts`).
 
 ## Unverified facts (test before relying on them)
-- **Every feed URL in `data/sources.seed.json`.** URLs came from third-party lists. Some were not found in any source and are marked `"feedSource": "memory"`.
+- **Feed URLs in `data/sources.json`:** all 24 verified live on 2026-11-08 (see docs/VERIFIED.md). Re-check periodically (`npm run check-feeds`; weekly CI planned for M7).
 - **Reuters and AP have no official RSS.** Reuters stopped its public feeds in June 2020; AP's feeds are unreliable and apnews.com blocks automated tools (per third-party reports). The Google News search-feed workaround is unofficial and undocumented; its terms of use have not been checked. Treat these as optional, off by default.
 - **NYT RSS terms.** An older case suggests the NYT objects to apps preloading its feed. Current terms were not checked. Do not pre-select it; allow user-added only.
 - **Displaying bias ratings (AllSides, Ad Fontes).** Whether their ratings can be shown in-app is unknown. Link to the raters; do not copy their data until terms are checked.

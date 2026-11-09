@@ -1,12 +1,17 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, net, protocol, screen, Tray } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, protocol, screen, Tray } from "electron";
+import { rm } from "node:fs/promises";
 import path from "node:path";
-import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { APP_NAME, OVERLAY_HEIGHT, SPRITE_SCALE } from "../shared/config.ts";
+import { APP_NAME, OVERLAY_HEIGHT, SOURCES_REMOTE_URL, SPRITE_SCALE } from "../shared/config.ts";
 import { realDeps } from "./feeds/client.ts";
 import { buildEdition } from "./feeds/edition.ts";
-import { DEFAULT_TOPICS, recommendedSources } from "./feeds/seed.ts";
-import { loadState, saveState } from "./feeds/store.ts";
+import { loadState, readJsonOrSetAside, saveState, writeJsonAtomic } from "./feeds/store.ts";
+import { applyFinish, applySkip, buildModel, type VerifiedFeeds } from "./onboarding/model.ts";
+import { closeOnboarding, openOnboarding, registerOnboardingIpc } from "./onboarding/window.ts";
+import { cleanSettings, defaultSettings, editionSources, loadSettings, type Settings, saveSettings } from "./settings.ts";
+import { checkLink } from "./sources/discover.ts";
+import { cleanRemoteCache, loadSources } from "./sources/load.ts";
+import type { SourcesFile } from "./sources/schema.ts";
 
 const ROOT = path.join(__dirname, "..", "..");
 // app://newscat/<path> serves only these two directories.
@@ -120,22 +125,55 @@ function createOverlay(): void {
   });
 }
 
-// Dev only until the scheduler (M5): fetch an edition now and show it as the pile.
+// --- data: sources list, settings ----------------------------------------------
+
+function dataPaths() {
+  const dir = app.getPath("userData");
+  return {
+    state: path.join(dir, "state.json"),
+    settings: path.join(dir, "settings.json"),
+    sourcesCache: path.join(dir, "sources-cache.json"),
+  };
+}
+
+let sourcesFile: SourcesFile;
+let settings: Settings;
+const verifiedFeeds: VerifiedFeeds = new Map(); // pasted feeds checked this session
+
+async function loadSourcesList(allowNetwork: boolean): Promise<void> {
+  const remote = cleanRemoteCache(await readJsonOrSetAside(dataPaths().sourcesCache));
+  const loaded = await loadSources({ bundledPath: path.join(ROOT, "data", "sources.json"), remoteUrl: SOURCES_REMOTE_URL, remote, deps: realDeps, allowNetwork });
+  if (allowNetwork) await writeJsonAtomic(dataPaths().sourcesCache, loaded.remote);
+  sourcesFile = loaded.file;
+  console.log(`[sources] ${sourcesFile.sources.length} sources (${loaded.origin} copy, reviewed ${sourcesFile.lastReviewed})${loaded.note ? `; ${loaded.note}` : ""}`);
+}
+
+function applyLoginItem(): void {
+  // In development this would register the bare Electron binary, so only packaged builds do it.
+  if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: settings.launchAtLogin });
+  else console.log(`[login] start at login = ${settings.launchAtLogin} (applied only in packaged builds)`);
+}
+
+// --- editions (fetched on demand until the scheduler in M5) -------------------------
+
 let fetching = false;
-async function devFetchEdition(): Promise<void> {
+async function fetchEdition(force: boolean): Promise<void> {
   if (fetching) return;
+  const sources = editionSources(settings, sourcesFile);
+  if (sources.length === 0) {
+    console.log("[feeds] no approved sources; nothing to fetch");
+    return;
+  }
   fetching = true;
   try {
-    const statePath = path.join(app.getPath("userData"), "state.json");
-    const seed = JSON.parse(readFileSync(path.join(ROOT, "data", "sources.seed.json"), "utf8"));
     const now = Date.now();
     const out = await buildEdition(
-      { sources: recommendedSources(seed), topics: DEFAULT_TOPICS, keywords: [], slot: new Date(now).getHours() < 18 ? "morning" : "evening", scheduledFor: now, force: true },
-      await loadState(statePath),
+      { sources, topics: settings.topics, keywords: settings.keywords, slot: new Date(now).getHours() < 18 ? "morning" : "evening", scheduledFor: now, force },
+      await loadState(dataPaths().state),
       realDeps,
     );
-    await saveState(statePath, out.state);
-    console.log(`[feeds] ${out.edition.id}: ${out.edition.items.length} headlines`);
+    await saveState(dataPaths().state, out.state);
+    console.log(`[feeds] ${out.edition.id}: ${out.edition.items.length} headlines from ${sources.length} sources`);
     for (const f of out.feeds) if (f.error) console.log(`[feeds] ${f.id}: ${f.result} ${f.error}`);
     setCatState({ unread: out.edition.items.length, editionAge: 0 });
   } catch (e) {
@@ -145,6 +183,51 @@ async function devFetchEdition(): Promise<void> {
   }
 }
 
+// --- setup window ------------------------------------------------------------
+
+registerOnboardingIpc({
+  model: () => buildModel(sourcesFile, settings),
+  checkLink: async (input) => {
+    const result = await checkLink(input, realDeps);
+    if (result.kind === "feed") verifiedFeeds.set(result.feedUrl, { title: result.title });
+    return result;
+  },
+  finish: async (payload) => {
+    settings = applyFinish(payload, sourcesFile, settings, verifiedFeeds);
+    await saveSettings(dataPaths().settings, settings);
+    applyLoginItem();
+    const fetchingNow = editionSources(settings, sourcesFile).length > 0;
+    if (fetchingNow) void fetchEdition(true);
+    return { fetching: fetchingNow };
+  },
+  skip: async () => {
+    settings = applySkip(settings);
+    await saveSettings(dataPaths().settings, settings);
+    applyLoginItem();
+  },
+  raterUrls: () => new Set(sourcesFile.sources.flatMap((s) => s.ratings.map((r) => r.evidenceUrl))),
+});
+
+async function resetEverything(): Promise<void> {
+  const { response } = await dialog.showMessageBox({
+    type: "warning",
+    message: `Reset ${APP_NAME}?`,
+    detail: "This deletes your topics, sources, settings and saved headlines from this Mac, then opens setup again.",
+    buttons: ["Reset", "Cancel"],
+    defaultId: 1,
+    cancelId: 1,
+  });
+  if (response !== 0) return;
+  closeOnboarding();
+  const p = dataPaths();
+  await Promise.all([p.state, p.settings, p.sourcesCache].map((f) => rm(f, { force: true })));
+  verifiedFeeds.clear();
+  settings = defaultSettings();
+  applyLoginItem();
+  setCatState({ unread: 0, editionAge: 0 });
+  openOnboarding(__dirname);
+}
+
 function devMenu(): Electron.MenuItemConstructorOptions[] {
   if (app.isPackaged) return [];
   return [
@@ -152,7 +235,7 @@ function devMenu(): Electron.MenuItemConstructorOptions[] {
     {
       label: "Dev",
       submenu: [
-        { label: "Fetch edition now", click: () => void devFetchEdition() },
+        { label: "Fetch edition now", click: () => void fetchEdition(true) },
         { type: "separator" },
         {
           label: "Unread headlines",
@@ -191,6 +274,9 @@ function rebuildTrayMenu(): void {
           rebuildTrayMenu();
         },
       },
+      { type: "separator" },
+      { label: "Set up…", click: () => openOnboarding(__dirname) },
+      { label: "Reset everything…", click: () => void resetEverything() },
       ...devMenu(),
       { type: "separator" },
       { label: `Quit ${APP_NAME}`, role: "quit" },
@@ -214,15 +300,24 @@ ipcMain.handle("cat:get-state", () => catState);
 // The renderer reports the click after the paper toss finishes: the pile is read.
 ipcMain.on("cat:delivered", () => setCatState({ unread: 0, editionAge: 0 }));
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   app.setName(APP_NAME);
   // Do not hide the Dock icon: as an accessory app, macOS shows our all-Spaces
   // window over full-screen apps too, which Rachel does not want (tested 2026-11-08).
   catState = devStartState() ?? catState;
   serveAppProtocol();
+  await loadSourcesList(false);
+  settings = await loadSettings(dataPaths().settings, sourcesFile);
   createOverlay();
   createTray();
-  if (!app.isPackaged && process.env.NEWSCAT_DEV_FETCH === "1") void devFetchEdition();
+  if (!settings.onboarded) openOnboarding(__dirname);
+  // Check for a newer sources list in the background; used from the next launch or setup.
+  void loadSourcesList(true)
+    .then(() => {
+      settings = cleanSettings(settings, sourcesFile);
+    })
+    .catch((e) => console.error("[sources] refresh failed", e));
+  if (!app.isPackaged && process.env.NEWSCAT_DEV_FETCH === "1") void fetchEdition(true);
   for (const ev of ["display-added", "display-removed", "display-metrics-changed"] as const) {
     screen.on(ev as "display-added", () => placeOverlay(ev));
   }

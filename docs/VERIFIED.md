@@ -147,3 +147,21 @@ Tuning: adaptive tick cadence from the engine, dirty-rect redraw, walk moves 2 p
 Found live, then fixed: the same Nvidia story from BBC and NPR, reworded, passed the near-identical rule (Jaccard 0.64). Added the "same story" rule (>= 5 shared words covering >= 75% of the shorter headline).
 
 Not verified: behavior behind a proxy (Node's fetch ignores macOS proxy settings); timeout against a real slow server.
+
+## 2026-11-08 — M3 sources and onboarding
+`npm test`: 88 tests pass (27 new: sources schema, remote loader, link checking/discovery, settings, setup validation). Lint clean.
+Live checks drove the real setup window through Chromium's DevTools protocol (localhost-only debug port), with real network for feeds.
+
+| acceptance item | result | how |
+|---|---|---|
+| Skipping setup leaves a working app | PASS | Skip -> settings onboarded, default topics, **no sources**, nothing fetched (no state.json written); cat keeps walking. Rachel's decision 2026-11-08. |
+| Recommended list requires explicit approval | PASS | nothing fetched until "Approve these sources" -> Finish; then 13 sources -> 7 headlines -> pile |
+| Pasted RSS / site link works | PASS | `stereogum.com` -> discovered https://stereogum.com/feed, latest headline shown, added under Music, saved |
+| Site without a feed shows the friendly message | PASS | `https://example.com` -> "We couldn't find a feed for this site."; tests confirm links in page bodies are not followed |
+| Local/private addresses rejected | PASS | localhost:3000, 192.168.1.1 live; tests add file:, javascript:, .local, DNS answers pointing to private IPs (never connected) |
+| Schema validation rejects a broken sources file and falls back | PASS | 11 rejection tests; remote copy invalid / not JSON / older / 404 -> bundled copy; live: repo still empty, 404 -> bundled |
+| Paywalled/opt-in/unofficial sources cannot be recommended | PASS | schema rule + test (NYT, Reuters via Google News) |
+| Ratings shown only with an evidence link, linking to the rater | PASS | AllSides lines with "see AllSides" link; main only opens URLs present in the validated file |
+| Settings saved owner-only, re-validated on load | PASS | settings.json 0600; tampered file test |
+
+Not verified live: "Reset everything…" (native dialog; code path only), start-at-login (only applied in packaged builds; M6), rater link opening in the browser, dark mode of the setup window, VoiceOver.

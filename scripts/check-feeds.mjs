@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Checks every feed in data/sources.seed.json: reachable, parses as RSS/Atom,
+// Checks every feed in data/sources.json: reachable, parses as RSS/Atom,
 // has recent items. For http URLs, also tries the https upgrade.
 // Rough regex parsing on purpose: this is a liveness check, not the app's parser.
 import { readFile } from "node:fs/promises";
 
 const UA = "NewsCat-feedcheck/0.1 (+personal project; liveness check)";
-const file = process.argv.slice(2).find((a) => !a.startsWith("--")) ?? new URL("../data/sources.seed.json", import.meta.url);
+const file = process.argv.slice(2).find((a) => !a.startsWith("--")) ?? new URL("../data/sources.json", import.meta.url);
 const seed = JSON.parse(await readFile(file, "utf8"));
 
 async function probe(url) {

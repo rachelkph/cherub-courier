@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "lastReviewed": "2026-11-08",
   "language": "en-US",
-  "readme": "Seed list. Every feed URL is UNVERIFIED: test each one. 'ratings' are third-party ratings with an evidence URL; do not copy rater data into the app until terms are checked, link to the rater instead. No source here is described as unbiased. Add or swap outlets by editing this file.",
+  "readme": "Curated source list. Validated by src/main/sources/schema.ts on every load. 'ratings' are third-party ratings shown only as a link to the rater (terms for copying rater data not checked). No source here is described as unbiased. recommendedDefault sources may not be paywalled, user-opt-in-only or unofficial.",
   "topics": [
     {
       "id": "us-news",
@@ -57,16 +57,17 @@
     {
       "id": "bbc-news-world",
       "name": "BBC News: World",
+      "description": "International news from the BBC.",
       "topics": [
         "world-news"
       ],
-      "feedUrl": "http://feeds.bbci.co.uk/news/world/rss.xml",
-      "feedSource": "third-party list",
-      "verified": false,
+      "feedUrl": "https://feeds.bbci.co.uk/news/world/rss.xml",
       "paywall": false,
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [
         {
           "rater": "AllSides",
@@ -79,16 +80,17 @@
     {
       "id": "bbc-news-top",
       "name": "BBC News: Top stories",
+      "description": "The BBC's top stories across all sections.",
       "topics": [
         "world-news"
       ],
       "feedUrl": "https://feeds.bbci.co.uk/news/rss.xml",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": false,
       "recommendedDefault": false,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [
         {
           "rater": "AllSides",
@@ -102,16 +104,17 @@
     {
       "id": "bbc-news-us-canada",
       "name": "BBC News: US and Canada",
+      "description": "BBC coverage of the United States and Canada.",
       "topics": [
         "us-news"
       ],
-      "feedUrl": "http://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml",
-      "feedSource": "memory",
-      "verified": false,
+      "feedUrl": "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml",
       "paywall": false,
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [
         {
           "rater": "AllSides",
@@ -120,69 +123,73 @@
           "evidenceUrl": "https://www.allsides.com/blog/google-news-bias-2026-new-data-shows-rising-left-leaning-coverage"
         }
       ],
-      "note": "URL recalled from memory, not found in research. Verify."
+      "note": "Verified live 2026-11-08 (originally recalled from memory)."
     },
     {
       "id": "npr-news",
       "name": "NPR News",
+      "description": "Top national and world stories from NPR, a US public broadcaster.",
       "topics": [
         "us-news"
       ],
       "feedUrl": "https://feeds.npr.org/1001/rss.xml",
-      "feedSource": "memory",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [],
-      "note": "URL recalled from memory. A third-party article reports several bias monitors list a left lean; no rating evidence URL captured, so none is shown."
+      "note": "Verified live 2026-11-08 (originally recalled from memory)."
     },
     {
       "id": "pbs-newshour",
       "name": "PBS NewsHour: Headlines",
+      "description": "Headlines from PBS NewsHour, the US public TV news program.",
       "topics": [
         "us-news"
       ],
       "feedUrl": "https://www.pbs.org/newshour/feeds/rss/headlines",
-      "feedSource": "memory",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [],
       "note": "Headlines URL recalled from memory; a politics-only feed (https://www.pbs.org/newshour/feeds/rss/politics) was found in a third-party list. A third-party article reports Ad Fontes places PBS NewsHour among the more reliable sources (reliability is not the same as political bias)."
     },
     {
       "id": "guardian-world",
       "name": "The Guardian: World",
+      "description": "World news from The Guardian, a UK daily.",
       "topics": [
         "world-news"
       ],
       "feedUrl": "https://www.theguardian.com/world/rss",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": false,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [],
       "note": "No rating captured."
     },
     {
       "id": "nyt-home",
       "name": "The New York Times: Home page",
+      "description": "Home page stories from The New York Times.",
       "topics": [
         "us-news"
       ],
       "feedUrl": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": true,
       "recommendedDefault": false,
       "userOptInOnly": true,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [
         {
           "rater": "AllSides",
@@ -196,16 +203,17 @@
     {
       "id": "nyt-world",
       "name": "The New York Times: World",
+      "description": "World news from The New York Times.",
       "topics": [
         "world-news"
       ],
       "feedUrl": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": true,
       "recommendedDefault": false,
       "userOptInOnly": true,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [
         {
           "rater": "AllSides",
@@ -219,17 +227,18 @@
     {
       "id": "reuters-google-news",
       "name": "Reuters (via Google News search feed)",
+      "description": "Reuters stories found through a Google News search feed (unofficial).",
       "topics": [
         "us-news",
         "world-news"
       ],
       "feedUrl": "https://news.google.com/rss/search?q=when:24h+site:reuters.com&ceid=US:en&hl=en-US&gl=US",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": false,
       "userOptInOnly": false,
       "unofficialFeed": true,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [
         {
           "rater": "AllSides",
@@ -243,17 +252,18 @@
     {
       "id": "ap-google-news",
       "name": "Associated Press (via Google News search feed)",
+      "description": "Associated Press stories found through a Google News search feed (unofficial).",
       "topics": [
         "us-news",
         "world-news"
       ],
       "feedUrl": "https://news.google.com/rss/search?q=when:24h+site:apnews.com&hl=en-US&gl=US&ceid=US:en",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": false,
       "userOptInOnly": false,
       "unofficialFeed": true,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [
         {
           "rater": "AllSides",
@@ -267,212 +277,226 @@
     {
       "id": "ars-technica-ai",
       "name": "Ars Technica: AI",
+      "description": "AI coverage from Ars Technica, a technology news site.",
       "topics": [
         "ai-tech"
       ],
       "feedUrl": "https://arstechnica.com/ai/feed/",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "mit-tech-review-ai",
       "name": "MIT Technology Review: AI",
+      "description": "AI coverage from MIT Technology Review.",
       "topics": [
         "ai-tech"
       ],
       "feedUrl": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "the-verge-ai",
       "name": "The Verge: AI",
+      "description": "AI news from The Verge, a technology and culture site.",
       "topics": [
         "ai-tech"
       ],
       "feedUrl": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "wired-ai",
       "name": "WIRED: AI",
+      "description": "AI stories from WIRED magazine.",
       "topics": [
         "ai-tech"
       ],
       "feedUrl": "https://www.wired.com/feed/tag/ai/latest/rss",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "techcrunch-ai",
       "name": "TechCrunch: AI",
+      "description": "AI and startup news from TechCrunch.",
       "topics": [
         "ai-tech"
       ],
       "feedUrl": "https://techcrunch.com/category/artificial-intelligence/feed/",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": false,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "openai-news",
       "name": "OpenAI News (lab blog)",
+      "description": "Announcements from OpenAI's own blog (a primary source, not journalism).",
       "topics": [
         "ai-tech"
       ],
       "feedUrl": "https://openai.com/news/rss.xml",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": false,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": [],
       "note": "Primary-source lab blog. Left off by default; Rachel decides which lab blogs to include (note: the assistant that drafted this list is made by Anthropic)."
     },
     {
       "id": "variety",
       "name": "Variety",
+      "description": "Film, TV and entertainment industry news from Variety.",
       "topics": [
         "film-tv"
       ],
       "feedUrl": "https://variety.com/feed/",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "deadline",
       "name": "Deadline",
+      "description": "Hollywood and TV industry news from Deadline.",
       "topics": [
         "film-tv"
       ],
       "feedUrl": "https://deadline.com/feed/",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "indiewire",
       "name": "IndieWire",
+      "description": "Film and TV news and reviews from IndieWire.",
       "topics": [
         "film-tv"
       ],
       "feedUrl": "https://www.indiewire.com/feed/",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "npr-music",
       "name": "NPR Music",
+      "description": "Music stories from NPR.",
       "topics": [
         "music"
       ],
       "feedUrl": "https://feeds.npr.org/1039/rss.xml",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "billboard-news",
       "name": "Billboard: Music news",
+      "description": "Music industry and artist news from Billboard.",
       "topics": [
         "music"
       ],
       "feedUrl": "https://www.billboard.com/c/music/music-news/feed/",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "pitchfork-best-albums",
       "name": "Pitchfork: Best new albums",
+      "description": "Pitchfork's 'Best New Album' picks (posted a few times a week).",
       "topics": [
         "music"
       ],
       "feedUrl": "https://pitchfork.com/feed/reviews/best/albums/rss",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "rolling-stone-music",
       "name": "Rolling Stone: Music news",
+      "description": "Music news from Rolling Stone.",
       "topics": [
         "music"
       ],
       "feedUrl": "https://www.rollingstone.com/music/music-news/feed/",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     },
     {
       "id": "stereogum",
       "name": "Stereogum",
+      "description": "Indie and alternative music news from Stereogum.",
       "topics": [
         "music"
       ],
       "feedUrl": "https://www.stereogum.com/feed",
-      "feedSource": "third-party list",
-      "verified": false,
       "paywall": "unknown",
       "recommendedDefault": false,
       "userOptInOnly": false,
       "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-08",
       "ratings": []
     }
   ],

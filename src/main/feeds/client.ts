@@ -16,6 +16,7 @@ export const BACKOFF_BASE_MS = 15 * 60_000;
 export const BACKOFF_MAX_MS = 24 * 3600_000;
 export const HOST_SPACING_MS = 2_000;
 export const MAX_PARALLEL_HOSTS = 4;
+const FEED_ACCEPT = "application/rss+xml, application/atom+xml, application/rdf+xml;q=0.9, application/xml;q=0.8, text/xml;q=0.8, */*;q=0.1";
 
 export type FeedCache = {
   url: string; // the feed URL as configured
@@ -86,9 +87,9 @@ async function assertPublic(url: string, deps: Deps): Promise<URL> {
   return u;
 }
 
-async function readCapped(res: Response): Promise<Uint8Array> {
+async function readCapped(res: Response, maxBytes = MAX_BYTES): Promise<Uint8Array> {
   const declared = Number(res.headers.get("content-length"));
-  if (declared > MAX_BYTES) throw new FetchError(`feed too large (${declared} bytes)`);
+  if (declared > maxBytes) throw new FetchError(`response too large (${declared} bytes)`);
   if (!res.body) return new Uint8Array(await res.arrayBuffer());
   const reader = res.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -97,9 +98,9 @@ async function readCapped(res: Response): Promise<Uint8Array> {
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > MAX_BYTES) {
+    if (size > maxBytes) {
       await reader.cancel();
-      throw new FetchError(`feed too large (over ${MAX_BYTES} bytes)`);
+      throw new FetchError(`response too large (over ${maxBytes} bytes)`);
     }
     chunks.push(value);
   }
@@ -127,19 +128,18 @@ export function decodeBody(bytes: Uint8Array, contentType: string | null): strin
   return new TextDecoder().decode(bytes);
 }
 
+type Conditional = { forUrl?: string; etag?: string; lastModified?: string };
+
 // One GET with manual redirects. Returns the final response and URL.
-async function get(url: string, cache: FeedCache, deps: Deps): Promise<{ res: Response; finalUrl: string; permanent: boolean }> {
+async function get(url: string, cond: Conditional, deps: Deps, accept = FEED_ACCEPT): Promise<{ res: Response; finalUrl: string; permanent: boolean }> {
   let current = url;
   let permanent = true;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const u = await assertPublic(current, deps);
-    const headers: Record<string, string> = {
-      "User-Agent": USER_AGENT,
-      Accept: "application/rss+xml, application/atom+xml, application/rdf+xml;q=0.9, application/xml;q=0.8, text/xml;q=0.8, */*;q=0.1",
-    };
-    if ((cache.fetchUrl ?? cache.url) === current) {
-      if (cache.etag) headers["If-None-Match"] = cache.etag;
-      if (cache.lastModified) headers["If-Modified-Since"] = cache.lastModified;
+    const headers: Record<string, string> = { "User-Agent": USER_AGENT, Accept: accept };
+    if (cond.forUrl === current) {
+      if (cond.etag) headers["If-None-Match"] = cond.etag;
+      if (cond.lastModified) headers["If-Modified-Since"] = cond.lastModified;
     }
     let res: Response;
     try {
@@ -172,7 +172,7 @@ export async function fetchFeed(cache: FeedCache, deps: Deps, opts: { force?: bo
   let lastError: FetchError | null = null;
   for (const url of candidates) {
     try {
-      const { res, finalUrl, permanent } = await get(url, cache, deps);
+      const { res, finalUrl, permanent } = await get(url, { forUrl: cache.fetchUrl ?? cache.url, etag: cache.etag, lastModified: cache.lastModified }, deps);
       if (res.status === 304) {
         await res.body?.cancel();
         return {
@@ -223,6 +223,31 @@ export async function fetchFeed(cache: FeedCache, deps: Deps, opts: { force?: bo
     result: "error",
     cache: { ...cache, status: err.gone ? "gone" : "error", lastError: err.message, failures, nextAllowedAt: now + wait },
   };
+}
+
+export type TextResponse =
+  | { status: 304; finalUrl: string }
+  | { status: 200; finalUrl: string; body: string; contentType: string; etag?: string; lastModified?: string };
+
+// GET any public URL as text, with the same safety rules as feeds (public hosts
+// only, manual redirects, timeout, size cap). Non-200/304 responses throw.
+export async function fetchText(
+  url: string,
+  deps: Deps,
+  opts: { maxBytes?: number; accept?: string; etag?: string; lastModified?: string } = {},
+): Promise<TextResponse> {
+  const { res, finalUrl } = await get(url, { forUrl: url, etag: opts.etag, lastModified: opts.lastModified }, deps, opts.accept ?? FEED_ACCEPT);
+  if (res.status === 304) {
+    await res.body?.cancel();
+    return { status: 304, finalUrl };
+  }
+  if (res.status !== 200) {
+    await res.body?.cancel();
+    throw new FetchError(`HTTP ${res.status}`, { gone: res.status === 404 || res.status === 410 });
+  }
+  const contentType = res.headers.get("content-type") ?? "";
+  const body = decodeBody(await readCapped(res, opts.maxBytes ?? MAX_BYTES), contentType);
+  return { status: 200, finalUrl, body, contentType, etag: res.headers.get("etag") ?? undefined, lastModified: res.headers.get("last-modified") ?? undefined };
 }
 
 export type FeedJob = { id: string; cache: FeedCache };

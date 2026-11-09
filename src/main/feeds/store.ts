@@ -93,25 +93,42 @@ export function cleanState(raw: unknown): State {
 }
 
 export async function loadState(path: string, now = Date.now()): Promise<State> {
-  let text: string;
+  const raw = await readJsonOrSetAside(path, now);
+  if (raw === null) return emptyState();
   try {
-    text = await readFile(path, "utf8");
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === "ENOENT") return emptyState();
-    throw e;
-  }
-  try {
-    return cleanState(JSON.parse(text));
+    return cleanState(raw);
   } catch {
     await rename(path, `${path}.corrupt-${now}`).catch(() => undefined);
     return emptyState();
   }
 }
 
-export async function saveState(path: string, state: State): Promise<void> {
+// Atomic, owner-only JSON write: temp file then rename, so a crash never leaves half a file.
+export async function writeJsonAtomic(path: string, value: unknown): Promise<void> {
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
   const tmp = `${path}.tmp-${process.pid}`;
-  await writeFile(tmp, `${JSON.stringify(state)}\n`, { mode: 0o600 });
+  await writeFile(tmp, `${JSON.stringify(value)}\n`, { mode: 0o600 });
   await chmod(tmp, 0o600);
   await rename(tmp, path);
+}
+
+// Reads JSON; missing file -> null; unreadable/corrupt -> set aside and null.
+export async function readJsonOrSetAside(path: string, now = Date.now()): Promise<unknown | null> {
+  let text: string;
+  try {
+    text = await readFile(path, "utf8");
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw e;
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    await rename(path, `${path}.corrupt-${now}`).catch(() => undefined);
+    return null;
+  }
+}
+
+export async function saveState(path: string, state: State): Promise<void> {
+  await writeJsonAtomic(path, state);
 }

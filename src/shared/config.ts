@@ -9,3 +9,7 @@ export const SPRITE_SCALE = 1;
 // check nothing leaves this strip.
 export const STRIP_ART_HEIGHT = 110;
 export const OVERLAY_HEIGHT = STRIP_ART_HEIGHT * SPRITE_SCALE;
+
+// Newer copies of the curated source list are published here. Fetched at most once
+// a day; the copy bundled in the app is the fallback. Empty string turns it off.
+export const SOURCES_REMOTE_URL = "https://raw.githubusercontent.com/rachelkph/news-sprite/main/data/sources.json";
