@@ -146,7 +146,6 @@ function topics(): HTMLElement {
         },
       },
       t.label,
-      t.recommendedCount === 0 ? h("small", {}, "· add your own") : null,
     ),
   );
   const kw = h("input", { type: "text", id: "keywords", value: state.keywords, placeholder: "e.g. synthesizers, open source", "aria-describedby": "kw-help" });
