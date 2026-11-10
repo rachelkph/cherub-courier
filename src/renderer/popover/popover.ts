@@ -1,14 +1,17 @@
-// The popover: masthead, topic chips, headlines by topic, footer. Text is set
-// with textContent only. Reports its natural height so main can anchor it.
+// The popover: the Gazette's nameplate, topic chips, the top story, headlines by
+// topic, footer. Text is set with textContent only. Reports its natural height so
+// main can anchor it.
 
 import { pixelIcon } from "./icons.ts";
 
 type ViewItem = { key: string; headline: string; source: string; alsoIn: number; paywall: boolean; note: string | null; opened: boolean; fresh: boolean };
 type View = {
-  masthead: string;
+  nameplate: string;
+  edition: string;
   dateLabel: string;
   newLabel: string | null;
   countLabel: string;
+  lead: (ViewItem & { topic: string; topicLabel: string }) | null;
   chips: { id: string; label: string }[];
   filter: string;
   sections: { topic: string; label: string; items: ViewItem[]; more: ViewItem[] }[];
@@ -58,28 +61,31 @@ function button(cls: string, label: string, onClick: () => void, ...kids: (Node 
 const expanded = new Set<string>();
 let lastView: View | null = null;
 
-function row(it: ViewItem): HTMLButtonElement {
+// Source line: NEW tag, source (+ other outlets), which edition, paywall.
+function meta(it: ViewItem): HTMLElement {
   const source = it.alsoIn > 0 ? `${it.source} +${it.alsoIn} more` : it.source;
-  const meta = el("span", "meta", it.note ? `${source} · ${it.note}` : source, it.paywall ? el("span", "paywall", "paywall") : null);
-  const top = el("span", "top", el("span", "headline", it.headline), it.fresh ? el("span", "new", "new") : null);
-  const b = button(`row${it.opened ? " opened" : ""}`, "", () => window.popover.open(it.key), top, meta);
+  return el("span", "meta", it.fresh ? el("span", "new", "new") : null, el("span", undefined, it.note ? `${source} · ${it.note}` : source), it.paywall ? el("span", "paywall", "paywall") : null);
+}
+
+function row(it: ViewItem): HTMLButtonElement {
+  const b = button(`row${it.opened ? " opened" : ""}`, "", () => window.popover.open(it.key), el("span", "headline", it.headline), meta(it));
   b.title = it.headline;
-  if (it.fresh) b.setAttribute("aria-description", "new");
+  return b;
+}
+
+function leadStory(it: NonNullable<View["lead"]>): HTMLElement {
+  const b = button(`lead${it.opened ? " opened" : ""}`, "", () => window.popover.open(it.key), el("span", "kicker", `Top story · ${it.topicLabel}`), el("span", "headline", it.headline), meta(it));
+  b.title = it.headline;
   return b;
 }
 
 function render(v: View): void {
   lastView = v;
-  const dateline = el("div", "dateline", `${v.dateLabel} · `);
-  if (v.newLabel) dateline.append(el("span", "n", v.newLabel), " · ");
-  dateline.append(v.countLabel);
-  const header = el(
-    "header",
-    undefined,
-    el("h1", "masthead", v.masthead),
-    dateline,
-    el("div", "rules", el("div"), el("div")),
-  );
+  const counts = el("span");
+  if (v.newLabel) counts.append(el("span", "n", v.newLabel), " · ");
+  counts.append(v.countLabel);
+  const folio = el("div", "folio", el("div", "rule2"), el("div", "folio-line", el("span", undefined, `${v.edition} · ${v.dateLabel}`), counts), el("div", "rule1"));
+  const header = el("header", undefined, el("h1", "masthead", v.nameplate), folio);
   (header.firstChild as HTMLElement).id = "masthead";
   (header.firstChild as HTMLElement).tabIndex = -1;
 
@@ -104,8 +110,9 @@ function render(v: View): void {
     const label = v.chips.find((c) => c.id === v.filter)?.label ?? "this topic";
     list.append(el("div", "empty", el("div", "body", `Nothing in ${label} right now.`)));
   } else {
-    v.sections.forEach((s, i) => {
-      const head = el("h2", `section-head${i === 0 ? " first" : ""}`, pixelIcon(s.topic), s.label, el("span", "count", `· ${s.items.length}`));
+    if (v.lead) list.append(leadStory(v.lead));
+    v.sections.forEach((s) => {
+      const head = el("h2", "section-head", pixelIcon(s.topic), s.label);
       list.append(head);
       for (const it of s.items) list.append(row(it));
       if (s.more.length > 0) {

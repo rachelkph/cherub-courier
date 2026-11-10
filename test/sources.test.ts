@@ -286,7 +286,7 @@ describe("settings and setup", () => {
     const item = { headline: "Grand Prix result", link: "https://f1.example.com/1", publishedAt: T - 3600_000, source: "F1 Blog", sourceId: "x", topic: f1, paywall: false, addedAt: T - 60_000 };
     const state = { ...emptyState(), editions: [{ id: "e", slot: "evening" as const, scheduledFor: T - 600_000, fetchedAt: T - 60_000, items: [item] }] };
     const view = buildView(state, { now: T, topics: s.topics.map((id) => ({ id, label: labels.get(id) ?? id })), sources: editionSources(s, file), keywords: [], filter: "all", editionTimes: s.editionTimes, hasSources: true, refreshing: false, clock: () => "6 PM" });
-    assert.deepEqual(view.sections.map((x) => x.label), ["Formula 1"]);
+    assert.equal(view.lead?.topicLabel, "Formula 1", "its only story leads the front page");
     assert.ok(view.chips.some((c) => c.id === f1 && c.label === "Formula 1"));
   });
 

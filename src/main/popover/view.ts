@@ -11,6 +11,7 @@ import type { Source } from "../feeds/edition.ts";
 import { type Candidate, FUTURE_TOLERANCE_MS, headlineTokens, isDuplicateHeadline, keywordMatch, urlKey } from "../feeds/select.ts";
 import type { EditionItem, State } from "../feeds/store.ts";
 import { currentEdition, type EditionTimes } from "../schedule.ts";
+import { APP_NAME } from "../../shared/config.ts";
 
 export const CARRY_OVER_MS = 48 * 3600_000;
 
@@ -66,10 +67,12 @@ export type ViewItem = {
   fresh: boolean; // in the cat's pile: shown with a NEW tag
 };
 export type View = {
-  masthead: string;
-  dateLabel: string;
+  nameplate: string; // "The NewsCat Gazette"
+  edition: string; // "Evening"
+  dateLabel: string; // "Mon, Nov 9"
   newLabel: string | null; // "7 new"
-  countLabel: string; // "15 top stories"
+  countLabel: string; // "15 stories"
+  lead: (ViewItem & { topic: string; topicLabel: string }) | null; // the top story, in the All view
   chips: { id: string; label: string }[]; // "all" first
   filter: string;
   sections: { topic: string; label: string; items: ViewItem[]; more: ViewItem[] }[];
@@ -242,7 +245,7 @@ export function buildView(state: State, opts: FrontPageOptions & { hasSources: b
   });
 
   const stories = gatherStories(state, opts);
-  const sections = opts.topics
+  const picked = opts.topics
     .map((t) => {
       const ranked = rankStories(
         stories.filter((s) => s.item.topic === t.id),
@@ -250,13 +253,30 @@ export function buildView(state: State, opts: FrontPageOptions & { hasSources: b
       );
       // The top 3, plus every new story (the cat never says "new" about something hidden).
       const shown = ranked.filter((s, i) => i < TOP_PER_TOPIC || s.fresh);
-      const items = [...shown.filter((s) => s.fresh), ...shown.filter((s) => !s.fresh)].map(toItem);
-      const more = ranked.filter((s) => !shown.includes(s)).slice(0, MORE_PER_TOPIC).map(toItem);
-      return { topic: t.id, label: t.label, items, more };
+      return { t, shown: [...shown.filter((s) => s.fresh), ...shown.filter((s) => !s.fresh)], more: ranked.filter((s) => !shown.includes(s)).slice(0, MORE_PER_TOPIC) };
     })
-    .filter((s) => s.items.length > 0);
+    .filter((p) => p.shown.length > 0);
 
   const filter = opts.filter === "all" || opts.topics.some((t) => t.id === opts.filter) ? opts.filter : "all";
+  // The All view leads with one top story: the best new one (most outlets, then the
+  // user's topic order, then the publisher's order, then newest), else the best of
+  // the rest. It moves out of its section.
+  const topicIndex = new Map(opts.topics.map((t, i) => [t.id, i]));
+  const leadStory =
+    picked
+      .flatMap((p) => p.shown)
+      .sort(
+        (a, b) =>
+          Number(b.fresh) - Number(a.fresh) ||
+          b.outlets.size - a.outlets.size ||
+          (topicIndex.get(a.item.topic) ?? 0) - (topicIndex.get(b.item.topic) ?? 0) ||
+          a.rank - b.rank ||
+          b.item.publishedAt - a.item.publishedAt,
+      )[0] ?? null;
+  const lead = leadStory
+    ? { ...toItem(leadStory), topic: leadStory.item.topic, topicLabel: opts.topics.find((t) => t.id === leadStory.item.topic)?.label ?? "" }
+    : null;
+  const sections = picked.map((p) => ({ topic: p.t.id, label: p.t.label, items: p.shown.map(toItem), more: p.more.map(toItem) }));
   const latestFetch = Math.max(0, ...Object.values(state.feeds).map((f) => f.lastSuccessAt ?? 0), ...state.editions.map((e) => e.fetchedAt));
   const total = sections.reduce((n, s) => n + s.items.length, 0);
   const fresh = sections.reduce((n, s) => n + s.items.filter((i) => i.fresh).length, 0);
@@ -265,11 +285,24 @@ export function buildView(state: State, opts: FrontPageOptions & { hasSources: b
   if (!opts.hasSources) empty = { title: "No sources yet", body: "Pick a few sources and I'll start delivering headlines.", action: "setup" };
   else if (total === 0) empty = { title: "Nothing in the last 24 hours", body: "Your sources haven't posted anything recent. Try Refresh, or wait for the next edition.", action: "refresh" };
 
+  const front = sections
+    .map((s) => {
+      if (!s.items.some((i) => i.key === lead?.key)) return s;
+      // The lead's section moves its next story up from "Show more".
+      return { ...s, items: [...s.items.filter((i) => i.key !== lead?.key), ...s.more.slice(0, 1)], more: s.more.slice(1) };
+    })
+    .filter((s) => s.items.length > 0);
+
+  // Everything on the front page (the lead included), whichever topic is selected.
+  const count = front.reduce((n, s) => n + s.items.length, 0) + (lead ? 1 : 0);
+
   return {
-    masthead: current.slot === "morning" ? "The Morning Edition" : "The Evening Edition",
-    dateLabel: new Date(current.scheduledFor).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
+    nameplate: `The ${APP_NAME} Gazette`,
+    edition: current.slot === "morning" ? "Morning" : "Evening",
+    dateLabel: new Date(current.scheduledFor).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
     newLabel: fresh > 0 ? `${fresh} new` : null,
-    countLabel: `${total} top ${total === 1 ? "story" : "stories"}`,
+    countLabel: `${count} ${count === 1 ? "story" : "stories"}`,
+    lead: filter === "all" ? lead : null,
     // Chips only for topics with stories here (plus the selected one), so none lead nowhere.
     // Built-in topics get a short name; the user's own keep the name they typed.
     chips: [
@@ -279,7 +312,7 @@ export function buildView(state: State, opts: FrontPageOptions & { hasSources: b
         .map((t) => ({ id: t.id, label: SHORT[t.id] ?? t.label })),
     ],
     filter,
-    sections: filter === "all" ? sections : sections.filter((s) => s.topic === filter),
+    sections: filter === "all" ? front : sections.filter((s) => s.topic === filter),
     fetchedLabel: latestFetch > 0 ? `Fetched ${opts.clock(latestFetch)}` : null,
     empty,
     refreshing: opts.refreshing,

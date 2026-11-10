@@ -88,6 +88,8 @@ describe("popover front page", () => {
   const view = (s: State, now: number, over: Partial<Parameters<typeof buildView>[1]> = {}) =>
     buildView(s, { now, topics, sources: SOURCES, keywords: [], filter: "all", editionTimes: TIMES, hasSources: true, refreshing: false, clock: () => "8:05 AM", ...over });
   const delivered = (sourceId: string, n: number, publishedAt: number, topic: string, addedAt: number): EditionItem => ({ ...entry(sourceId, n, publishedAt), source: sourceId.toUpperCase(), sourceId, topic, paywall: false, addedAt });
+  // Everything on the page, top story first.
+  const everything = (v: ReturnType<typeof view>) => [...(v.lead ? [v.lead] : []), ...v.sections.flatMap((x) => x.items)];
 
   // Monday 9 Nov, 9 AM. Last night's edition (seen: the cat was clicked at 10 PM) and
   // this morning's (new). The feeds still list some of last night's stories.
@@ -113,17 +115,18 @@ describe("popover front page", () => {
 
   it("keeps seen stories while they are still current, with NEW on what the cat just brought", () => {
     const v = view(monday(), M9 + H);
-    assert.equal(v.masthead, "The Morning Edition");
-    assert.equal(v.dateLabel, "Monday, November 9");
+    assert.equal(v.nameplate, "The NewsCat Gazette");
+    assert.equal(v.edition, "Morning");
+    assert.equal(v.dateLabel, "Mon, Nov 9");
     assert.equal(v.newLabel, "2 new");
-    assert.equal(v.countLabel, "5 top stories");
-    assert.deepEqual(v.sections.map((s) => s.topic), ["us-news", "ai-tech", "music"]);
-    assert.deepEqual(v.sections[0].items.map((i) => [i.headline, i.fresh, i.note]), [
+    assert.equal(v.countLabel, "5 stories");
+    const us = view(monday(), M9 + H, { filter: "us-news" }).sections[0];
+    assert.deepEqual(us.items.map((i) => [i.headline, i.fresh, i.note]), [
       [words(3), true, null],
       [words(1), false, "last night"],
       [words(5), false, "yesterday afternoon"], // never delivered: named after when it was published (3 PM)
     ]);
-    assert.deepEqual(v.sections[2].items.map((i) => i.headline), [words(4)], "older than 24 hours: gone");
+    assert.deepEqual(view(monday(), M9 + H, { filter: "music" }).sections[0].items.map((i) => i.headline), [words(4)], "older than 24 hours: gone");
     assert.equal(v.fetchedLabel, "Fetched 8:05 AM");
   });
 
@@ -131,15 +134,15 @@ describe("popover front page", () => {
     const s = markOpened(clearPile(monday(), M9 + H), urlKey("https://bb.example/4"), M9 + H);
     const v = view(s, M9 + 2 * H);
     assert.equal(v.newLabel, "2 new");
-    assert.equal(v.countLabel, "5 top stories");
-    assert.equal(v.sections[2].items[0].opened, true, "opened ones dim");
+    assert.equal(v.countLabel, "5 stories");
+    assert.equal(everything(v).find((i) => i.headline === words(4))?.opened, true, "opened ones dim");
     // The evening edition arrives and is clicked: only its headline is new now.
     const E9 = M9 + 10 * H;
     let next: State = { ...s, editions: [...s.editions, edition("e9", "evening", E9, [delivered("npr", 7, E9 - H, "us-news", E9)])] };
     next = withFeeds(next, { npr: [entry("npr", 7, E9 - H), entry("npr", 3, M9 - H)], bb: [entry("bb", 4, M9 - H)] }, E9);
     next = clearPile(next, E9 + 60_000);
-    const ve = view(next, E9 + H);
-    assert.equal(ve.newLabel, "1 new");
+    assert.equal(view(next, E9 + H).newLabel, "1 new");
+    const ve = view(next, E9 + H, { filter: "us-news" });
     assert.deepEqual(ve.sections[0].items.map((i) => [i.headline, i.fresh, i.note]), [
       [words(7), true, null],
       [words(3), false, "this morning"],
@@ -150,11 +153,11 @@ describe("popover front page", () => {
     const s = monday();
     const dropped = { ...s, feeds: { ...s.feeds, verge: { ...s.feeds.verge, entries: [] } } };
     assert.ok(!view(dropped, M9 + H).sections.some((x) => x.topic === "ai-tech"), "seen and no longer in the feed");
-    assert.ok(!view(s, E8 - H + 24 * H + 60_000).sections[0].items.some((i) => i.headline === words(1)), "24 hours after publishing");
+    assert.ok(!everything(view(s, E8 - H + 24 * H + 60_000)).some((i) => i.headline === words(1)), "24 hours after publishing");
     // This morning's headlines are unseen: still shown 30 hours later, even though the feeds dropped them.
     const later = { ...s, feeds: {} };
     const v = view(later, M9 + 30 * H);
-    assert.deepEqual(v.sections.flatMap((x) => x.items.map((i) => [i.headline, i.fresh])), [
+    assert.deepEqual(everything(v).map((i) => [i.headline, i.fresh]), [
       [words(3), true],
       [words(4), true],
     ]);
@@ -164,13 +167,13 @@ describe("popover front page", () => {
     const feed = Array.from({ length: 8 }, (_, i) => entry("npr", 10 + i, M9 - (i + 1) * 60_000));
     const pile = [delivered("bbc", 30, M9 - 5 * H, "us-news", M9), delivered("bbc", 31, M9 - 6 * H, "us-news", M9)];
     const s = withFeeds({ ...emptyState(), editions: [edition("m9", "morning", M9, pile)] }, { npr: feed }, M9);
-    const us = view(s, M9 + H).sections[0];
+    const us = view(s, M9 + H, { filter: "us-news" }).sections[0];
     assert.deepEqual(us.items.map((i) => i.headline), [words(30), words(31), words(10)], "new first, filled to 3");
     assert.deepEqual(us.more.map((i) => i.headline), [words(11), words(12), words(13)]);
     // More new stories than 3: all of them show, plus NPR's top story, which ranks in the top 3.
     const many = Array.from({ length: 5 }, (_, i) => delivered("bbc", 70 + i, M9 - (i + 1) * H, "us-news", M9));
     const s5 = withFeeds({ ...emptyState(), editions: [edition("m9", "morning", M9, many)] }, { npr: feed }, M9);
-    assert.deepEqual(view(s5, M9 + H).sections[0].items.map((i) => i.headline), [...many.map((i) => i.headline), words(10)]);
+    assert.deepEqual(view(s5, M9 + H, { filter: "us-news" }).sections[0].items.map((i) => i.headline), [...many.map((i) => i.headline), words(10)]);
   });
 
   it("ranks by how many sources carry a story, then the publisher's order, then newest; keywords first", () => {
@@ -183,7 +186,7 @@ describe("popover front page", () => {
       },
       M9,
     );
-    const v = view(s, M9 + H);
+    const v = view(s, M9 + H, { filter: "us-news" });
     assert.deepEqual(v.sections[0].items.map((i) => [i.headline, i.alsoIn]), [
       [same, 1], // carried by NPR and BBC
       [words(40), 0], // NPR's top item, though older than 42
@@ -191,18 +194,18 @@ describe("popover front page", () => {
     ]);
     // Two feeds from one outlet are not extra coverage.
     const bbcTwice = withFeeds(emptyState(), { npr: [entry("npr", 43, M9 - H)], bbc: [{ ...entry("bbc", 44, M9 - 2 * H), link: "https://www.bbc.com/news/1" }], bbc2: [{ ...entry("bbc", 44, M9 - 2 * H), link: "https://www.bbc.co.uk/news/1?at_medium=RSS" }] }, M9);
-    const twice = view(bbcTwice, M9 + H, { sources: [...SOURCES, src("bbc2", "us-news")] }).sections[0].items;
+    const twice = view(bbcTwice, M9 + H, { filter: "us-news", sources: [...SOURCES, src("bbc2", "us-news")] }).sections[0].items;
     assert.deepEqual(twice.map((i) => [i.headline, i.alsoIn]), [[words(43), 0], [words(44), 0]]);
     assert.equal(outletOf("https://feeds.npr.org/1001/rss.xml"), "npr");
-    const kw = view(s, M9 + H, { keywords: [W[42 % 16]] });
+    const kw = view(s, M9 + H, { filter: "us-news", keywords: [W[42 % 16]] });
     assert.equal(kw.sections[0].items[0].headline, words(42), "a keyword match goes first");
   });
 
   it("only uses approved sources for picked topics", () => {
     const s = withFeeds(emptyState(), { npr: [entry("npr", 60, M9)], rogue: [entry("rogue", 61, M9)] }, M9);
-    assert.deepEqual(view(s, M9 + H, { sources: [] }).sections, []);
-    assert.deepEqual(view(s, M9 + H, { topics: [{ id: "music", label: "Music" }] }).sections, []);
-    assert.deepEqual(view(s, M9 + H).sections.flatMap((x) => x.items.map((i) => i.headline)), [words(60)]);
+    assert.deepEqual(everything(view(s, M9 + H, { sources: [] })), []);
+    assert.deepEqual(everything(view(s, M9 + H, { topics: [{ id: "music", label: "Music" }] })), []);
+    assert.deepEqual(everything(view(s, M9 + H)).map((i) => i.headline), [words(60)]);
   });
 
   it("filters to one topic, falls back to All for unknown filters, and has no chips for empty topics", () => {
@@ -217,7 +220,46 @@ describe("popover front page", () => {
     assert.equal(view(emptyState(), M9, { hasSources: false }).empty?.action, "setup");
     const none = view(emptyState(), M9);
     assert.equal(none.empty?.title, "Nothing in the last 24 hours");
-    assert.equal(none.masthead, "The Morning Edition", "named after the current edition time");
+    assert.equal(none.edition, "Morning", "named after the current edition time");
+  });
+
+  it("leads with the best new story, moving it out of its section", () => {
+    // US: 4 older NPR stories; AI: one new story that two outlets carry; music: one new story.
+    const shared = "Chipmaker unveils new accelerator for large language model training";
+    const aiNew = { ...delivered("verge", 80, M9 - 2 * H, "ai-tech", M9), headline: shared };
+    const s = withFeeds(
+      { ...emptyState(), editions: [edition("m9", "morning", M9, [aiNew, delivered("bb", 81, M9 - H, "music", M9)])] },
+      {
+        npr: [entry("npr", 82, M9 - H), entry("npr", 83, M9 - 2 * H), entry("npr", 84, M9 - 3 * H), entry("npr", 85, M9 - 4 * H)],
+        verge: [{ ...entry("verge", 80, M9 - 2 * H), headline: shared }],
+        bbc2: [{ ...entry("bbc2", 86, M9 - 2 * H), headline: `${shared} today` }],
+      },
+      M9,
+    );
+    const sources = [...SOURCES, src("bbc2", "ai-tech")];
+    const v = view(s, M9 + H, { sources });
+    assert.equal(v.lead?.headline, shared, "new, and carried by two outlets (beats the newer music story)");
+    // Ties go to the user's first topics: without the second outlet, AI (2nd topic) beats music (3rd).
+    const single = view(s, M9 + H);
+    assert.equal(single.lead?.topicLabel, "AI and tech");
+    assert.equal(view(s, M9 + H, { topics: [topics[0], topics[2], topics[1]] }).lead?.topicLabel, "Music");
+    assert.equal(v.lead?.topicLabel, "AI and tech");
+    assert.equal(v.lead?.alsoIn, 1);
+    assert.ok(!v.sections.some((x) => x.topic === "ai-tech"), "its section had nothing else");
+    assert.equal(v.countLabel, "5 stories", "top story + 3 US + 1 music");
+    // A topic view has no lead and the full section; the count stays the same.
+    const ai = view(s, M9 + H, { sources, filter: "ai-tech" });
+    assert.equal(ai.lead, null);
+    assert.deepEqual(ai.sections[0].items.map((i) => i.headline), [shared]);
+    assert.equal(ai.countLabel, v.countLabel);
+    // No new stories: the best of the rest leads, and its section moves the next one up from "Show more".
+    const quiet = withFeeds(emptyState(), { npr: [entry("npr", 90, M9 - H), entry("npr", 91, M9 - 2 * H), entry("npr", 92, M9 - 3 * H), entry("npr", 93, M9 - 4 * H)] }, M9);
+    const q = view(quiet, M9 + H);
+    assert.equal(q.lead?.headline, words(90));
+    assert.deepEqual(q.sections[0].items.map((i) => i.headline), [words(91), words(92), words(93)]);
+    assert.deepEqual(q.sections[0].more, []);
+    assert.equal(q.countLabel, "4 stories");
+    assert.equal(view(quiet, M9 + H, { filter: "us-news" }).countLabel, "4 stories");
   });
 
   it("names older editions, and finds the link behind any story", () => {
