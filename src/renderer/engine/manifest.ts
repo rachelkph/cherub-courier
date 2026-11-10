@@ -1,5 +1,8 @@
-// Typed view of assets/manifest.json (version 2). parseManifest validates the
-// fields the engine uses and throws with the path of the first bad field.
+// Typed view of a character's manifest.json (version 2): assets/manifest.json for
+// the cat, assets/<character>/manifest.json for the others. parseManifest validates
+// the fields the engine uses and throws with the path of the first bad field.
+// Fields for flying characters (carry, hover, flight, wake_in_flight,
+// restAfterEditions) are optional; the cat has none of them.
 
 export type Size = [number, number];
 
@@ -26,6 +29,17 @@ export type Zzz = {
   stepMs: number; // z's move in steps this long, to limit redraws
 };
 
+// While carrying unread news (before landing on the pile): the loop for the load.
+export type Carry = LoopState & { minUnread: number; stepMs?: number; shadow?: string };
+
+export type Flight = {
+  altitudePx: number; // height of the sprite box's bottom above the ground
+  shadow: string; // shadow on the ground under him, when not carrying
+  shadowCenterX: number; // art px from the sprite's left edge (facing right)
+  tossOrigin: [number, number]; // where rolls leave the satchel in flight, facing right
+  turnHoverMs: number; // hover this long when turning around
+};
+
 export type SequenceStep = { frame: string; ms: number; y: number };
 
 export type PaperToss = {
@@ -41,12 +55,16 @@ export type Manifest = {
   version: 2;
   states: {
     walk: LoopState;
-    walk_nobag: LoopState;
+    walk_nobag?: LoopState;
+    carry?: Carry[]; // sorted by minUnread
+    hover?: LoopState & { extras: Extra[] };
     loaf: LoopState & { extras: Extra[] };
     sleep: LoopState & { zzz: Zzz };
   };
+  flight?: Flight;
   sequences: {
     wake_on_click: { steps: SequenceStep[]; paperToss: PaperToss };
+    wake_in_flight?: { steps: SequenceStep[] };
   };
   pile: {
     files: string[];
@@ -59,6 +77,7 @@ export type Manifest = {
   };
   behavior: {
     sleepAfterEditions: number;
+    restAfterEditions: number; // 0: rest on the pile as soon as there is news
     walkStepPx: number;
     walkStepMs: number;
   };
@@ -118,30 +137,64 @@ function loop(v: unknown, path: string): LoopState {
   };
 }
 
+function extras(v: unknown, path: string): Extra[] {
+  return list(
+    v,
+    path,
+    (x, p) => {
+      const e = obj(x, p);
+      if (typeof e.name !== "string") fail(`${p}.name`, "a string");
+      return {
+        name: e.name,
+        frame: spritePath(e.frame, `${p}.frame`),
+        showMs: num(e.showMs, `${p}.showMs`, 1),
+        everyMs: range(e.everyMs, `${p}.everyMs`),
+      };
+    },
+    0,
+  );
+}
+
+function steps(v: unknown, path: string): SequenceStep[] {
+  return list(v, path, (x, p) => {
+    const s = obj(x, p);
+    return { frame: spritePath(s.frame, `${p}.frame`), ms: num(s.ms, `${p}.ms`, 1), y: int(s.y, `${p}.y`, -100) };
+  });
+}
+
+function flight(v: unknown): Flight {
+  const f = obj(v, "flight");
+  return {
+    altitudePx: int(f.altitudePx, "flight.altitudePx"),
+    shadow: spritePath(f.shadow, "flight.shadow"),
+    shadowCenterX: int(f.shadowCenterX, "flight.shadowCenterX"),
+    tossOrigin: pair(f.tossOrigin, "flight.tossOrigin"),
+    turnHoverMs: num(f.turnHoverMs, "flight.turnHoverMs"),
+  };
+}
+
+function carry(v: unknown): Carry[] {
+  const out = list(v, "states.carry", (x, p) => {
+    const c = obj(x, p);
+    return {
+      ...loop(c, p),
+      minUnread: int(c.minUnread, `${p}.minUnread`, 1),
+      ...(c.stepMs === undefined ? {} : { stepMs: num(c.stepMs, `${p}.stepMs`, 1) }),
+      ...(c.shadow === undefined ? {} : { shadow: spritePath(c.shadow, `${p}.shadow`) }),
+    };
+  });
+  for (let i = 1; i < out.length; i++) if (out[i].minUnread <= out[i - 1].minUnread) fail("states.carry", "sorted by minUnread");
+  return out;
+}
+
 export function parseManifest(raw: unknown): Manifest {
   const root = obj(raw, "manifest");
   if (root.version !== 2) fail("version", "2");
   const states = obj(root.states, "states");
 
   const loafRaw = obj(states.loaf, "states.loaf");
-  const loaf = {
-    ...loop(loafRaw, "states.loaf"),
-    extras: list(
-      loafRaw.extras,
-      "states.loaf.extras",
-      (x, p) => {
-        const e = obj(x, p);
-        if (typeof e.name !== "string") fail(`${p}.name`, "a string");
-        return {
-          name: e.name,
-          frame: spritePath(e.frame, `${p}.frame`),
-          showMs: num(e.showMs, `${p}.showMs`, 1),
-          everyMs: range(e.everyMs, `${p}.everyMs`),
-        };
-      },
-      0,
-    ),
-  };
+  const loaf = { ...loop(loafRaw, "states.loaf"), extras: extras(loafRaw.extras, "states.loaf.extras") };
+  const hoverRaw = states.hover === undefined ? undefined : obj(states.hover, "states.hover");
 
   const sleepRaw = obj(states.sleep, "states.sleep");
   const z = obj(sleepRaw.zzz, "states.sleep.zzz");
@@ -158,7 +211,8 @@ export function parseManifest(raw: unknown): Manifest {
     },
   };
 
-  const wake = obj(obj(root.sequences, "sequences").wake_on_click, "sequences.wake_on_click");
+  const sequences = obj(root.sequences, "sequences");
+  const wake = obj(sequences.wake_on_click, "sequences.wake_on_click");
   const toss = obj(wake.paperToss, "sequences.wake_on_click.paperToss");
   const tp = "sequences.wake_on_click.paperToss";
 
@@ -177,13 +231,21 @@ export function parseManifest(raw: unknown): Manifest {
 
   return {
     version: 2,
-    states: { walk: loop(states.walk, "states.walk"), walk_nobag: loop(states.walk_nobag, "states.walk_nobag"), loaf, sleep },
+    states: {
+      walk: loop(states.walk, "states.walk"),
+      ...(states.walk_nobag === undefined ? {} : { walk_nobag: loop(states.walk_nobag, "states.walk_nobag") }),
+      ...(states.carry === undefined ? {} : { carry: carry(states.carry) }),
+      ...(hoverRaw === undefined ? {} : { hover: { ...loop(hoverRaw, "states.hover"), extras: extras(hoverRaw.extras, "states.hover.extras") } }),
+      loaf,
+      sleep,
+    },
+    ...(root.flight === undefined ? {} : { flight: flight(root.flight) }),
     sequences: {
+      ...(sequences.wake_in_flight === undefined
+        ? {}
+        : { wake_in_flight: { steps: steps(obj(sequences.wake_in_flight, "sequences.wake_in_flight").steps, "sequences.wake_in_flight.steps") } }),
       wake_on_click: {
-        steps: list(wake.steps, "sequences.wake_on_click.steps", (x, p) => {
-          const s = obj(x, p);
-          return { frame: spritePath(s.frame, `${p}.frame`), ms: num(s.ms, `${p}.ms`, 1), y: int(s.y, `${p}.y`, -100) };
-        }),
+        steps: steps(wake.steps, "sequences.wake_on_click.steps"),
         paperToss: {
           frame: spritePath(toss.frame, `${tp}.frame`),
           maxRolls: int(toss.maxRolls, `${tp}.maxRolls`, 1),
@@ -205,6 +267,7 @@ export function parseManifest(raw: unknown): Manifest {
     },
     behavior: {
       sleepAfterEditions: int(behavior.sleepAfterEditions, "behavior.sleepAfterEditions"),
+      restAfterEditions: behavior.restAfterEditions === undefined ? 0 : int(behavior.restAfterEditions, "behavior.restAfterEditions"),
       walkStepPx: int(behavior.walkStepPx, "behavior.walkStepPx", 1),
       walkStepMs: num(behavior.walkStepMs, "behavior.walkStepMs", 1),
     },
@@ -218,12 +281,16 @@ export function spritePaths(m: Manifest): string[] {
   return [
     ...new Set([
       ...s.walk.frames,
-      ...s.walk_nobag.frames,
+      ...(s.walk_nobag?.frames ?? []),
+      ...(s.carry ?? []).flatMap((c) => [...c.frames, ...(c.shadow ? [c.shadow] : [])]),
+      ...(s.hover ? [...s.hover.frames, ...s.hover.extras.map((e) => e.frame)] : []),
       ...s.loaf.frames,
       ...s.loaf.extras.map((e) => e.frame),
       ...s.sleep.frames,
       ...s.sleep.zzz.frames,
       ...w.steps.map((x) => x.frame),
+      ...(m.sequences.wake_in_flight?.steps.map((x) => x.frame) ?? []),
+      ...(m.flight ? [m.flight.shadow] : []),
       w.paperToss.frame,
       ...m.pile.files,
     ]),

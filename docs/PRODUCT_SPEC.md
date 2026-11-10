@@ -43,6 +43,21 @@ A pixel-art news cat who delivers your twice-daily headlines — and gets comfie
 ## Feed fetching
 Honest User-Agent; conditional GET; 15 s timeout; 5 MB cap; at most 200 entries per feed; one request at a time per host with 2 s spacing, 4 hosts in parallel; a feed is not refetched within 30 min, even on Refresh (confirmed by Rachel 2026-11-08); errors back off from 15 min doubling to 24 h, honoring Retry-After; 404/410 marks a feed "gone" and waits 24 h. http feeds try https first. Redirects are followed manually (max 5) and every hop, including its resolved IP, must be public.
 
+## Characters
+Rachel's choice (2026-11-10): the **cherub** delivers the news by default; the **cat** stays as an option (menu bar → Character; saved in settings as `character`). Same engine, one manifest each. The strip above the Dock is 160 pt tall for the cherub, 110 for the cat.
+
+### Cherub states (assets in `assets/cherub/`, Rachel's own art)
+| State | When | Sprites |
+|---|---|---|
+| Fly light | Nothing unread | `fly_light/0..3`, 130 ms, 26 px up, small shadow on the ground |
+| Carry, medium bag | Newest edition unread, 1–4 headlines | `fly_medium/0..3`, 110 ms, slower flight, medium shadow |
+| Carry, heavy bag (tired) | Newest edition unread, 5+ | `fly_heavy/0..3`, 140 ms, slowest, large shadow |
+| Hover | Hovered, popover open, or turning around (420 ms) with nothing unread | `hover_light/0..3` + `hover_blink` every 3–6 s |
+| Rest on pile | An older edition is still unread (`restAfterEditions` 1) | `rest/rest_0`, blink `rest_1`, doze `rest_2`; pile art borrowed from the cat until a newspaper mound is drawn |
+| Sleep on pile | More than 2 editions old | `sleep/0..1` + z's |
+| Click in flight | Carrying | hover up 4 px (`wake_in_flight`), rolls drop from the satchel to the ground, then fly light |
+| Click on pile | Resting/sleeping | `wake_on_click` from the art notes (rest_1 → hover → fly, rising 14 px), pile tossed as for the cat |
+
 ## Cat states (assets in `assets/`)
 | State | When | Sprites |
 |---|---|---|
@@ -79,7 +94,7 @@ Chosen layout: "Option 1 — topic sections" in the mockup https://claude.ai/art
 - Superseded 2026-11-08: the Edition/Topic "Group by" switch and per-row topic labels.
 
 ## Settings
-Edition times, topics, keywords, sources (add/remove/test a feed), launch at login, snooze, reset.
+Edition times, topics, keywords, sources (add/remove/test a feed), launch at login, snooze, character (cherub or cat), reset.
 
 ## Out of scope for v1
 Accounts, sync, analytics, AI summaries or ranking, keyword-to-feed discovery, multiple displays, other languages, auto-update, in-app article reading, Windows/Linux.

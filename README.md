@@ -48,7 +48,11 @@ Dev-only controls (not in packaged builds):
 Local data lives in `~/Library/Application Support/NewsCat/` (`settings.json`, `state.json`, `sources-cache.json`).
 The curated source list is `data/sources.json`; a newer copy is fetched from this repo's `main` branch at most once a day.
 
-Sprites and animation timings live in `assets/manifest.json`; swap art there without code changes.
-The sprite PNGs themselves are **not in this repository** (the current placeholder art's license is unchecked, and new art is planned).
-Put them under `assets/` (folders listed in `.gitignore`) to run the app; without them, art-dependent tests are skipped.
+Two characters deliver the news; pick one under **Character** in the menu-bar menu (the cherub is the default):
+- the **cherub** flies above the Dock: `assets/cherub/manifest.json`, art under `assets/cherub/`;
+- the **cat** walks: `assets/manifest.json`, art at the top of `assets/`.
+
+Sprites and animation timings live in those manifests; swap art there without code changes.
+The sprite PNGs themselves are **not in this repository** (licensing of the art is unchecked).
+Put them under `assets/` (folders listed in `.gitignore`) to run the app; without them, art-dependent tests are skipped and the menu offers only a character whose art is present.
 Docs: `docs/PRODUCT_SPEC.md`, `docs/BUILD_PLAN.md`, `docs/RELEASE.md`, `docs/VERIFIED.md`.

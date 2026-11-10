@@ -39,6 +39,8 @@ Headlines stay reachable while they are still top news: the popover is a front p
 - **Keyword-to-feed discovery** (e.g. via news search feeds). Not verified as free or permitted. Out of v1.
 - **Electron behaviors**: click-through windows with per-pixel hit testing, behavior over full-screen apps and across Spaces, Dock-position detection. Not tested yet — M0 verifies.
 - **Sprite licensing:** the head of the cat comes from a PixelLab free-trial generation. Check PixelLab's current terms for commercial/shared use before public release.
+- **Cherub art licensing:** cut from Rachel's own Perchance image (the heavy bag too). Check Perchance's terms for the generator used before shipping it in a public DMG. Its art is gitignored like the cat's.
+- **Cherub pile:** he lands on the cat's newspaper pile for now; the art notes ask for a newspaper mound and a "buried" stage (not built).
 - **Notarization timing** for a first submission from this account.
 
 ## Costs known so far

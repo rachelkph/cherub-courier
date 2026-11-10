@@ -1,4 +1,4 @@
-// First-run setup: welcome, topics, sources (approve), schedule, meet the cat.
+// First-run setup: welcome, topics, sources (approve), schedule, meet the cat (or cherub).
 // All text from sources and feeds is set with textContent, never as HTML.
 
 type SourceView = {
@@ -110,17 +110,23 @@ function go(step: number): void {
   (app.querySelector("h1") as HTMLElement | null)?.focus?.();
 }
 
-// --- walking cat on the welcome screen ----------------------------------------
+// --- the character (main passes ?character=), walking on the welcome screen -------
+
+const ART = "app://newscat/assets/";
+const CHARACTER =
+  new URLSearchParams(location.search).get("character") === "cherub"
+    ? { noun: "cherub", moving: "flying", frame: (i: number) => `${ART}cherub/fly_light/fly_light_${i}.png`, frameMs: 130, cls: "cat cherub", idle: "I land on the pile and doze off" }
+    : { noun: "cat", moving: "walking", frame: (i: number) => `${ART}walk/walk_${i}.png`, frameMs: 140, cls: "cat", idle: "I curl up on the pile" };
 
 let catTimer: number | undefined;
 function walkingCat(): HTMLImageElement {
-  const img = h("img", { class: "cat", alt: "The news cat, walking", src: "app://newscat/assets/walk/walk_0.png" });
+  const img = h("img", { class: CHARACTER.cls, alt: `The news ${CHARACTER.noun}, ${CHARACTER.moving}`, src: CHARACTER.frame(0) });
   let f = 0;
   window.clearInterval(catTimer);
   catTimer = window.setInterval(() => {
     f = (f + 1) % 4;
-    img.src = `app://newscat/assets/walk/walk_${f}.png`;
-  }, 140);
+    img.src = CHARACTER.frame(f);
+  }, CHARACTER.frameMs);
   return img;
 }
 
@@ -128,10 +134,10 @@ function walkingCat(): HTMLImageElement {
 
 function welcome(): HTMLElement {
   return frame(
-    "Hello from the news cat",
+    `Hello from the news ${CHARACTER.noun}`,
     [
       walkingCat(),
-      h("p", { class: "lead" }, "Twice a day I bring you a few headlines from sources you pick. If you leave them, I curl up on the pile."),
+      h("p", { class: "lead" }, `Twice a day I bring you a few headlines from sources you pick. If you leave them, ${CHARACTER.idle}.`),
       h("p", { class: "note" }, "Everything stays on this Mac: no account, no tracking, no AI. The only things I download are the news feeds you choose."),
     ],
     [h("button", { class: "link", type: "button", onclick: () => void skip() }, "Skip setup"), h("span", { class: "spacer" }), h("button", { class: "primary", type: "button", onclick: () => go(2) }, "Get started")],
@@ -397,7 +403,7 @@ function schedule(): HTMLElement {
     [
       h("p", {}, "Two editions a day, in your Mac's time zone. If your Mac is asleep, I'll deliver when it wakes up."),
       h("div", { class: "times" }, time("morning", "Morning edition"), time("evening", "Evening edition")),
-      h("label", { class: "check", for: "login" }, login, "Start the cat when my Mac turns on"),
+      h("label", { class: "check", for: "login" }, login, `Start the ${CHARACTER.noun} when my Mac turns on`),
     ],
     [
       h("button", { type: "button", onclick: () => go(3) }, "Back"),
@@ -410,14 +416,14 @@ function schedule(): HTMLElement {
 function meet(): HTMLElement {
   const hasSources = state.checked.size > 0 || state.custom.length > 0;
   return frame(
-    "Meet the cat",
+    `Meet the ${CHARACTER.noun}`,
     [
-      h("img", { class: "cat", alt: "The news cat", src: "app://newscat/assets/walk/walk_0.png" }),
+      h("img", { class: CHARACTER.cls, alt: `The news ${CHARACTER.noun}`, src: CHARACTER.frame(0) }),
       hasSources
         ? h("p", { class: "lead" }, state.fetching ? "Your first edition is on its way. Watch the bottom of your screen." : "All set.")
         : h("p", { class: "lead" }, "No sources picked yet, so I have nothing to deliver. You can choose some anytime."),
       h("p", {}, `I deliver at ${clock(state.times.morning)} and ${clock(state.times.evening)}. Click me to read the headlines.`),
-      h("p", { class: "note" }, "To hide me, snooze me, or change these settings, use the cat icon in the menu bar at the top right of your screen."),
+      h("p", { class: "note" }, `To hide me, snooze me, switch to the ${CHARACTER.noun === "cat" ? "cherub" : "cat"}, or change these settings, use the ${CHARACTER.noun} icon in the menu bar at the top right of your screen.`),
     ],
     [h("span", { class: "spacer" }), h("button", { class: "primary", type: "button", onclick: () => void window.setup.close() }, "Done")],
   );

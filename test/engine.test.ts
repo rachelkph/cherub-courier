@@ -7,6 +7,7 @@ import { type Manifest, parseManifest, spritePaths } from "../src/renderer/engin
 import { catMode, pileHeight, pileLayers, stack } from "../src/renderer/engine/state.ts";
 import { arc, loopIndex, nextAt, sequenceStep, tossPlan } from "../src/renderer/engine/timeline.ts";
 import { blank, diffPixels, draw, readPng } from "./helpers/png.ts";
+import { CHARACTERS } from "../src/shared/config.ts";
 
 const ASSETS = join(import.meta.dirname, "..", "assets");
 const rawManifest = JSON.parse(readFileSync(join(ASSETS, "manifest.json"), "utf8"));
@@ -31,7 +32,7 @@ describe("manifest", () => {
   });
 
   it("declared state sizes match the sprite files", art, () => {
-    for (const s of [m.states.walk, m.states.walk_nobag, m.states.loaf, m.states.sleep]) {
+    for (const s of [m.states.walk, m.states.walk_nobag, m.states.loaf, m.states.sleep].filter((x) => x !== undefined)) {
       for (const f of s.frames) assert.deepEqual(sizes[f], s.size, f);
     }
   });
@@ -247,5 +248,193 @@ describe("CatEngine", art, () => {
     for (let t = 0; t < 2000; t += 10) for (const s of e.tick(t).sprites) assert.ok(s.y >= 0, `${s.sprite} at ${t}ms`);
     e.setInputs({ unread: 12, editionAge: 3 });
     for (let t = 2000; t < 6000; t += 50) for (const s of e.tick(t).sprites) assert.ok(s.y >= 0, `${s.sprite} at ${t}ms`);
+  });
+});
+
+// The cherub: flies above the ground carrying the news, lands on the pile once an
+// older edition is still unread, sleeps after that. Same engine, his own manifest.
+const CHERUB = join(ASSETS, "cherub");
+const cm: Manifest = parseManifest(JSON.parse(readFileSync(join(CHERUB, "manifest.json"), "utf8")));
+const cpng = (p: string) => readPng(join(CHERUB, p));
+const CHERUB_ART = spritePaths(cm).every((p) => existsSync(join(CHERUB, p)));
+const cherubArt = { skip: CHERUB_ART ? false : "cherub art not in this checkout (see README)" };
+const csizes: Sizes = CHERUB_ART
+  ? Object.fromEntries(
+      spritePaths(cm).map((p) => {
+        const img = cpng(p);
+        return [p, [img.width, img.height]];
+      }),
+    )
+  : {};
+
+describe("cherub manifest", () => {
+  it("parses, and every sprite exists at its declared size", cherubArt, () => {
+    for (const p of spritePaths(cm)) assert.ok(existsSync(join(CHERUB, p)), p);
+    for (const s of [cm.states.walk, cm.states.hover, cm.states.loaf, cm.states.sleep, ...(cm.states.carry ?? [])]) {
+      for (const f of s?.frames ?? []) assert.deepEqual(csizes[f], s?.size, f);
+    }
+  });
+
+  it("carries the news in flight, lands on the pile an edition later, then sleeps", () => {
+    const { sleepAfterEditions: s, restAfterEditions: r } = cm.behavior;
+    assert.equal(catMode({ unread: 0, editionAge: 3 }, s, r), "walk");
+    assert.equal(catMode({ unread: 4, editionAge: 0 }, s, r), "carry");
+    assert.equal(catMode({ unread: 4, editionAge: 1 }, s, r), "loaf");
+    assert.equal(catMode({ unread: 4, editionAge: 3 }, s, r), "sleep");
+  });
+
+  it("the cat never flies: its manifest has no flight fields", () => {
+    assert.equal(m.flight, undefined);
+    assert.equal(m.behavior.restAfterEditions, 0);
+  });
+
+  it("rejects a carry table out of order", () => {
+    const raw = JSON.parse(readFileSync(join(CHERUB, "manifest.json"), "utf8"));
+    raw.states.carry.reverse();
+    assert.throws(() => parseManifest(raw), /states\.carry/);
+  });
+});
+
+describe("CatEngine with the cherub", cherubArt, () => {
+  const strip = { width: 600, height: CHARACTERS.cherub.stripArtHeight };
+  const make = (rng = () => 0.5) => new CatEngine(cm, csizes, strip, 0, rng);
+  const fl = cm.flight as NonNullable<Manifest["flight"]>;
+  const him = (sprites: Sprite[]) => sprites.filter((s) => s.hit && !s.sprite.startsWith("pile/")).at(-1) as Sprite;
+  const shadow = (sprites: Sprite[]) => sprites.find((s) => s.sprite.startsWith("fx/shadow_"));
+  const bottom = (s: Sprite) => s.y + csizes[s.sprite][1];
+  const carry = cm.states.carry ?? [];
+
+  it("flies at his altitude with an unclickable shadow on the ground", () => {
+    const e = make();
+    const sprites = e.tick(0).sprites;
+    const c = him(sprites);
+    assert.ok(cm.states.walk.frames.includes(c.sprite));
+    assert.equal(bottom(c), strip.height - fl.altitudePx);
+    const sh = shadow(sprites) as Sprite;
+    assert.equal(sh.sprite, fl.shadow);
+    assert.equal(sh.hit, false);
+    assert.equal(bottom(sh), strip.height);
+    assert.equal(sh.x + csizes[sh.sprite][0] / 2, c.x + fl.shadowCenterX, "shadow under his feet");
+    const later = him(e.tick(1300).sprites);
+    assert.equal(later.x - c.x, Math.floor(1300 / cm.behavior.walkStepMs) * cm.behavior.walkStepPx);
+  });
+
+  it("keeps flapping in place (hover, with a blink) while hovered or paused", () => {
+    const e = make(() => 0);
+    const a = him(e.tick(0).sprites);
+    e.setHovered(true);
+    const seen = new Set<string>();
+    for (let t = 100; t < 3200; t += 20) {
+      const s = him(e.tick(t).sprites);
+      assert.equal(s.x, a.x);
+      seen.add(s.sprite);
+    }
+    assert.ok(cm.states.hover?.frames.every((f) => seen.has(f)), "all hover frames play");
+    assert.ok(seen.has("hover_light/hover_blink.png"), "blinks");
+  });
+
+  it("carries a heavier bag (bigger shadow, slower) as the news piles up", () => {
+    for (const [unread, entry] of [[2, carry[0]], [5, carry[1]], [12, carry[1]]] as const) {
+      const e = make();
+      e.setInputs({ unread, editionAge: 0 });
+      const a = e.tick(0).sprites;
+      assert.ok(entry.frames.includes(him(a).sprite), `unread ${unread}`);
+      assert.equal(shadow(a)?.sprite, entry.shadow);
+      assert.equal(a.some((s) => s.sprite.startsWith("pile/")), false, "no pile while flying");
+      const b = him(e.tick(2000).sprites);
+      assert.equal(b.x - him(a).x, Math.floor(2000 / (entry.stepMs ?? 0)) * cm.behavior.walkStepPx);
+    }
+  });
+
+  it("hovers for a moment when turning around", () => {
+    const e = make();
+    e.tick(0);
+    const steps = (strip.width - 96) / cm.behavior.walkStepPx;
+    let t = 0;
+    let s = him(e.tick(t).sprites);
+    while (!s.flip) {
+      t += cm.behavior.walkStepMs;
+      s = him(e.tick(t).sprites);
+    }
+    assert.ok(t <= (steps + 1) * cm.behavior.walkStepMs);
+    assert.ok(cm.states.hover?.frames.includes(s.sprite) || s.sprite === "hover_light/hover_blink.png");
+    const x = s.x;
+    assert.equal(him(e.tick(t + fl.turnHoverMs - 10).sprites).x, x, "holds still while turning");
+    const on = him(e.tick(t + fl.turnHoverMs + cm.behavior.walkStepMs * 3).sprites);
+    assert.ok(on.x < x && cm.states.walk.frames.includes(on.sprite), "then flies back left");
+  });
+
+  it("lands on the pile with his feet on the top paper, and sleeps later", () => {
+    const e = make();
+    e.setInputs({ unread: 7, editionAge: 1 });
+    const sprites = e.tick(100).sprites;
+    const pile = sprites.find((s) => s.sprite.startsWith("pile/")) as Sprite;
+    assert.equal(pile.sprite, "pile/pile_4.png");
+    assert.equal(bottom(pile), strip.height);
+    const c = him(sprites);
+    assert.ok(cm.states.loaf.frames.includes(c.sprite));
+    assert.equal(shadow(sprites), undefined, "no shadow when landed");
+    // His lowest opaque row sits right on the pile's highest opaque row.
+    const lowest = (img: ReturnType<typeof cpng>) => {
+      for (let y = img.height - 1; y >= 0; y--) for (let x = 0; x < img.width; x++) if (img.data[(y * img.width + x) * 4 + 3] > 0) return y;
+      return -1;
+    };
+    const highest = (img: ReturnType<typeof cpng>) => {
+      for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) if (img.data[(y * img.width + x) * 4 + 3] > 0) return y;
+      return -1;
+    };
+    assert.equal(c.y + lowest(cpng(c.sprite)) + 1, pile.y + highest(cpng(pile.sprite)));
+    e.setInputs({ unread: 7, editionAge: 3 });
+    const z = e.tick(5000).sprites;
+    assert.ok(cm.states.sleep.frames.includes(him(z).sprite));
+    assert.equal(z.filter((s) => s.sprite.startsWith("fx/z_")).length, cm.states.sleep.zzz.count);
+  });
+
+  it("click in flight: hovers, drops the rolls from his satchel, delivers once, flies light", () => {
+    const e = make();
+    e.setInputs({ unread: 6, editionAge: 0 });
+    e.tick(0);
+    assert.equal(e.click(1000), "deliver");
+    const wake = cm.sequences.wake_in_flight?.steps ?? [];
+    assert.equal(him(e.tick(1000).sprites).sprite, wake[0].frame);
+    const tossStart = 1000 + wake.reduce((n, s) => n + s.ms, 0);
+    const mid = e.tick(tossStart + 150).sprites;
+    const rolls = mid.filter((s) => s.sprite === "fx/paper_roll.png");
+    assert.ok(rolls.length > 0 && rolls.every((r) => !r.hit));
+    assert.equal(mid.some((s) => s.sprite.startsWith("pile/")), false);
+    const t = cm.sequences.wake_on_click.paperToss;
+    const end = tossStart + 2 * t.staggerMs + t.flightMs;
+    const done = e.tick(end);
+    assert.equal(done.delivered, true);
+    assert.deepEqual(e.getInputs(), { unread: 0, editionAge: 0 });
+    assert.ok(cm.states.walk.frames.includes(him(done.sprites).sprite));
+    assert.equal(e.tick(end + 200).delivered, false);
+  });
+
+  it("click on the pile: wakes with the given sequence, then tosses", () => {
+    const e = make();
+    e.setInputs({ unread: 9, editionAge: 2 });
+    e.tick(0);
+    assert.equal(e.click(500), "deliver");
+    assert.equal(him(e.tick(500).sprites).sprite, "rest/rest_1.png");
+    const start = 500 + cm.sequences.wake_on_click.steps.reduce((n, s) => n + s.ms, 0);
+    const mid = e.tick(start + 150).sprites;
+    assert.equal((mid.find((s) => s.sprite.startsWith("pile/")) as Sprite).sprite, "pile/pile_2.png");
+    assert.ok(mid.some((s) => s.sprite === "fx/paper_roll.png"));
+  });
+
+  it("everything fits inside his strip, in every state, facing either way", () => {
+    for (const editionAge of [0, 1, 3]) {
+      for (const unread of [0, 1, 5, 12]) {
+        const e = make();
+        e.setInputs({ unread, editionAge });
+        for (let t = 0; t < 4000; t += 25) {
+          if (t === 1000) e.click(t);
+          for (const s of e.tick(t).sprites) {
+            assert.ok(s.y >= 0 && bottom(s) <= strip.height, `${s.sprite} at ${t}ms (unread ${unread}, age ${editionAge})`);
+          }
+        }
+      }
+    }
   });
 });

@@ -13,6 +13,8 @@ files:
   - data/sources.json
   - assets/**
   - "!assets/preview/**"
+  - "!assets/cherub/preview/**"
+  - "!assets/cherub/source_manifest.json"
 asar: true
 electronFuses:
   runAsNode: false

@@ -1,4 +1,4 @@
-// Draws the cat engine's sprites on the transparent overlay strip and hit-tests
+// Draws the character engine's sprites on the transparent overlay strip and hit-tests
 // the cursor against their pixels so clicks pass through everywhere else.
 
 import { CatEngine, type Sizes, type Sprite } from "./engine/cat.ts";
@@ -23,7 +23,11 @@ declare global {
   }
 }
 
-const ASSETS = "app://newscat/assets/";
+// The character's art folder (main passes ?character=; it matches CHARACTERS in
+// shared/config.ts, which is not served to pages). The cat's art is at the top.
+const CHARACTER_DIRS: Record<string, string> = { cat: "", cherub: "cherub/" };
+const characterParam = new URLSearchParams(location.search).get("character") ?? "cat";
+const ASSETS = `app://newscat/assets/${Object.hasOwn(CHARACTER_DIRS, characterParam) ? CHARACTER_DIRS[characterParam] : ""}`;
 
 const canvas = document.getElementById("stage") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -114,7 +118,7 @@ function draw(): void {
   ctx.restore();
 }
 
-// Is the CSS point over an opaque pixel of the cat or its pile?
+// Is the CSS point over an opaque pixel of the character or its pile?
 function hit(px: number, py: number): boolean {
   const ax = Math.floor(px / bounds.scale);
   const ay = Math.floor(py / bounds.scale);

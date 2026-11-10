@@ -48,7 +48,8 @@ export function registerOnboardingIpc(h: OnboardingHandlers): void {
   ipcMain.handle("setup:close", guard(() => win?.close()));
 }
 
-export function openOnboarding(preloadDir: string): void {
+// character: whose picture the welcome and "meet" screens show.
+export function openOnboarding(preloadDir: string, character: string): void {
   if (win) {
     win.show();
     win.focus();
@@ -76,7 +77,7 @@ export function openOnboarding(preloadDir: string): void {
   win.on("closed", () => {
     win = null;
   });
-  void win.loadURL(PAGE);
+  void win.loadURL(`${PAGE}?character=${encodeURIComponent(character)}`);
 }
 
 export function closeOnboarding(): void {

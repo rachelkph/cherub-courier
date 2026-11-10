@@ -14,3 +14,7 @@ assets/sleep/
 assets/pile/
 assets/fx/
 assets/preview/
+# The cherub (the user's own art, cut from a Perchance image): same rule, art stays local.
+# Only its manifest is tracked.
+assets/cherub/*
+!assets/cherub/manifest.json

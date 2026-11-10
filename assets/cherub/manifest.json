@@ -1,0 +1,116 @@
+{
+  "version": 2,
+  "notes": "The cherub: flies above the Dock carrying the news, lands on the pile when an edition goes unread, then sleeps. Art pixels; faces right, the app flips him for left. Art is the user's own (cut from a Perchance image) and stays out of git; the pile art is the cat's until a newspaper mound is drawn. Original cut notes: source_manifest.json.",
+  "states": {
+    "walk": {
+      "frames": ["fly_light/fly_light_0.png", "fly_light/fly_light_1.png", "fly_light/fly_light_2.png", "fly_light/fly_light_3.png"],
+      "frameMs": 130,
+      "size": [96, 99],
+      "note": "nothing to deliver: light flight"
+    },
+    "carry": [
+      {
+        "minUnread": 1,
+        "frames": ["fly_medium/fly_medium_0.png", "fly_medium/fly_medium_1.png", "fly_medium/fly_medium_2.png", "fly_medium/fly_medium_3.png"],
+        "frameMs": 110,
+        "size": [96, 99],
+        "stepMs": 160,
+        "shadow": "fx/shadow_m.png"
+      },
+      {
+        "minUnread": 5,
+        "frames": ["fly_heavy/fly_heavy_0.png", "fly_heavy/fly_heavy_1.png", "fly_heavy/fly_heavy_2.png", "fly_heavy/fly_heavy_3.png"],
+        "frameMs": 140,
+        "size": [96, 99],
+        "stepMs": 200,
+        "shadow": "fx/shadow_l.png"
+      }
+    ],
+    "hover": {
+      "frames": ["hover_light/hover_light_0.png", "hover_light/hover_light_1.png", "hover_light/hover_light_2.png", "hover_light/hover_light_3.png"],
+      "frameMs": 140,
+      "size": [96, 99],
+      "extras": [{ "name": "blink", "frame": "hover_light/hover_blink.png", "showMs": 120, "everyMs": [3000, 6000] }],
+      "note": "upright hover while hovered, paused (popover open) or turning around"
+    },
+    "loaf": {
+      "frames": ["rest/rest_0.png"],
+      "frameMs": 1000,
+      "size": [96, 99],
+      "extras": [
+        { "name": "blink", "frame": "rest/rest_1.png", "showMs": 120, "everyMs": [3000, 6000] },
+        { "name": "doze", "frame": "rest/rest_2.png", "showMs": 900, "everyMs": [9000, 16000] }
+      ],
+      "note": "landed on the pile"
+    },
+    "sleep": {
+      "frames": ["sleep/sleep_0.png", "sleep/sleep_1.png"],
+      "frameMs": 1400,
+      "size": [96, 99],
+      "zzz": {
+        "frames": ["fx/z_0.png", "fx/z_1.png", "fx/z_2.png"],
+        "origin": [74, 10],
+        "riseMs": 2400,
+        "risePx": 18,
+        "driftPx": 6,
+        "count": 2,
+        "stepMs": 200
+      }
+    }
+  },
+  "flight": {
+    "altitudePx": 26,
+    "shadow": "fx/shadow_s.png",
+    "shadowCenterX": 47,
+    "tossOrigin": [20, 62],
+    "turnHoverMs": 420,
+    "note": "feet are at x 29-65; the satchel hangs at his back (left when facing right)"
+  },
+  "sequences": {
+    "wake_on_click": {
+      "steps": [
+        { "frame": "rest/rest_1.png", "ms": 150, "y": 0 },
+        { "frame": "hover_light/hover_light_0.png", "ms": 100, "y": -5 },
+        { "frame": "hover_light/hover_light_1.png", "ms": 100, "y": -8 },
+        { "frame": "fly_light/fly_light_2.png", "ms": 160, "y": -14 }
+      ],
+      "paperToss": {
+        "frame": "fx/paper_roll.png",
+        "maxRolls": 3,
+        "staggerMs": 140,
+        "flightMs": 520,
+        "arcHeightPx": 22,
+        "distancePx": [30, 52]
+      }
+    },
+    "wake_in_flight": {
+      "steps": [
+        { "frame": "hover_light/hover_light_0.png", "ms": 120, "y": 0 },
+        { "frame": "hover_light/hover_light_1.png", "ms": 120, "y": -2 },
+        { "frame": "hover_light/hover_light_2.png", "ms": 120, "y": -4 }
+      ]
+    }
+  },
+  "pile": {
+    "files": ["pile/pile_1.png", "pile/pile_2.png", "pile/pile_3.png", "pile/pile_4.png", "pile/pile_5.png"],
+    "width": 56,
+    "layerHeight": 8,
+    "basePad": 2,
+    "offsetX": 19,
+    "catOverlap": 3,
+    "unreadToLayers": [
+      { "minUnread": 1, "layers": 1 },
+      { "minUnread": 3, "layers": 2 },
+      { "minUnread": 5, "layers": 3 },
+      { "minUnread": 7, "layers": 4 },
+      { "minUnread": 9, "layers": 5 }
+    ]
+  },
+  "behavior": {
+    "sleepAfterEditions": 2,
+    "restAfterEditions": 1,
+    "walkStepPx": 2,
+    "walkStepMs": 130,
+    "note": "carries the news in flight while the newest edition is unread; lands on the pile once an older edition is still unread (restAfterEditions); sleeps after sleepAfterEditions"
+  }
+}

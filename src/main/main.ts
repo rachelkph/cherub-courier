@@ -1,8 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, powerMonitor, protocol, screen, shell, Tray } from "electron";
+import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { APP_NAME, OVERLAY_HEIGHT, SOURCES_REMOTE_URL, SPRITE_SCALE } from "../shared/config.ts";
+import { APP_NAME, CHARACTERS, type CharacterId, overlayHeight, SOURCES_REMOTE_URL, SPRITE_SCALE } from "../shared/config.ts";
 import { realDeps } from "./feeds/client.ts";
 import { buildEdition } from "./feeds/edition.ts";
 import { safeUrl } from "./feeds/sanitize.ts";
@@ -76,15 +77,53 @@ function serveAppProtocol(): void {
   });
 }
 
+// --- character -----------------------------------------------------------------
+
+// Sprite art is not in git, so a checkout may lack a character's art.
+function hasArt(c: CharacterId): boolean {
+  return existsSync(path.join(ROOT, "assets", CHARACTERS[c].dir, CHARACTERS[c].icon));
+}
+
+// The chosen character, or the other one if its art is missing.
+function character(): CharacterId {
+  const want = settings?.character ?? "cat";
+  if (hasArt(want)) return want;
+  return (Object.keys(CHARACTERS) as CharacterId[]).find(hasArt) ?? want;
+}
+
+function overlayUrl(): string {
+  return `app://newscat/renderer/index.html?character=${character()}`;
+}
+
+function setCharacter(c: CharacterId): void {
+  if (c === settings.character) return;
+  settings = { ...settings, character: c };
+  void saveSettings(dataPaths().settings, settings);
+  showCharacter();
+}
+
+// Swap the overlay and menu-bar icon to the current character.
+function showCharacter(): void {
+  hidePopover();
+  if (overlay) {
+    // Strip height depends on the character; the renderer reads it at startup.
+    overlay.setBounds(overlayBounds());
+    void overlay.loadURL(overlayUrl());
+  }
+  tray?.setImage(trayIcon());
+  rebuildTrayMenu();
+}
+
 // The strip sits on the bottom edge of the main display's usable area,
 // so it clears a bottom Dock and ignores side Docks.
 function overlayBounds(): Electron.Rectangle {
   const { workArea } = screen.getPrimaryDisplay();
+  const height = overlayHeight(character());
   return {
     x: workArea.x,
-    y: workArea.y + workArea.height - OVERLAY_HEIGHT,
+    y: workArea.y + workArea.height - height,
     width: workArea.width,
-    height: OVERLAY_HEIGHT,
+    height,
   };
 }
 
@@ -135,7 +174,7 @@ function createOverlay(): void {
   overlay.webContents.on("console-message", (e) => console.log(`[renderer:${e.level}] ${e.message}`));
   overlay.webContents.on("render-process-gone", (_e, d) => console.log("[renderer] gone", d));
 
-  overlay.loadURL("app://newscat/renderer/index.html");
+  overlay.loadURL(overlayUrl());
   overlay.once("ready-to-show", () => {
     placeOverlay("initial");
     applyVisibility(); // shows the cat unless hidden or snoozed
@@ -318,7 +357,7 @@ registerPopoverIpc({
   },
   settings: () => {
     hidePopover();
-    openOnboarding(__dirname);
+    openOnboarding(__dirname, character());
   },
   visibility: (visible) => overlay?.webContents.send("popover:visible", visible),
 });
@@ -377,12 +416,14 @@ async function resetEverything(): Promise<void> {
   const p = dataPaths();
   await Promise.all([p.state, p.settings, p.sourcesCache].map((f) => rm(f, { force: true })));
   verifiedFeeds.clear();
+  const was = character();
   settings = defaultSettings();
+  if (character() !== was) showCharacter();
   state = emptyState();
   hidePopover();
   applyLoginItem();
   setCatState({ unread: 0, editionAge: 0 });
-  openOnboarding(__dirname);
+  openOnboarding(__dirname, character());
 }
 
 function devMenu(): Electron.MenuItemConstructorOptions[] {
@@ -422,7 +463,7 @@ function snoozeMenu(): Electron.MenuItemConstructorOptions[] {
     const until = new Date(settings.snoozeUntil);
     const sameDay = until.toDateString() === new Date().toDateString();
     const when = `${sameDay ? "" : "tomorrow "}${clock(settings.snoozeUntil)}`;
-    return [{ label: `Snoozed until ${when}`, enabled: false }, { label: "Wake the cat now", click: () => snooze(0) }];
+    return [{ label: `Snoozed until ${when}`, enabled: false }, { label: `Wake the ${CHARACTERS[character()].noun} now`, click: () => snooze(0) }];
   }
   return [
     {
@@ -440,15 +481,25 @@ function rebuildTrayMenu(): void {
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
-        label: hiddenByUser ? "Show cat" : "Hide cat",
+        label: `${hiddenByUser ? "Show" : "Hide"} ${CHARACTERS[character()].noun}`,
         click: () => {
           hiddenByUser = !hiddenByUser;
           applyVisibility();
         },
       },
       ...snoozeMenu(),
+      {
+        label: "Character",
+        submenu: (Object.keys(CHARACTERS) as CharacterId[]).map((c) => ({
+          label: CHARACTERS[c].label,
+          type: "radio" as const,
+          checked: character() === c,
+          enabled: hasArt(c),
+          click: () => setCharacter(c),
+        })),
+      },
       { type: "separator" },
-      { label: "Set up…", click: () => openOnboarding(__dirname) },
+      { label: "Set up…", click: () => openOnboarding(__dirname, character()) },
       { label: "Reset everything…", click: () => void resetEverything() },
       ...devMenu(),
       { type: "separator" },
@@ -457,9 +508,13 @@ function rebuildTrayMenu(): void {
   );
 }
 
+function trayIcon(): Electron.NativeImage {
+  const c = CHARACTERS[character()];
+  return nativeImage.createFromPath(path.join(ROOT, "assets", c.dir, c.icon)).resize({ height: 18 });
+}
+
 function createTray(): void {
-  const icon = nativeImage.createFromPath(path.join(ROOT, "assets", "walk", "walk_0.png")).resize({ height: 18 });
-  tray = new Tray(icon);
+  tray = new Tray(trayIcon());
   tray.setToolTip(APP_NAME);
   rebuildTrayMenu();
 }
@@ -483,7 +538,7 @@ app.whenReady().then(async () => {
   catState = devStartState() ?? catInputs(state, Date.now());
   createOverlay();
   createTray();
-  if (!settings.onboarded) openOnboarding(__dirname);
+  if (!settings.onboarded) openOnboarding(__dirname, character());
   preparePopover(__dirname);
   // Unread headlines expire after 48h and the cat gets sleepier as editions pass.
   setInterval(updateCat, 10 * 60_000);

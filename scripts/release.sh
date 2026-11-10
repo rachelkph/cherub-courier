@@ -12,7 +12,7 @@ if ! security find-identity -v -p codesigning | grep -q "Developer ID Applicatio
   echo "No 'Developer ID Application' certificate in your keychain (docs/RELEASE.md, step 1)." >&2
   exit 1
 fi
-for d in walk walk_nobag loaf sleep pile fx; do
+for d in walk walk_nobag loaf sleep pile fx cherub/fly_light cherub/fly_medium cherub/fly_heavy cherub/hover_light cherub/rest cherub/sleep cherub/pile cherub/fx; do
   [ -d "assets/$d" ] || { echo "Sprite folder assets/$d is missing; the app would ship without art." >&2; exit 1; }
 done
 
