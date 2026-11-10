@@ -137,7 +137,20 @@ function render(v: View): void {
   card.replaceChildren(header, list, footer);
   list.scrollTop = scroll;
   root.style.setProperty("--list-max", `${LIST_MAX}px`);
+  fitNameplate();
   reportHeight();
+}
+
+// The nameplate stays on one line: long names step the pixel font down (24 -> 14 px).
+function fitNameplate(): void {
+  const h1 = card.querySelector<HTMLElement>(".masthead");
+  const header = h1?.parentElement;
+  if (!h1 || !header) return;
+  const cs = getComputedStyle(header);
+  const room = header.clientWidth - Number.parseFloat(cs.paddingLeft) - Number.parseFloat(cs.paddingRight);
+  let size = 24;
+  h1.style.fontSize = `${size}px`;
+  while (size > 14 && h1.scrollWidth > room) h1.style.fontSize = `${--size}px`;
 }
 
 // Measured synchronously (reading the size forces layout): a hidden page gets no
@@ -145,7 +158,10 @@ function render(v: View): void {
 function reportHeight(): void {
   window.popover.height(frame.getBoundingClientRect().height);
 }
-void document.fonts.ready.then(reportHeight);
+void document.fonts.ready.then(() => {
+  fitNameplate();
+  reportHeight();
+});
 
 window.popover.onShow((v) => {
   expanded.clear();

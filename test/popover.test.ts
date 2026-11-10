@@ -115,7 +115,8 @@ describe("popover front page", () => {
 
   it("keeps seen stories while they are still current, with NEW on what the cat just brought", () => {
     const v = view(monday(), M9 + H);
-    assert.equal(v.nameplate, "The NewsCat Gazette");
+    assert.equal(v.nameplate, "The Cloud Nine Chronicle", "the default character's paper");
+    assert.equal(view(monday(), M9 + H, { nameplate: "The Mewsletter" }).nameplate, "The Mewsletter", "the cat's paper");
     assert.equal(v.edition, "Morning");
     assert.equal(v.dateLabel, "Mon, Nov 9");
     assert.equal(v.newLabel, "2 new");

@@ -102,9 +102,10 @@ function setCharacter(c: CharacterId): void {
   showCharacter();
 }
 
-// Swap the overlay and menu-bar icon to the current character.
+// Swap the overlay, menu-bar icon and newspaper name to the current character.
 function showCharacter(): void {
   hidePopover();
+  pushPopoverView(popoverView());
   if (overlay) {
     // Strip height depends on the character; the renderer reads it at startup.
     overlay.setBounds(overlayBounds());
@@ -318,6 +319,7 @@ function popoverView() {
     hasSources: sources.length > 0,
     refreshing,
     clock,
+    nameplate: CHARACTERS[character()].paper,
   });
 }
 

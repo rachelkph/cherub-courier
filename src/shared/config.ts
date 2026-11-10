@@ -11,10 +11,11 @@ export type CharacterId = "cherub" | "cat";
 // scale: screen points per art pixel. 1 keeps pixels crisp; the cherub's art is
 // drawn larger than the cat's, so he is shown at 2/3 (smoothed, snapped to whole
 // device pixels; 0.5 would be crisp on Retina but smaller than the cat).
-export type Character = { label: string; noun: string; dir: string; stripArtHeight: number; scale: number; icon: string };
+// paper: the newspaper's name on the popover's nameplate (Rachel's picks, 2026-11-10).
+export type Character = { label: string; noun: string; paper: string; dir: string; stripArtHeight: number; scale: number; icon: string };
 export const CHARACTERS: Record<CharacterId, Character> = {
-  cherub: { label: "Cherub", noun: "cherub", dir: "cherub/", stripArtHeight: 160, scale: 2 / 3, icon: "hover_light/hover_light_0.png" },
-  cat: { label: "Cat", noun: "cat", dir: "", stripArtHeight: 110, scale: 1, icon: "walk/walk_0.png" },
+  cherub: { label: "Cherub", noun: "cherub", paper: "The Cloud Nine Chronicle", dir: "cherub/", stripArtHeight: 160, scale: 2 / 3, icon: "hover_light/hover_light_0.png" },
+  cat: { label: "Cat", noun: "cat", paper: "The Mewsletter", dir: "", stripArtHeight: 110, scale: 1, icon: "walk/walk_0.png" },
 };
 export const DEFAULT_CHARACTER: CharacterId = "cherub";
 export const isCharacterId = (v: unknown): v is CharacterId => typeof v === "string" && Object.hasOwn(CHARACTERS, v);

@@ -67,7 +67,7 @@ header {
   background-color: var(--paper); background-image: radial-gradient(var(--dot) 0.6px, transparent 0.7px); background-size: 4px 4px;
   border-bottom: 1px solid var(--ink);
 }
-.masthead { font: 24px/1 var(--pixel); letter-spacing: 0.02em; margin: 0; text-align: center; outline: none; }
+.masthead { font: 24px/1 var(--pixel); letter-spacing: 0.02em; margin: 0; text-align: center; outline: none; white-space: nowrap; }
 .folio { align-self: stretch; display: flex; flex-direction: column; gap: 2px; margin-top: 3px; }
 .folio .rule2 { height: 2px; background: var(--ink); }
 .folio .rule1 { height: 1px; background: var(--ink); }

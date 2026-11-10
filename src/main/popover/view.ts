@@ -11,7 +11,7 @@ import type { Source } from "../feeds/edition.ts";
 import { type Candidate, FUTURE_TOLERANCE_MS, headlineTokens, isDuplicateHeadline, keywordMatch, urlKey } from "../feeds/select.ts";
 import type { EditionItem, State } from "../feeds/store.ts";
 import { currentEdition, type EditionTimes } from "../schedule.ts";
-import { APP_NAME } from "../../shared/config.ts";
+import { CHARACTERS, DEFAULT_CHARACTER } from "../../shared/config.ts";
 
 export const CARRY_OVER_MS = 48 * 3600_000;
 
@@ -67,7 +67,7 @@ export type ViewItem = {
   fresh: boolean; // in the cat's pile: shown with a NEW tag
 };
 export type View = {
-  nameplate: string; // "The NewsCat Gazette"
+  nameplate: string; // the character's paper, e.g. "The Cloud Nine Chronicle"
   edition: string; // "Evening"
   dateLabel: string; // "Mon, Nov 9"
   newLabel: string | null; // "7 new"
@@ -164,6 +164,7 @@ export type FrontPageOptions = {
   editionTimes: EditionTimes;
   refreshing: boolean;
   clock: (t: number) => string; // formats a time for "Fetched …"
+  nameplate?: string; // the newspaper's name (default: the default character's)
 };
 
 function gatherStories(state: State, opts: FrontPageOptions): Story[] {
@@ -297,7 +298,7 @@ export function buildView(state: State, opts: FrontPageOptions & { hasSources: b
   const count = front.reduce((n, s) => n + s.items.length, 0) + (lead ? 1 : 0);
 
   return {
-    nameplate: `The ${APP_NAME} Gazette`,
+    nameplate: opts.nameplate ?? CHARACTERS[DEFAULT_CHARACTER].paper,
     edition: current.slot === "morning" ? "Morning" : "Evening",
     dateLabel: new Date(current.scheduledFor).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
     newLabel: fresh > 0 ? `${fresh} new` : null,
