@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { APP_NAME, CHARACTERS, type CharacterId, overlayHeight, SOURCES_REMOTE_URL, SPRITE_SCALE } from "../shared/config.ts";
+import { APP_NAME, CHARACTERS, type CharacterId, overlayHeight, SOURCES_REMOTE_URL } from "../shared/config.ts";
 import { realDeps } from "./feeds/client.ts";
 import { buildEdition } from "./feeds/edition.ts";
 import { safeUrl } from "./feeds/sanitize.ts";
@@ -129,7 +129,7 @@ function overlayBounds(): Electron.Rectangle {
 
 function rendererBounds() {
   const b = overlayBounds();
-  return { width: b.width, height: b.height, scale: SPRITE_SCALE };
+  return { width: b.width, height: b.height, scale: CHARACTERS[character()].scale };
 }
 
 function placeOverlay(reason: string): void {

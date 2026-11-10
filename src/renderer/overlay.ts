@@ -65,15 +65,21 @@ function strip() {
   return { width: Math.floor(bounds.width / bounds.scale), height: Math.floor(bounds.height / bounds.scale) };
 }
 
+let k = 1; // device pixels per art pixel
+const dev = (artPx: number) => Math.round(artPx * k);
+
 function resize(): void {
   const dpr = window.devicePixelRatio;
   canvas.style.width = `${bounds.width}px`;
   canvas.style.height = `${bounds.height}px`;
   canvas.width = Math.round(bounds.width * dpr);
   canvas.height = Math.round(bounds.height * dpr);
-  // One art pixel = scale CSS px = scale * dpr device px; always an integer.
-  ctx.setTransform(dpr * bounds.scale, 0, 0, dpr * bounds.scale, 0, 0);
-  ctx.imageSmoothingEnabled = false;
+  // Drawing is in device pixels: one art pixel = scale * dpr of them. A whole number
+  // keeps pixels crisp; otherwise (the cherub at 2/3) smooth, at whole-pixel positions.
+  k = dpr * bounds.scale;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = !Number.isInteger(k);
+  ctx.imageSmoothingQuality = "high";
   lastKey = "";
   lastBox = null;
 }
@@ -98,21 +104,25 @@ function draw(): void {
   lastBox = next;
   if (parts.length === 0) return;
   const dirty = parts.reduce((a, b) => ({ x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) }));
+  // In device px, one pixel wider on each side for rounding.
+  const [x0, y0] = [dev(dirty.x0) - 1, dev(dirty.y0) - 1];
+  const [w, h] = [dev(dirty.x1) + 1 - x0, dev(dirty.y1) + 1 - y0];
   ctx.save();
   ctx.beginPath();
-  ctx.rect(dirty.x0, dirty.y0, dirty.x1 - dirty.x0, dirty.y1 - dirty.y0);
+  ctx.rect(x0, y0, w, h);
   ctx.clip();
-  ctx.clearRect(dirty.x0, dirty.y0, dirty.x1 - dirty.x0, dirty.y1 - dirty.y0);
+  ctx.clearRect(x0, y0, w, h);
   for (const s of sprites) {
     const img = images.get(s.sprite) as HTMLImageElement;
+    const [dx, dy, dw, dh] = [dev(s.x), dev(s.y), dev(img.width), dev(img.height)];
     if (s.flip) {
       ctx.save();
-      ctx.translate(s.x + img.width, s.y);
+      ctx.translate(dx + dw, dy);
       ctx.scale(-1, 1);
-      ctx.drawImage(img, 0, 0);
+      ctx.drawImage(img, 0, 0, dw, dh);
       ctx.restore();
     } else {
-      ctx.drawImage(img, s.x, s.y);
+      ctx.drawImage(img, dx, dy, dw, dh);
     }
   }
   ctx.restore();

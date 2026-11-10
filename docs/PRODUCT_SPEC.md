@@ -44,7 +44,7 @@ A pixel-art news cat who delivers your twice-daily headlines — and gets comfie
 Honest User-Agent; conditional GET; 15 s timeout; 5 MB cap; at most 200 entries per feed; one request at a time per host with 2 s spacing, 4 hosts in parallel; a feed is not refetched within 30 min, even on Refresh (confirmed by Rachel 2026-11-08); errors back off from 15 min doubling to 24 h, honoring Retry-After; 404/410 marks a feed "gone" and waits 24 h. http feeds try https first. Redirects are followed manually (max 5) and every hop, including its resolved IP, must be public.
 
 ## Characters
-Rachel's choice (2026-11-10): the **cherub** delivers the news by default; the **cat** stays as an option (menu bar → Character; saved in settings as `character`). Same engine, one manifest each. The strip above the Dock is 160 pt tall for the cherub, 110 for the cat.
+Rachel's choice (2026-11-10): the **cherub** delivers the news by default; the **cat** stays as an option (menu bar → Character; saved in settings as `character`). Same engine, one manifest each. The cherub is shown at 2/3 size (his art is drawn bigger than the cat's; Rachel asked for smaller, 2026-11-10): 1 art px = 2/3 pt, smoothed and snapped to whole device pixels, so he is about the cat's height (66 pt vs 58). The cat stays at 1 pt per art px, crisp. The strip above the Dock is 160 art px (107 pt) for the cherub, 110 for the cat. Sizes in the table are art px.
 
 ### Cherub states (assets in `assets/cherub/`, Rachel's own art)
 | State | When | Sprites |
