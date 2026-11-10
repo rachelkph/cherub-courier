@@ -1,8 +1,15 @@
 // What the cat's pile holds and what the popover shows. Pure functions over the
 // stored state, so restarts, Refresh and the 48h carry-over behave the same.
+//
+// The cat's pile is what's new: headlines he delivered that you haven't seen (you
+// see them by clicking him). The popover is a front page of what's top right now:
+// the best stories of the last 24 hours from your sources' latest feeds. What the
+// cat brought most recently is tagged NEW until his next delivery. Seen stories
+// stay while they are still current.
 
+import type { Source } from "../feeds/edition.ts";
+import { type Candidate, FUTURE_TOLERANCE_MS, headlineTokens, isDuplicateHeadline, keywordMatch, urlKey } from "../feeds/select.ts";
 import type { EditionItem, State } from "../feeds/store.ts";
-import { urlKey } from "../feeds/select.ts";
 import { currentEdition, type EditionTimes } from "../schedule.ts";
 
 export const CARRY_OVER_MS = 48 * 3600_000;
@@ -28,7 +35,8 @@ export function catInputs(state: State, now: number): { unread: number; editionA
   return { unread: u.length, editionAge: newer.size };
 }
 
-// Clicking the cat: everything in the pile is read; remember what it held.
+// Clicking the cat: everything in the pile is read; remember what it held, so the
+// popover can tag it NEW until the next delivery.
 export function clearPile(state: State, now: number): State {
   const u = unread(state, now);
   return { ...state, pileClearedAt: now, lastPile: u.length ? u.map((l) => l.key) : state.lastPile };
@@ -41,16 +49,30 @@ export function markOpened(state: State, key: string, now: number): State {
   return { ...state, opened: [...opened, { key, at: now }] };
 }
 
-// --- the popover's view ------------------------------------------------------------
+// --- the popover's front page --------------------------------------------------
 
-export type ViewItem = { key: string; headline: string; source: string; paywall: boolean; note: string | null; opened: boolean };
+export const FRONT_PAGE_MS = 24 * 3600_000; // rolling window (Rachel, 2026-11-09)
+export const TOP_PER_TOPIC = 3;
+export const MORE_PER_TOPIC = 3; // behind "Show more"
+
+export type ViewItem = {
+  key: string;
+  headline: string;
+  source: string;
+  alsoIn: number; // other outlets running nearly the same headline ("+1 more")
+  paywall: boolean;
+  note: string | null; // which earlier edition it is from; null for current ones
+  opened: boolean;
+  fresh: boolean; // in the cat's pile: shown with a NEW tag
+};
 export type View = {
   masthead: string;
   dateLabel: string;
-  countLabel: string;
+  newLabel: string | null; // "7 new"
+  countLabel: string; // "15 top stories"
   chips: { id: string; label: string }[]; // "all" first
   filter: string;
-  sections: { topic: string; label: string; items: ViewItem[] }[];
+  sections: { topic: string; label: string; items: ViewItem[]; more: ViewItem[] }[];
   fetchedLabel: string | null;
   empty: null | { title: string; body: string; action: "setup" | "refresh" | null };
   refreshing: boolean;
@@ -84,67 +106,171 @@ export function editionNote(slot: "morning" | "evening", scheduledFor: number, n
   return `${new Date(scheduledFor).toLocaleDateString("en-US", { weekday: "long" })} ${slot}`;
 }
 
-export function buildView(
-  state: State,
-  opts: {
-    now: number;
-    topics: { id: string; label: string }[]; // the user's topics, in their order
-    filter: string;
-    editionTimes: EditionTimes;
-    hasSources: boolean;
-    refreshing: boolean;
-    clock: (t: number) => string; // formats a time for "Fetched …"
-  },
-): View {
-  const { now } = opts;
+// What the cat brought most recently: the unread pile, plus what the pile held at
+// your last click (you see it as you click him). Kept even after its feed drops it,
+// for up to 48h.
+function freshItems(state: State, now: number): Located[] {
+  const last = new Set(state.lastPile);
   const pile = unread(state, now);
-  const everything = allItems(state);
-  const remembered = new Set(state.lastPile);
-  const shown =
-    pile.length > 0
-      ? pile
-      : remembered.size > 0
-        ? everything.filter((l) => remembered.has(l.key))
-        : (() => {
-            const latest = [...state.editions].sort((a, b) => b.scheduledFor - a.scheduledFor)[0];
-            return latest ? everything.filter((l) => l.scheduledFor === latest.scheduledFor) : [];
-          })();
+  const inPile = new Set(pile.map((l) => l.key));
+  const clicked = allItems(state).filter((l) => last.has(l.key) && !inPile.has(l.key) && now - l.item.addedAt <= CARRY_OVER_MS);
+  return [...pile, ...clicked];
+}
 
-  const newest = shown.length ? Math.max(...shown.map((l) => l.scheduledFor)) : null;
-  const edition = newest === null ? currentEdition(now, opts.editionTimes) : { slot: shown.find((l) => l.scheduledFor === newest)?.slot ?? "morning", scheduledFor: newest };
+// When a story the cat never delivered was published: "this afternoon", "last night",
+// "Friday morning"… (edition periods would call a 3 PM story "morning").
+export function publishedNote(t: number, now: number): string {
+  const h = new Date(t).getHours();
+  const part = h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+  const days = Math.round((dayStart(now) - dayStart(t)) / 86_400_000);
+  if (days <= 0) return `this ${part}`;
+  if (days === 1) return part === "evening" ? "last night" : `yesterday ${part}`;
+  return `${new Date(t).toLocaleDateString("en-US", { weekday: "long" })} ${part}`;
+}
+
+// The outlet behind a link, so several feeds from one site count once:
+// www.bbc.com and bbc.co.uk -> "bbc", feeds.npr.org -> "npr".
+export function outletOf(link: string): string {
+  try {
+    const labels = new URL(link).hostname.toLowerCase().split(".").filter(Boolean);
+    let i = labels.length - 2;
+    if (i > 0 && labels[i].length <= 3 && labels[labels.length - 1].length === 2) i--; // co.uk, com.au
+    return labels[Math.max(0, i)] ?? link;
+  } catch {
+    return link;
+  }
+}
+
+// One story on the front page: the first headline seen for it, plus every outlet
+// that ran the same link or nearly the same headline.
+type Story = {
+  item: Candidate;
+  key: string;
+  tokens: Set<string>;
+  outlets: Set<string>;
+  rank: number; // best position in a publisher's feed (0 = top); pile items count as 0
+  fresh: boolean;
+};
+
+export type FrontPageOptions = {
+  now: number;
+  topics: { id: string; label: string }[]; // the user's topics, in their order
+  sources: Source[]; // the sources the user approved, for the topics they picked
+  keywords: string[];
+  filter: string;
+  editionTimes: EditionTimes;
+  refreshing: boolean;
+  clock: (t: number) => string; // formats a time for "Fetched …"
+};
+
+function gatherStories(state: State, opts: FrontPageOptions): Story[] {
+  const { now } = opts;
+  const picked = new Set(opts.topics.map((t) => t.id));
+  const topicOf = (ids: string[]) => opts.topics.find((t) => ids.includes(t.id))?.id;
+
+  // New first, so a pile headline represents its story and keeps its NEW tag.
+  const pile = freshItems(state, now)
+    .filter((l) => picked.has(l.item.topic))
+    .map((l) => ({ item: l.item as Candidate, rank: 0, fresh: true }));
+  const feed = opts.sources.flatMap((s) => {
+    const topic = topicOf(s.topics);
+    if (!topic) return [];
+    return (state.feeds[s.id]?.entries ?? []).flatMap((e, rank) =>
+      now - e.publishedAt <= FRONT_PAGE_MS && e.publishedAt <= now + FUTURE_TOLERANCE_MS
+        ? [{ item: { ...e, source: s.name, sourceId: s.id, topic, paywall: s.paywall }, rank, fresh: false }]
+        : [],
+    );
+  });
+  feed.sort((a, b) => b.item.publishedAt - a.item.publishedAt);
+
+  const stories: Story[] = [];
+  const byKey = new Map<string, Story>();
+  for (const c of [...pile, ...feed]) {
+    const key = urlKey(c.item.link);
+    const tokens = headlineTokens(c.item.headline);
+    const same = byKey.get(key) ?? stories.find((st) => isDuplicateHeadline(st.tokens, tokens));
+    if (same) {
+      same.outlets.add(outletOf(c.item.link));
+      same.rank = Math.min(same.rank, c.rank);
+      byKey.set(key, same);
+      continue;
+    }
+    const story: Story = { item: c.item, key, tokens, outlets: new Set([outletOf(c.item.link)]), rank: c.rank, fresh: c.fresh };
+    stories.push(story);
+    byKey.set(key, story);
+  }
+  return stories;
+}
+
+// Within a topic: your keywords first, then stories more outlets carry,
+// then the publisher's own order, then newest.
+function rankStories(stories: Story[], keywords: string[]): Story[] {
+  const kw = new Map(stories.map((s) => [s, keywordMatch(s.item.headline, keywords)]));
+  return [...stories].sort(
+    (a, b) =>
+      Number(kw.get(b)) - Number(kw.get(a)) ||
+      b.outlets.size - a.outlets.size ||
+      a.rank - b.rank ||
+      b.item.publishedAt - a.item.publishedAt,
+  );
+}
+
+export function buildView(state: State, opts: FrontPageOptions & { hasSources: boolean }): View {
+  const { now } = opts;
+  const current = currentEdition(now, opts.editionTimes);
+  const deliveredIn = new Map<string, { slot: "morning" | "evening"; scheduledFor: number }>();
+  for (const e of state.editions) for (const i of e.items) deliveredIn.set(urlKey(i.link), { slot: e.slot, scheduledFor: e.scheduledFor });
   const opened = new Set(state.opened.map((o) => o.key));
 
+  // Older stories say where they came from: the edition that delivered them, or
+  // else when they were published. Nothing for stories from the current edition.
+  const note = (st: Story): string | null => {
+    if (st.fresh) return null;
+    const from = deliveredIn.get(st.key);
+    if (from) return from.scheduledFor >= current.scheduledFor ? null : editionNote(from.slot, from.scheduledFor, now);
+    return st.item.publishedAt >= current.scheduledFor ? null : publishedNote(st.item.publishedAt, now);
+  };
+  const toItem = (st: Story): ViewItem => ({
+    key: st.key,
+    headline: st.item.headline,
+    source: st.item.source,
+    alsoIn: st.outlets.size - 1,
+    paywall: st.item.paywall,
+    note: note(st),
+    opened: opened.has(st.key),
+    fresh: st.fresh,
+  });
+
+  const stories = gatherStories(state, opts);
   const sections = opts.topics
-    .map((t) => ({
-      topic: t.id,
-      label: t.label,
-      items: shown
-        .filter((l) => l.item.topic === t.id)
-        .sort((a, b) => b.scheduledFor - a.scheduledFor || b.item.publishedAt - a.item.publishedAt)
-        .map((l) => ({
-          key: l.key,
-          headline: l.item.headline,
-          source: l.item.source,
-          paywall: l.item.paywall,
-          note: l.scheduledFor === newest ? null : editionNote(l.slot, l.scheduledFor, now),
-          opened: opened.has(l.key),
-        })),
-    }))
+    .map((t) => {
+      const ranked = rankStories(
+        stories.filter((s) => s.item.topic === t.id),
+        opts.keywords,
+      );
+      // The top 3, plus every new story (the cat never says "new" about something hidden).
+      const shown = ranked.filter((s, i) => i < TOP_PER_TOPIC || s.fresh);
+      const items = [...shown.filter((s) => s.fresh), ...shown.filter((s) => !s.fresh)].map(toItem);
+      const more = ranked.filter((s) => !shown.includes(s)).slice(0, MORE_PER_TOPIC).map(toItem);
+      return { topic: t.id, label: t.label, items, more };
+    })
     .filter((s) => s.items.length > 0);
 
   const filter = opts.filter === "all" || opts.topics.some((t) => t.id === opts.filter) ? opts.filter : "all";
-  const latestFetch = state.editions.length ? Math.max(...state.editions.map((e) => e.fetchedAt)) : null;
-  const count = shown.length;
+  const latestFetch = Math.max(0, ...Object.values(state.feeds).map((f) => f.lastSuccessAt ?? 0), ...state.editions.map((e) => e.fetchedAt));
+  const total = sections.reduce((n, s) => n + s.items.length, 0);
+  const fresh = sections.reduce((n, s) => n + s.items.filter((i) => i.fresh).length, 0);
 
   let empty: View["empty"] = null;
   if (!opts.hasSources) empty = { title: "No sources yet", body: "Pick a few sources and I'll start delivering headlines.", action: "setup" };
-  else if (count === 0) empty = { title: "Nothing to deliver yet", body: "No new headlines from your sources. Try Refresh, or wait for the next edition.", action: "refresh" };
+  else if (total === 0) empty = { title: "Nothing in the last 24 hours", body: "Your sources haven't posted anything recent. Try Refresh, or wait for the next edition.", action: "refresh" };
 
   return {
-    masthead: edition.slot === "morning" ? "The Morning Edition" : "The Evening Edition",
-    dateLabel: new Date(edition.scheduledFor).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
-    countLabel: pile.length > 0 ? `${count} new` : `${count} headline${count === 1 ? "" : "s"}`,
-    // Chips only for topics with headlines here (plus the selected one), so none lead nowhere.
+    masthead: current.slot === "morning" ? "The Morning Edition" : "The Evening Edition",
+    dateLabel: new Date(current.scheduledFor).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
+    newLabel: fresh > 0 ? `${fresh} new` : null,
+    countLabel: `${total} top ${total === 1 ? "story" : "stories"}`,
+    // Chips only for topics with stories here (plus the selected one), so none lead nowhere.
     // Built-in topics get a short name; the user's own keep the name they typed.
     chips: [
       { id: "all", label: "All" },
@@ -154,8 +280,15 @@ export function buildView(
     ],
     filter,
     sections: filter === "all" ? sections : sections.filter((s) => s.topic === filter),
-    fetchedLabel: latestFetch === null ? null : `Fetched ${opts.clock(latestFetch)}`,
+    fetchedLabel: latestFetch > 0 ? `Fetched ${opts.clock(latestFetch)}` : null,
     empty,
     refreshing: opts.refreshing,
   };
+}
+
+// The link behind a front-page story (from an edition or a feed), for opening it.
+export function linkFor(state: State, key: string): string | null {
+  for (const e of state.editions) for (const i of e.items) if (urlKey(i.link) === key) return i.link;
+  for (const f of Object.values(state.feeds)) for (const e of f.entries) if (urlKey(e.link) === key) return e.link;
+  return null;
 }

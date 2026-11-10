@@ -6,11 +6,10 @@ import { APP_NAME, OVERLAY_HEIGHT, SOURCES_REMOTE_URL, SPRITE_SCALE } from "../s
 import { realDeps } from "./feeds/client.ts";
 import { buildEdition } from "./feeds/edition.ts";
 import { safeUrl } from "./feeds/sanitize.ts";
-import { urlKey } from "./feeds/select.ts";
 import { emptyState, loadState, readJsonOrSetAside, type State, saveState, writeJsonAtomic } from "./feeds/store.ts";
 import { applyFinish, applySkip, buildModel, type VerifiedFeeds } from "./onboarding/model.ts";
 import { closeOnboarding, openOnboarding, registerOnboardingIpc } from "./onboarding/window.ts";
-import { buildView, catInputs, clearPile, markOpened } from "./popover/view.ts";
+import { buildView, catInputs, clearPile, linkFor, markOpened } from "./popover/view.ts";
 import { hidePopover, preparePopover, pushPopoverView, registerPopoverIpc, showPopover, togglePopover } from "./popover/window.ts";
 import { currentEdition, snoozeEnd } from "./schedule.ts";
 import { Scheduler } from "./scheduler.ts";
@@ -269,12 +268,15 @@ const clock = (t: number) => new Date(t).toLocaleTimeString([], { hour: "numeric
 
 function popoverView() {
   const labels = topicLabels(settings, sourcesFile);
+  const sources = editionSources(settings, sourcesFile);
   return buildView(state, {
     now: Date.now(),
     topics: settings.topics.map((id) => ({ id, label: labels.get(id) ?? id })),
+    sources,
+    keywords: settings.keywords,
     filter: settings.popoverFilter,
     editionTimes: settings.editionTimes,
-    hasSources: editionSources(settings, sourcesFile).length > 0,
+    hasSources: sources.length > 0,
     refreshing,
     clock,
   });
@@ -294,8 +296,8 @@ function catOnScreen(box: unknown): { x: number; y: number; width: number; heigh
 registerPopoverIpc({
   view: popoverView,
   open: (key) => {
-    const item = state.editions.flatMap((e) => e.items).find((i) => urlKey(i.link) === key);
-    const link = item ? safeUrl(item.link) : null;
+    const found = linkFor(state, key);
+    const link = found ? safeUrl(found) : null;
     if (!link) return;
     void shell.openExternal(link);
     void saveAndShow(markOpened(state, key, Date.now()));

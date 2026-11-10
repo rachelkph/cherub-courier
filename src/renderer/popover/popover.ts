@@ -3,14 +3,15 @@
 
 import { pixelIcon } from "./icons.ts";
 
-type ViewItem = { key: string; headline: string; source: string; paywall: boolean; note: string | null; opened: boolean };
+type ViewItem = { key: string; headline: string; source: string; alsoIn: number; paywall: boolean; note: string | null; opened: boolean; fresh: boolean };
 type View = {
   masthead: string;
   dateLabel: string;
+  newLabel: string | null;
   countLabel: string;
   chips: { id: string; label: string }[];
   filter: string;
-  sections: { topic: string; label: string; items: ViewItem[] }[];
+  sections: { topic: string; label: string; items: ViewItem[]; more: ViewItem[] }[];
   fetchedLabel: string | null;
   empty: null | { title: string; body: string; action: "setup" | "refresh" | null };
   refreshing: boolean;
@@ -53,12 +54,30 @@ function button(cls: string, label: string, onClick: () => void, ...kids: (Node 
   return b;
 }
 
+// Topics whose "Show more" is open; reset each time the popover opens.
+const expanded = new Set<string>();
+let lastView: View | null = null;
+
+function row(it: ViewItem): HTMLButtonElement {
+  const source = it.alsoIn > 0 ? `${it.source} +${it.alsoIn} more` : it.source;
+  const meta = el("span", "meta", it.note ? `${source} · ${it.note}` : source, it.paywall ? el("span", "paywall", "paywall") : null);
+  const top = el("span", "top", el("span", "headline", it.headline), it.fresh ? el("span", "new", "new") : null);
+  const b = button(`row${it.opened ? " opened" : ""}`, "", () => window.popover.open(it.key), top, meta);
+  b.title = it.headline;
+  if (it.fresh) b.setAttribute("aria-description", "new");
+  return b;
+}
+
 function render(v: View): void {
+  lastView = v;
+  const dateline = el("div", "dateline", `${v.dateLabel} · `);
+  if (v.newLabel) dateline.append(el("span", "n", v.newLabel), " · ");
+  dateline.append(v.countLabel);
   const header = el(
     "header",
     undefined,
     el("h1", "masthead", v.masthead),
-    el("div", "dateline", `${v.dateLabel} · ${v.countLabel}`),
+    dateline,
     el("div", "rules", el("div"), el("div")),
   );
   (header.firstChild as HTMLElement).id = "masthead";
@@ -88,11 +107,17 @@ function render(v: View): void {
     v.sections.forEach((s, i) => {
       const head = el("h2", `section-head${i === 0 ? " first" : ""}`, pixelIcon(s.topic), s.label, el("span", "count", `· ${s.items.length}`));
       list.append(head);
-      for (const it of s.items) {
-        const meta = el("span", "meta", it.note ? `${it.source} · ${it.note}` : it.source, it.paywall ? el("span", "paywall", "paywall") : null);
-        const row = button(`row${it.opened ? " opened" : ""}`, "", () => window.popover.open(it.key), el("span", "headline", it.headline), meta);
-        row.title = it.headline;
-        list.append(row);
+      for (const it of s.items) list.append(row(it));
+      if (s.more.length > 0) {
+        const open = expanded.has(s.topic);
+        if (open) for (const it of s.more) list.append(row(it));
+        const toggle = button("more", "", () => {
+          if (open) expanded.delete(s.topic);
+          else expanded.add(s.topic);
+          if (lastView) render(lastView);
+        }, open ? "Show fewer" : `Show ${s.more.length} more`);
+        toggle.setAttribute("aria-expanded", String(open));
+        list.append(toggle);
       }
     });
   }
@@ -116,6 +141,7 @@ function reportHeight(): void {
 void document.fonts.ready.then(reportHeight);
 
 window.popover.onShow((v) => {
+  expanded.clear();
   render(v);
   (card.querySelector(".list") as HTMLElement | null)?.scrollTo(0, 0);
 });

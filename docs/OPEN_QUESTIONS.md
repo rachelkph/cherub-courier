@@ -28,6 +28,9 @@ Rachel plans to replace the cat with a **news boy cycling along the Dock**. His 
 - **AI — OPEN, not planned for v1.** Cloud model (e.g. Claude Haiku 4.5, about $1/$5 per million input/output tokens, check current pricing): roughly $1 per user per year to sort headlines, but the API key cannot ship in the app, so it needs each user's own key or a server Rachel runs, and topics and headlines would leave the Mac (breaks the privacy promise and "no AI"). On-device (Apple Natural Language, or Foundation Models on macOS 26 with Apple Intelligence): $0 and private, needs a small Swift helper; can judge whether a feed fits a topic but cannot find new sources. Revisit for v2.
 - **More topics than headlines — DECIDED (Rachel):** no limit on topics. Every subscribed topic with news gets its best headline in each edition, even if that makes the edition longer than 7; the 7 only limits the extra headlines after that.
 
+## Front page (2026-11-09) — DECIDED (Rachel)
+Headlines stay reachable while they are still top news: the popover is a front page of the last 24 hours (rolling), and the cat's pile is only what's new. See PRODUCT_SPEC "Popover". Grouping of the same story across outlets only catches nearly identical headlines; matching differently worded coverage would need on-device language tools (see "AI" above).
+
 ## Unverified facts (test before relying on them)
 - **Feed URLs in `data/sources.json`:** all 24 verified live on 2026-11-08 (see docs/VERIFIED.md). Re-check periodically (`npm run check-feeds`; weekly CI planned for M7).
 - **Reuters and AP have no official RSS.** Reuters stopped its public feeds in June 2020; AP's feeds are unreliable and apnews.com blocks automated tools (per third-party reports). The Google News search-feed workaround is unofficial and undocumented; its terms of use have not been checked. Treat these as optional, off by default.
