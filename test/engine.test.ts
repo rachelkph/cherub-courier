@@ -287,13 +287,13 @@ describe("cherub manifest", () => {
     assert.equal(catMode({ unread: 4, editionAge: 3 }, s, r), "sleep");
   });
 
-  it("is buried with more than 10 unread, whatever the edition's age", () => {
+  it("is buried with 8 or more unread, whatever the edition's age", () => {
     const { sleepAfterEditions: s, restAfterEditions: r } = cm.behavior;
     const at = cm.buried?.minUnread;
-    assert.equal(at, 11);
+    assert.equal(at, 8);
     for (const editionAge of [0, 1, 3]) {
-      assert.equal(catMode({ unread: 11, editionAge }, s, r, at), "buried", `age ${editionAge}`);
-      assert.notEqual(catMode({ unread: 10, editionAge }, s, r, at), "buried", `age ${editionAge}`);
+      assert.equal(catMode({ unread: 8, editionAge }, s, r, at), "buried", `age ${editionAge}`);
+      assert.notEqual(catMode({ unread: 7, editionAge }, s, r, at), "buried", `age ${editionAge}`);
     }
   });
 
@@ -348,7 +348,7 @@ describe("CatEngine with the cherub", cherubArt, () => {
   });
 
   it("carries a heavier bag (bigger shadow, slower) as the news piles up", () => {
-    for (const [unread, entry] of [[2, carry[0]], [5, carry[1]], [10, carry[1]]] as const) {
+    for (const [unread, entry] of [[2, carry[0]], [5, carry[1]], [7, carry[1]]] as const) {
       const e = make();
       e.setInputs({ unread, editionAge: 0 });
       const a = e.tick(0).sprites;
@@ -491,13 +491,13 @@ describe("CatEngine with the cherub", cherubArt, () => {
 
   it("click on the pile: wakes with the given sequence, then tosses", () => {
     const e = make();
-    e.setInputs({ unread: 9, editionAge: 2 });
+    e.setInputs({ unread: 7, editionAge: 2 });
     e.tick(0);
     assert.equal(e.click(500), "deliver");
     assert.equal(him(e.tick(500).sprites).sprite, "rest/rest_1.png");
     const start = 500 + cm.sequences.wake_on_click.steps.reduce((n, s) => n + s.ms, 0);
     const mid = e.tick(start + 150).sprites;
-    assert.equal((mid.find((s) => s.sprite.startsWith("pile/")) as Sprite).sprite, "pile/pile_2.png");
+    assert.equal((mid.find((s) => s.sprite.startsWith("pile/")) as Sprite).sprite, "pile/pile_1.png"); // 4 -> 3 -> 1 layers
     assert.ok(mid.some((s) => s.sprite === "fx/paper_roll.png"));
   });
 
