@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "notes": "The cherub: flies above the Dock carrying the news, lands on the pile when an edition goes unread, then sleeps. Art pixels; faces right, the app flips him for left. Art is the user's own (cut from a Perchance image) and stays out of git; the pile art is the cat's until a newspaper mound is drawn. Original cut notes: source_manifest.json.",
+  "notes": "The cherub: flies above the Dock carrying the news, lands on the pile when an edition goes unread, then sleeps. Art pixels; faces right, the app flips him for left. Art is the user's own (cut from a Perchance image) and stays out of git; the pile is a newspaper mound drawn for him (scripts/mound.mjs). Original cut notes: source_manifest.json.",
   "states": {
     "walk": {
       "frames": ["fly_light/fly_light_0.png", "fly_light/fly_light_1.png", "fly_light/fly_light_2.png", "fly_light/fly_light_3.png"],
@@ -93,11 +93,11 @@
   },
   "pile": {
     "files": ["pile/pile_1.png", "pile/pile_2.png", "pile/pile_3.png", "pile/pile_4.png", "pile/pile_5.png"],
-    "width": 56,
-    "layerHeight": 8,
-    "basePad": 2,
-    "offsetX": 19,
-    "catOverlap": 3,
+    "width": 80,
+    "layerHeight": 7,
+    "basePad": 3,
+    "offsetX": 7,
+    "catOverlap": 4,
     "unreadToLayers": [
       { "minUnread": 1, "layers": 1 },
       { "minUnread": 3, "layers": 2 },

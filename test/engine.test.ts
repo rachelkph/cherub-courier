@@ -275,6 +275,10 @@ describe("cherub manifest", () => {
     }
   });
 
+  it("mound stages match the pile width and layer heights", cherubArt, () => {
+    cm.pile.files.forEach((f, i) => assert.deepEqual(csizes[f], [cm.pile.width, pileHeight(cm, i + 1)], f));
+  });
+
   it("carries the news in flight, lands on the pile an edition later, then sleeps", () => {
     const { sleepAfterEditions: s, restAfterEditions: r } = cm.behavior;
     assert.equal(catMode({ unread: 0, editionAge: 3 }, s, r), "walk");

@@ -53,7 +53,7 @@ Rachel's choice (2026-11-10): the **cherub** delivers the news by default; the *
 | Carry, medium bag | Newest edition unread, 1–4 headlines | `fly_medium/0..3`, 110 ms, slower flight, medium shadow |
 | Carry, heavy bag (tired) | Newest edition unread, 5+ | `fly_heavy/0..3`, 140 ms, slowest, large shadow |
 | Hover | Hovered, popover open, or turning around (420 ms) with nothing unread | `hover_light/0..3` + `hover_blink` every 3–6 s |
-| Rest on pile | An older edition is still unread (`restAfterEditions` 1) | `rest/rest_0`, blink `rest_1`, doze `rest_2`; pile art borrowed from the cat until a newspaper mound is drawn |
+| Rest on pile | An older edition is still unread (`restAfterEditions` 1) | `rest/rest_0`, blink `rest_1`, doze `rest_2`, on a newspaper mound (`pile/pile_1..5`, 80 px wide, drawn by `scripts/mound.mjs`: a dome of folded and rolled papers in his palette, level top for his feet) |
 | Sleep on pile | More than 2 editions old | `sleep/0..1` + z's |
 | Click in flight | Carrying | hover up 4 px (`wake_in_flight`), rolls drop from the satchel to the ground, then fly light |
 | Click on pile | Resting/sleeping | `wake_on_click` from the art notes (rest_1 → hover → fly, rising 14 px), pile tossed as for the cat |
