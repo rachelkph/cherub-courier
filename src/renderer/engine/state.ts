@@ -4,7 +4,9 @@ import type { Manifest } from "./manifest.ts";
 
 // walk: nothing to deliver. carry: flying with the news (characters that fly, while
 // the newest edition is unread). loaf: resting on the pile. sleep: long neglect.
-export type Mode = "walk" | "carry" | "loaf" | "sleep";
+// buried: up to the neck in the news (characters with a buried state, when a lot
+// is unread, whatever its age).
+export type Mode = "walk" | "carry" | "loaf" | "sleep" | "buried";
 
 export type Inputs = {
   unread: number; // unread headlines in the pile
@@ -17,8 +19,9 @@ export function pileLayers(unread: number, table: Manifest["pile"]["unreadToLaye
   return layers;
 }
 
-export function catMode(inputs: Inputs, sleepAfterEditions: number, restAfterEditions = 0): Mode {
+export function catMode(inputs: Inputs, sleepAfterEditions: number, restAfterEditions = 0, buriedAt = Number.POSITIVE_INFINITY): Mode {
   if (inputs.unread <= 0) return "walk";
+  if (inputs.unread >= buriedAt) return "buried";
   if (inputs.editionAge < restAfterEditions) return "carry";
   return inputs.editionAge > sleepAfterEditions ? "sleep" : "loaf";
 }

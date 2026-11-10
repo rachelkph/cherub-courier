@@ -1,4 +1,5 @@
-// Draws the cherub's newspaper mound: assets/cherub/pile/pile_1..5.png (80 x 7n+3),
+// Draws the cherub's newspaper mound: assets/cherub/pile/pile_1..5.png (80 x 7n+3)
+// and buried.png (the heap he is buried in up to the neck),
 // a dome of folded and rolled papers in the cherub's palette, with a level top
 // for his feet. Deterministic: same output every run. The PNGs stay out of git
 // like the rest of the art; this script is how to remake them.
@@ -102,26 +103,26 @@ function endOn(c, x, yb) {
 }
 
 
-function stage(n, seed = 7) {
-  const H = LAYER * n + PAD;
-  const c = canvas(W, H);
-  const r = rng(seed * 131 + n * 7919);
-  const baseHalf = Math.min(40, 21 + 4 * n); // half-width at the ground
-  const topHalf = 19; // the level top he stands on (his feet span 36 px)
+// A heap w x H: half-width baseHalf at the ground rounding in to topHalf at the
+// top. level: the top band lies flat (something stands on it).
+// halfAt(yb), if given, replaces that shape: the half-width at band line yb.
+function heap({ w: Wd, h: H, topHalf, baseHalf, r, level, halfAt: shape }) {
+  const c = canvas(Wd, H);
   const base = H - 1; // ground row
   const top = 2;
   const b = base - top; // mound height
   // Dome: wide at the ground, rounding in to the level top.
-  const halfAt = (yb) => { const h = (base - yb) / Math.max(1, b - 5); return topHalf + (baseHalf - topHalf) * Math.sqrt(Math.max(0, 1 - Math.min(1, h) ** 2)); };
+  const halfAt = shape ?? ((yb) => { const h = (base - yb) / Math.max(1, b - 5); return topHalf + (baseHalf - topHalf) * Math.sqrt(Math.max(0, 1 - Math.min(1, h) ** 2));
+    });
   // Bands every 5 px from the top down; lower bands are in front, drawn later.
   const bands = [];
   for (let y = top + 7; y <= base + 1; y += 5) bands.push(y);
   if (bands.at(-1) !== base) bands.push(base);
   bands.forEach((yb, bi) => {
     const hw = halfAt(yb);
-    const first = bi === 0;
-    let x = Math.round(W / 2 - hw) - (first ? 0 : Math.floor(r() * 2));
-    const right = Math.round(W / 2 + hw);
+    const first = bi === 0 && level;
+    let x = Math.round(Wd / 2 - hw) - (first ? 0 : Math.floor(r() * 2));
+    const right = Math.round(Wd / 2 + hw);
     const items = [];
     while (x < right - 6) {
       const room = right - x;
@@ -133,7 +134,7 @@ function stage(n, seed = 7) {
       it.x = x;
       it.yb = yb - (first ? 0 : Math.floor(r() * 2));
       // Papers at the edges slide down the slope; the rest lie nearly flat.
-      const mid = it.x + it.w / 2 - W / 2;
+      const mid = it.x + it.w / 2 - Wd / 2;
       const edge = !first && Math.abs(mid) > hw - 12;
       it.slope = it.k !== "slab" || first ? 0 : edge ? Math.sign(mid) * (0.12 + r() * 0.1) : (r() - 0.5) * 0.1;
       if (it.slope > 0) it.yb -= Math.round(it.w * it.slope); // keep the low end on the band
@@ -152,20 +153,66 @@ function stage(n, seed = 7) {
     shade = 0;
   });
   // The smallest heap: rolls tucked against both ends round it off.
-  if (bands.length === 1) { endOn(c, Math.round(W / 2 - topHalf) - 4, base); endOn(c, Math.round(W / 2 + topHalf) - 4, base); }
+  if (bands.length === 1) { endOn(c, Math.round(Wd / 2 - topHalf) - 4, base); endOn(c, Math.round(Wd / 2 + topHalf) - 4, base); }
   return c;
 }
 
-function write(dir, seed) {
-  for (let n = 1; n <= 5; n++) {
-    const c = stage(n, seed);
-    const data = new Uint8Array(c.w * c.h * 4);
-    c.px.forEach((k, i) => { if (k) { data.set(rgb(C[k]), i * 4); data[i * 4 + 3] = 255; } });
-    encode(`${dir}/pile_${n}.png`, { w: c.w, h: c.h, data });
+// Pile stage n (1..5): 80 x (7n+3), level top for his feet (they span 36 px).
+function stage(n, seed = 7) {
+  return heap({ w: W, h: LAYER * n + PAD, topHalf: 19, baseHalf: Math.min(40, 21 + 4 * n), r: rng(seed * 131 + n * 7919), level: true });
+}
+
+// Buried: the big heap drawn in front of him, up to his chin, BURIED_W x BURIED_H.
+// It covers his body (frame x 7..93) from the neck (frame row 57) down; the wing
+// tips stay out.
+// Its surface falls off as (dx / half)^3.5 from the middle: still high (row <= 7)
+// over his satchel 39 px out, then sloping to the ground.
+export const BURIED_W = 136;
+export const BURIED_H = 46;
+function buried(seed = 7) {
+  const half = BURIED_W / 2;
+  const top = BURIED_H - 1;
+  // At band line yb (height above ground top - yb), the surface is that high out to:
+  const halfAt = (yb) => Math.max(10, half * Math.max(0, 1 - (top - yb) / top) ** (1 / 3.5));
+  return heap({ w: BURIED_W, h: BURIED_H, r: rng(seed * 977 + 31), level: false, halfAt });
+}
+
+// Gaps between papers inside the heap (opaque to the left, right and above) are
+// dark crevices, so nothing behind shows through.
+function fillGaps(c) {
+  const at = (x, y) => c.px[y * c.w + x];
+  for (let y = 1; y < c.h; y++) {
+    for (let x = 1; x < c.w - 1; x++) {
+      if (at(x, y)) continue;
+      let l = false;
+      let r = false;
+      let u = false;
+      for (let i = x - 1; i >= 0 && !l; i--) l = !!at(i, y);
+      for (let i = x + 1; i < c.w && !r; i++) r = !!at(i, y);
+      for (let j = y - 1; j >= 0 && !u; j--) u = !!at(x, j);
+      if (l && r && u) c.px[y * c.w + x] = "O2";
+    }
   }
+  return c;
+}
+
+function save(c, file) {
+  const data = new Uint8Array(c.w * c.h * 4);
+  c.px.forEach((k, i) => {
+    if (k) {
+      data.set(rgb(C[k]), i * 4);
+      data[i * 4 + 3] = 255;
+    }
+  });
+  encode(file, { w: c.w, h: c.h, data });
+}
+
+function write(dir, seed) {
+  for (let n = 1; n <= 5; n++) save(fillGaps(stage(n, seed)), `${dir}/pile_${n}.png`);
+  save(fillGaps(buried(seed)), `${dir}/buried.png`);
 }
 
 const out = process.argv[2] ?? path.join(import.meta.dirname, "..", "assets", "cherub", "pile");
 fs.mkdirSync(out, { recursive: true });
 write(out, 7);
-console.log(`wrote ${out}/pile_1..5.png`);
+console.log(`wrote ${out}/pile_1..5.png and buried.png`);

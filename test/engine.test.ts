@@ -287,6 +287,16 @@ describe("cherub manifest", () => {
     assert.equal(catMode({ unread: 4, editionAge: 3 }, s, r), "sleep");
   });
 
+  it("is buried with more than 10 unread, whatever the edition's age", () => {
+    const { sleepAfterEditions: s, restAfterEditions: r } = cm.behavior;
+    const at = cm.buried?.minUnread;
+    assert.equal(at, 11);
+    for (const editionAge of [0, 1, 3]) {
+      assert.equal(catMode({ unread: 11, editionAge }, s, r, at), "buried", `age ${editionAge}`);
+      assert.notEqual(catMode({ unread: 10, editionAge }, s, r, at), "buried", `age ${editionAge}`);
+    }
+  });
+
   it("the cat never flies: its manifest has no flight fields", () => {
     assert.equal(m.flight, undefined);
     assert.equal(m.behavior.restAfterEditions, 0);
@@ -338,7 +348,7 @@ describe("CatEngine with the cherub", cherubArt, () => {
   });
 
   it("carries a heavier bag (bigger shadow, slower) as the news piles up", () => {
-    for (const [unread, entry] of [[2, carry[0]], [5, carry[1]], [12, carry[1]]] as const) {
+    for (const [unread, entry] of [[2, carry[0]], [5, carry[1]], [10, carry[1]]] as const) {
       const e = make();
       e.setInputs({ unread, editionAge: 0 });
       const a = e.tick(0).sprites;
@@ -415,6 +425,70 @@ describe("CatEngine with the cherub", cherubArt, () => {
     assert.equal(e.tick(end + 200).delivered, false);
   });
 
+  it("buried up to the neck: head above the mound, body hidden, mound clickable, box is him", () => {
+    const e = make(() => 0.99);
+    e.setInputs({ unread: 12, editionAge: 0 });
+    const sprites = e.tick(100).sprites;
+    const b = cm.buried as NonNullable<Manifest["buried"]>;
+    const mound = sprites.find((s) => s.sprite === b.mound) as Sprite;
+    const c = sprites.find((s) => s.sprite !== b.mound && s.hit) as Sprite;
+    assert.ok(cm.states.loaf.frames.includes(c.sprite));
+    assert.equal(bottom(mound), strip.height);
+    assert.equal(bottom(c), strip.height, "feet on the ground");
+    assert.equal(mound.hit, true);
+    assert.equal(sprites.indexOf(mound) > sprites.indexOf(c), true, "mound in front");
+    assert.deepEqual(e.catBox(sprites), { x: c.x, y: c.y, width: 96, height: 99 });
+    // Every pixel of him below the chin (frame row 57) is covered by the mound.
+    const img = cpng(c.sprite);
+    const mimg = cpng(b.mound);
+    const covered = (x: number, y: number) => {
+      const mx = c.x + x - mound.x;
+      const my = c.y + y - mound.y;
+      return mx >= 0 && my >= 0 && mx < mimg.width && my < mimg.height && mimg.data[(my * mimg.width + mx) * 4 + 3] > 0;
+    };
+    let shown = 0;
+    let body = 0;
+    for (let y = 0; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        if (img.data[(y * img.width + x) * 4 + 3] === 0) continue;
+        if (y < 50 && !covered(x, y)) shown++;
+        if (y >= 60 && !covered(x, y)) body++;
+      }
+    }
+    assert.ok(shown > 2000, "his head shows");
+    assert.equal(body, 0, "nothing below the neck shows");
+  });
+
+  it("buried and neglected: asleep in the mound with z's; facing left mirrors the mound", () => {
+    const e = make();
+    e.setInputs({ unread: 15, editionAge: 3 });
+    const sprites = e.tick(3000).sprites;
+    assert.ok(sprites.some((s) => cm.states.sleep.frames.includes(s.sprite)));
+    assert.equal(sprites.filter((s) => s.sprite.startsWith("fx/z_")).length, cm.states.sleep.zzz.count);
+  });
+
+  it("click while buried: climbs out, then tosses the full pile and delivers", () => {
+    const e = make();
+    e.setInputs({ unread: 12, editionAge: 1 });
+    e.tick(0);
+    assert.equal(e.click(100), "deliver");
+    const b = cm.buried as NonNullable<Manifest["buried"]>;
+    const first = e.tick(100).sprites;
+    assert.equal((first.find((s) => s.hit && s.sprite !== b.mound) as Sprite).sprite, b.wake[0].frame);
+    const out = 100 + b.wake.reduce((n, s) => n + s.ms, 0);
+    const climbing = e.tick(out - 10).sprites;
+    const him = climbing.find((s) => s.hit && s.sprite !== b.mound) as Sprite;
+    assert.equal(bottom(him), strip.height + b.wake[b.wake.length - 1].y);
+    const tossing = e.tick(out + 10).sprites;
+    assert.equal(tossing.some((s) => s.sprite === b.mound), false, "out of the mound");
+    const pile = tossing.find((s) => s.sprite.startsWith("pile/pile_")) as Sprite;
+    assert.equal(pile.sprite, "pile/pile_3.png", "the first roll leaves as he lands on the pile (5 -> 3 layers)");
+    const t = cm.sequences.wake_on_click.paperToss;
+    const done = e.tick(out + 2 * t.staggerMs + t.flightMs);
+    assert.equal(done.delivered, true);
+    assert.deepEqual(e.getInputs(), { unread: 0, editionAge: 0 });
+  });
+
   it("click on the pile: wakes with the given sequence, then tosses", () => {
     const e = make();
     e.setInputs({ unread: 9, editionAge: 2 });
@@ -429,7 +503,7 @@ describe("CatEngine with the cherub", cherubArt, () => {
 
   it("everything fits inside his strip, in every state, facing either way", () => {
     for (const editionAge of [0, 1, 3]) {
-      for (const unread of [0, 1, 5, 12]) {
+      for (const unread of [0, 1, 5, 10, 12]) {
         const e = make();
         e.setInputs({ unread, editionAge });
         for (let t = 0; t < 4000; t += 25) {

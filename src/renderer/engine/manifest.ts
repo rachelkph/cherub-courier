@@ -42,6 +42,10 @@ export type Flight = {
 
 export type SequenceStep = { frame: string; ms: number; y: number };
 
+// Buried up to the neck when this much is unread: the mound is drawn in front of
+// him, his feet on the ground. wake: how he climbs out when clicked (y in art px).
+export type Buried = { minUnread: number; mound: string; moundOffsetX: number; wake: SequenceStep[] };
+
 export type PaperToss = {
   frame: string;
   maxRolls: number;
@@ -62,6 +66,7 @@ export type Manifest = {
     sleep: LoopState & { zzz: Zzz };
   };
   flight?: Flight;
+  buried?: Buried;
   sequences: {
     wake_on_click: { steps: SequenceStep[]; paperToss: PaperToss };
     wake_in_flight?: { steps: SequenceStep[] };
@@ -173,6 +178,16 @@ function flight(v: unknown): Flight {
   };
 }
 
+function buried(v: unknown): Buried {
+  const b = obj(v, "buried");
+  return {
+    minUnread: int(b.minUnread, "buried.minUnread", 1),
+    mound: spritePath(b.mound, "buried.mound"),
+    moundOffsetX: int(b.moundOffsetX, "buried.moundOffsetX", -1000),
+    wake: steps(b.wake, "buried.wake"),
+  };
+}
+
 function carry(v: unknown): Carry[] {
   const out = list(v, "states.carry", (x, p) => {
     const c = obj(x, p);
@@ -240,6 +255,7 @@ export function parseManifest(raw: unknown): Manifest {
       sleep,
     },
     ...(root.flight === undefined ? {} : { flight: flight(root.flight) }),
+    ...(root.buried === undefined ? {} : { buried: buried(root.buried) }),
     sequences: {
       ...(sequences.wake_in_flight === undefined
         ? {}
@@ -291,6 +307,7 @@ export function spritePaths(m: Manifest): string[] {
       ...w.steps.map((x) => x.frame),
       ...(m.sequences.wake_in_flight?.steps.map((x) => x.frame) ?? []),
       ...(m.flight ? [m.flight.shadow] : []),
+      ...(m.buried ? [m.buried.mound, ...m.buried.wake.map((x) => x.frame)] : []),
       w.paperToss.frame,
       ...m.pile.files,
     ]),

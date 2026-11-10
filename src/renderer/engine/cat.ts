@@ -25,11 +25,13 @@ const BUSY_CADENCE_MS = 35;
 const REST_CADENCE_MS = 100;
 
 // airborne: clicked while carrying the news in flight (no pile to stand on).
+// buried: clicked while buried in the mound (he climbs out first).
+type Wake = { airborne: boolean; buried: boolean };
 type Phase =
   | { kind: "idle" }
   | { kind: "hop"; start: number }
-  | { kind: "waking"; start: number; layers: number; airborne: boolean }
-  | { kind: "tossing"; start: number; layers: number; airborne: boolean; plan: number[]; rolls: { dir: 1 | -1; dist: number }[] };
+  | ({ kind: "waking"; start: number; layers: number } & Wake)
+  | ({ kind: "tossing"; start: number; layers: number; plan: number[]; rolls: { dir: 1 | -1; dist: number }[] } & Wake);
 
 const HOP = { ms: 160, y: -3 };
 
@@ -68,7 +70,7 @@ export class CatEngine {
   private steps = 0;
   private phase: Phase = { kind: "idle" };
   private restingSince: number; // start of the current loaf/sleep, for frame timing
-  private restingMode: "loaf" | "sleep" | null = null;
+  private restingMode: "loaf" | "sleep" | "buried" | null = null;
   private restExtras: ExtraClock = { next: [], until: [] };
   private hoverExtras: ExtraClock;
   private turnUntil = 0; // fliers hover in place for a moment after turning around
@@ -108,7 +110,7 @@ export class CatEngine {
 
   // The cat's own sprite box (not the pile or effects), for anchoring the popover.
   catBox(sprites: Sprite[]): { x: number; y: number; width: number; height: number } | null {
-    const cat = sprites.filter((s) => s.hit && !this.m.pile.files.includes(s.sprite)).at(-1);
+    const cat = sprites.filter((s) => s.hit && !this.m.pile.files.includes(s.sprite) && s.sprite !== this.m.buried?.mound).at(-1);
     if (!cat) return null;
     const [w, h] = this.size(cat.sprite);
     return { x: cat.x, y: cat.y, width: w, height: h };
@@ -120,12 +122,13 @@ export class CatEngine {
 
   private mode() {
     const b = this.m.behavior;
-    return catMode(this.inputs, b.sleepAfterEditions, b.restAfterEditions);
+    return catMode(this.inputs, b.sleepAfterEditions, b.restAfterEditions, this.m.buried?.minUnread);
   }
 
-  private wakeSteps(airborne: boolean) {
+  private wakeSteps(w: Wake) {
     const seq = this.m.sequences;
-    return airborne && seq.wake_in_flight ? seq.wake_in_flight.steps : seq.wake_on_click.steps;
+    if (w.buried && this.m.buried) return this.m.buried.wake;
+    return w.airborne && seq.wake_in_flight ? seq.wake_in_flight.steps : seq.wake_on_click.steps;
   }
 
   // Click on the cat or pile (or a flier carrying the news): wake and toss the
@@ -134,7 +137,8 @@ export class CatEngine {
     if (this.phase.kind !== "idle") return "ignored";
     const layers = pileLayers(this.inputs.unread, this.m.pile.unreadToLayers);
     if (layers > 0) {
-      this.phase = { kind: "waking", start: now, layers, airborne: this.mode() === "carry" };
+      const mode = this.mode();
+      this.phase = { kind: "waking", start: now, layers, airborne: mode === "carry", buried: mode === "buried" };
       return "deliver";
     }
     this.phase = { kind: "hop", start: now };
@@ -146,7 +150,7 @@ export class CatEngine {
     const p = this.phase;
 
     if (p.kind === "hop" && now - p.start >= HOP.ms) this.phase = { kind: "idle" };
-    if (p.kind === "waking" && now - p.start >= sequenceDuration(this.wakeSteps(p.airborne))) {
+    if (p.kind === "waking" && now - p.start >= sequenceDuration(this.wakeSteps(p))) {
       const toss = this.m.sequences.wake_on_click.paperToss;
       const plan = tossPlan(p.layers, toss.maxRolls);
       const [lo, hi] = toss.distancePx;
@@ -154,7 +158,7 @@ export class CatEngine {
         dir: (i % 2 === 0 ? this.facing : -this.facing) as 1 | -1,
         dist: lo + Math.floor(this.rng() * (hi - lo + 1)),
       }));
-      this.phase = { kind: "tossing", start: p.start + sequenceDuration(this.wakeSteps(p.airborne)), layers: p.layers, airborne: p.airborne, plan, rolls };
+      this.phase = { kind: "tossing", start: p.start + sequenceDuration(this.wakeSteps(p)), layers: p.layers, airborne: p.airborne, buried: p.buried, plan, rolls };
     }
     const q = this.phase;
     if (q.kind === "tossing" && now - q.start >= this.tossDuration(q.plan.length)) {
@@ -176,7 +180,8 @@ export class CatEngine {
       return { sprites: moving.sprites, delivered, cadenceMs: hopping ? BUSY_CADENCE_MS : moving.cadenceMs };
     }
     if (this.restingMode !== mode) this.enterRest(mode, now);
-    return { sprites: mode === "loaf" ? this.drawLoaf(now) : this.drawSleep(now), delivered, cadenceMs: REST_CADENCE_MS };
+    const sprites = mode === "loaf" ? this.drawLoaf(now) : mode === "sleep" ? this.drawSleep(now) : this.drawBuried(now);
+    return { sprites, delivered, cadenceMs: REST_CADENCE_MS };
   }
 
   // --- walking (or flying) --------------------------------------------------
@@ -248,7 +253,7 @@ export class CatEngine {
 
   // --- resting on the pile -------------------------------------------------
 
-  private enterRest(mode: "loaf" | "sleep", now: number): void {
+  private enterRest(mode: "loaf" | "sleep" | "buried", now: number): void {
     this.restingMode = mode;
     this.restingSince = now;
     this.restExtras = startExtras(this.m.states.loaf.extras, now, this.rng);
@@ -272,10 +277,15 @@ export class CatEngine {
     return pileLayers(this.inputs.unread, this.m.pile.unreadToLayers);
   }
 
-  private drawLoaf(now: number): Sprite[] {
+  private loafFrame(now: number): string {
     const loaf = this.m.states.loaf;
     // Earlier extras win (blink over tail flick).
-    const frame = withExtras(loaf.extras, this.restExtras, now, loaf.frames[loopIndex(loaf.frames.length, loaf.frameMs, now - this.restingSince)], this.rng);
+    return withExtras(loaf.extras, this.restExtras, now, loaf.frames[loopIndex(loaf.frames.length, loaf.frameMs, now - this.restingSince)], this.rng);
+  }
+
+  private drawLoaf(now: number): Sprite[] {
+    const loaf = this.m.states.loaf;
+    const frame = this.loafFrame(now);
     return this.onPile(frame, loaf.size, this.layers());
   }
 
@@ -283,10 +293,39 @@ export class CatEngine {
     const sleep = this.m.states.sleep;
     const elapsed = now - this.restingSince;
     const frame = sleep.frames[loopIndex(sleep.frames.length, sleep.frameMs, elapsed)];
-    const zElapsed = Math.floor(elapsed / sleep.zzz.stepMs) * sleep.zzz.stepMs;
     const sprites = this.onPile(frame, sleep.size, this.layers());
-    const cat = sprites[sprites.length - 1];
+    return [...sprites, ...this.zzz(sprites[sprites.length - 1], elapsed)];
+  }
+
+  // --- buried up to the neck ------------------------------------------------
+
+  // Him standing on the ground (lifted by `lift`) with the mound in front of him.
+  private inMound(frame: string, lift: number): Sprite[] {
+    const b = this.m.buried as NonNullable<Manifest["buried"]>;
+    const [, h] = this.size(frame);
+    const [mw, mh] = this.size(b.mound);
+    const mx = this.facing === 1 ? b.moundOffsetX : this.catW() - b.moundOffsetX - mw;
+    return [
+      { sprite: frame, x: this.x, y: this.stripH - h + lift, flip: this.facing === -1, hit: true },
+      { sprite: b.mound, x: this.x + mx, y: this.stripH - mh, flip: this.facing === -1, hit: true },
+    ];
+  }
+
+  // Awake (blinking) or, after enough editions, asleep with z's.
+  private drawBuried(now: number): Sprite[] {
+    const elapsed = now - this.restingSince;
+    if (this.inputs.editionAge <= this.m.behavior.sleepAfterEditions) return this.inMound(this.loafFrame(now), 0);
+    const sleep = this.m.states.sleep;
+    const sprites = this.inMound(sleep.frames[loopIndex(sleep.frames.length, sleep.frameMs, elapsed)], 0);
+    return [...sprites, ...this.zzz(sprites[0], elapsed)];
+  }
+
+  // z's rising from the sleeping character's head.
+  private zzz(cat: Sprite, elapsed: number): Sprite[] {
+    const sleep = this.m.states.sleep;
     const z = sleep.zzz;
+    const zElapsed = Math.floor(elapsed / z.stepMs) * z.stepMs;
+    const sprites: Sprite[] = [];
     for (let i = 0; i < z.count; i++) {
       const t = ((zElapsed + (i * z.riseMs) / z.count) % z.riseMs) / z.riseMs;
       const zf = z.frames[Math.min(z.frames.length - 1, Math.floor(t * z.frames.length))];
@@ -300,9 +339,10 @@ export class CatEngine {
 
   // --- click: wake, then toss the papers -----------------------------------
 
-  private drawWaking(now: number, p: { start: number; layers: number; airborne: boolean }): Sprite[] {
-    const steps = this.wakeSteps(p.airborne);
+  private drawWaking(now: number, p: { start: number; layers: number } & Wake): Sprite[] {
+    const steps = this.wakeSteps(p);
     const s = sequenceStep(steps, now - p.start) ?? steps[steps.length - 1];
+    if (p.buried) return this.inMound(s.frame, s.y);
     if (p.airborne) return this.inFlight(s.frame, s.y, this.moveLoop("carry").shadow);
     return this.onPile(s.frame, this.size(s.frame), p.layers, s.y);
   }
@@ -314,15 +354,16 @@ export class CatEngine {
 
   private drawTossing(
     now: number,
-    p: { start: number; layers: number; airborne: boolean; plan: number[]; rolls: { dir: 1 | -1; dist: number }[] },
+    p: { start: number; layers: number; plan: number[]; rolls: { dir: 1 | -1; dist: number }[] } & Wake,
   ): Sprite[] {
     const t = this.m.sequences.wake_on_click.paperToss;
     const elapsed = now - p.start;
     const launched = p.plan.filter((_, i) => elapsed >= i * t.staggerMs).length;
     const layersNow = launched === 0 ? p.layers : p.plan[launched - 1];
     // The cat stands to toss; a flier hovers where the wake sequence left him.
-    const steps = this.wakeSteps(p.airborne);
-    const lift = steps[steps.length - 1].y;
+    // Out of the mound he climbs onto the full pile, so he tosses from its top.
+    const steps = this.wakeSteps(p);
+    const lift = p.buried ? 0 : steps[steps.length - 1].y;
     const hover = this.m.states.hover;
     const stand = hover ? hover.frames[loopIndex(hover.frames.length, hover.frameMs, now)] : this.m.states.walk.frames[0];
     const sprites = p.airborne ? this.inFlight(stand, lift, this.moveLoop("walk").shadow) : this.onPile(stand, this.size(stand), layersNow, lift);

@@ -66,6 +66,18 @@
     "turnHoverMs": 420,
     "note": "feet are at x 29-65; the satchel hangs at his back (left when facing right)"
   },
+  "buried": {
+    "minUnread": 11,
+    "mound": "pile/buried.png",
+    "moundOffsetX": -20,
+    "wake": [
+      { "frame": "rest/rest_1.png", "ms": 150, "y": 0 },
+      { "frame": "hover_light/hover_light_0.png", "ms": 110, "y": -12 },
+      { "frame": "hover_light/hover_light_1.png", "ms": 110, "y": -24 },
+      { "frame": "fly_light/fly_light_2.png", "ms": 160, "y": -34 }
+    ],
+    "note": "more than 10 unread (Rachel, 2026-11-10): up to his neck in the mound, whatever the edition age; asleep inside it after sleepAfterEditions. Clicked, he climbs out onto the full pile (y -34 = standing on pile_5) and tosses it"
+  },
   "sequences": {
     "wake_on_click": {
       "steps": [
