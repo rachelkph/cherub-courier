@@ -291,3 +291,14 @@ NSRunningApplication (0 = Dock icon, 1 = accessory). Notched 1470x956 MacBook sc
 | Engine, cat: no walking, no hop, click delivers once with no paper toss, walks again when turned off | PASS | unit test |
 | Engine, cherub: stays in place in the air, empty-handed and carrying, wings still flap | PASS | unit test |
 | Live: macOS Reduce motion toggled while the app runs | NOT done | needs Rachel (System Settings > Accessibility > Display) |
+
+## 2026-11-11 — First signed, notarized release build (0.1.0)
+`APPLE_KEYCHAIN_PROFILE=newscat-notary npm run release` on this Mac.
+
+| check | result | evidence |
+|---|---|---|
+| Signed with Developer ID (Rachel Pham, UBJH7LSLYN) | PASS | `codesign --verify --deep --strict`: valid on disk |
+| App and DMG notarized and stapled | PASS | `stapler validate`: worked, for both |
+| Gatekeeper accepts the DMG and the app inside it | PASS | `spctl`: accepted, source=Notarized Developer ID |
+| First run failed: notarytool profile not found | FIXED | the script forced `APPLE_KEYCHAIN=login.keychain-db`; `store-credentials` saved the profile elsewhere on this macOS. Left unset now |
+| Clean-Mac test (download from GitHub, open) | NOT done | needs a GitHub Release and a Mac or user account that never ran the app |

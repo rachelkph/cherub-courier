@@ -7,7 +7,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 : "${APPLE_KEYCHAIN_PROFILE:?set APPLE_KEYCHAIN_PROFILE to your notarytool profile name (docs/RELEASE.md)}"
-export APPLE_KEYCHAIN="${APPLE_KEYCHAIN:-$HOME/Library/Keychains/login.keychain-db}" # where that profile is stored
+# APPLE_KEYCHAIN is left unset: notarytool then finds the profile wherever
+# store-credentials saved it. Forcing login.keychain-db fails on recent macOS (2026-11-11).
 if ! security find-identity -v -p codesigning | grep -q "Developer ID Application"; then
   echo "No 'Developer ID Application' certificate in your keychain (docs/RELEASE.md, step 1)." >&2
   exit 1
