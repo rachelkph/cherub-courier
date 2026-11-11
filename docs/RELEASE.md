@@ -24,7 +24,9 @@ her login keychain.
 
 ## Each release
 
-1. Make sure the sprite art in `assets/` is cleared for distribution (it ships inside the app).
+1. Make sure the cherub art in `assets/cherub/` is cleared for distribution (it ships inside
+   the app, and the app icon is drawn from it; `npm run release` redraws the icon with
+   `node scripts/icon.mjs`).
 2. Bump `version` in `package.json`, commit.
 3. `APPLE_KEYCHAIN_PROFILE=newscat-notary npm run release`
    - lint + tests, universal build, hardened runtime, signing, notarization and stapling

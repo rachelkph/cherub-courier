@@ -15,6 +15,7 @@ fi
 for d in cherub/fly_light cherub/fly_medium cherub/fly_heavy cherub/hover_light cherub/rest cherub/sleep cherub/pile cherub/fx; do
   [ -d "assets/$d" ] || { echo "Sprite folder assets/$d is missing; the app would ship without art." >&2; exit 1; }
 done
+node scripts/icon.mjs # the app icon, from the cherub's art
 
 npm run lint
 npm test

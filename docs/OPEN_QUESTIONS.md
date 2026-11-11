@@ -18,7 +18,7 @@ Rachel plans to replace the cat with a **news boy cycling along the Dock**. His 
 - Name: DECIDED 2026-11-11 (Rachel): **Cherub Courier** (APP_NAME in `src/shared/config.ts`).
 
 ## Release (M6) — open
-- **App icon.** None yet; the build uses Electron's default icon. Needs a 1024x1024 icon (`build/icon.icns` or an Icon Composer `.icon`). It would likely reuse the character art, so it waits on the art/licensing decision.
+- **App icon.** DONE 2026-11-11: drawn from the cherub by `scripts/icon.mjs` (kept out of git with the art). Same licensing question as the cherub art.
 - **Universal vs. per-chip DMGs.** Currently one universal DMG (225 MB). Separate Apple-silicon and Intel DMGs would be about half each, but users must pick the right one.
 - **First version number.** Proposed 0.1.0 for the first public release.
 - **Sprite licensing blocks a public DMG** (see Unverified facts): the art ships inside the app.

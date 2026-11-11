@@ -47,10 +47,7 @@ The mound images (`assets/cherub/pile/`) can be redrawn any time with `node scri
    `prefers-reduced-motion`), the character stays in place (wings still flap, blinks and z's stay), no hop,
    and a click delivers at once with no wake-and-toss; the popover still opens. Engine tests cover
    the cherub; Rachel's live check pending.
-3. **Error states:**
-   - A friendly line when offline or when every feed failed.
-   - A per-source note when one feed keeps failing or disappears (e.g. "Pitchfork hasn't loaded since Monday").
-   - Never a scary error.
+3. **Error states:** SKIPPED (Rachel, 2026-11-11).
 4. **Weekly feed check in CI:**
    - A GitHub Actions workflow runs `node scripts/check-feeds.mjs` weekly and fails if a bundled feed stops resolving.
    - `[COST]` $0 on a public repo (free Actions minutes) `[Likely]`; confirm before adding.
@@ -65,7 +62,7 @@ Full steps are in `docs/RELEASE.md`. Rachel does these herself; credentials neve
    - Mound: our own art; no question.
 4. **Decisions:**
    - **App name:** DONE 2026-11-11, **Cherub Courier** (bundle id `io.github.rachelkph.cherubcourier`; data copied from the old `NewsCat` folder on first launch). The repo stays `news-sprite`.
-   - **App icon:** 1024x1024, probably the cherub; needed for the release.
+   - **App icon:** DONE 2026-11-11. `node scripts/icon.mjs` draws `build/icon.png` and `build/icon.icns` (the cherub over a pixel cloud in a Cloud Nine sky); not in git, since it contains his art. `npm run release` regenerates it.
    - **First version:** proposed 0.1.0.
    - **DMG:** one universal DMG (225 MB), or separate Apple-silicon and Intel ones.
 
