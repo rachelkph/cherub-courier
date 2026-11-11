@@ -280,4 +280,7 @@ NSRunningApplication (0 = Dock icon, 1 = accessory). Notched 1470x956 MacBook sc
 | Full-screen window bounds on a notched screen | measured | y 33, height 923 (below the notch), not the whole display; Dock (layer 20) and Finder desktop windows absent in the full-screen Space |
 | Cherub hidden while another app is full screen | PASS | on screen 1 before, 0 for the whole full-screen period, 1 after leaving; log shows hide then show |
 | Packaged build (`LSUIElement`) | NOT verified | needs `npm run dist:adhoc` |
-| Rachel re-test with full-screen Chrome, and with Dock auto-hide on | NOT done | |
+| Rachel re-test with full-screen Chrome | FAIL (Rachel: still visible) | Chrome is a stack of full-width windows (toolbars 0,33,1470,41 / 0,74,1470,81 / 0,33,1470,158; page 0,155,1470,801), so no single window spanned top to bottom. Dock window absent as expected |
+| Fix: one app's full-width windows together span top bar to bottom | PASS (replay) | the 5 window lists logged during Rachel's test replayed through the new rule: false, true, true, false, false (correct each time); unit test with Chrome's bounds |
+| Rachel re-test with full-screen Chrome after the fix | PASS (Rachel) | |
+| Dock auto-hide on | NOT done | |

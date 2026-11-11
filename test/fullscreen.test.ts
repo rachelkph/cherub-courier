@@ -11,6 +11,14 @@ describe("full-screen detection", () => {
   it("a full-screen app below the notch, with the Dock gone, is full screen", () => {
     assert.equal(otherAppFullScreen([win({})], display, 100), true);
   });
+  it("Chrome's stack of full-width windows (toolbars at the top, page to the bottom) is full screen", () => {
+    // Measured with Chrome full screen, 2026-11-11.
+    const chrome = [win({ height: 41 }), win({ y: 74, height: 81 }), win({ height: 158 }), win({ y: 155, height: 801 })];
+    assert.equal(otherAppFullScreen(chrome, display, 100), true);
+  });
+  it("the top from one app and the bottom from another do not add up", () => {
+    assert.equal(otherAppFullScreen([win({ height: 41 }), win({ pid: 300, y: 155, height: 801 })], display, 100), false);
+  });
   it("full screen on a screen without a notch (covering the menu bar) counts too", () => {
     assert.equal(otherAppFullScreen([win({ y: 0, height: 956 })], display, 100), true);
   });

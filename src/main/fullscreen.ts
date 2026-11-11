@@ -6,9 +6,10 @@ import { execFile } from "node:child_process";
 // app hides the cherub itself. macOS has no public "is this Space full screen" call,
 // so we ask the window server for on-screen windows. Two signs, both required
 // (measured on a notched MacBook, 2026-11-11):
-// - another app has a normal-level window spanning the display's width from the top
-//   bar to the bottom edge (on a notched screen it starts below the notch, y = 33,
-//   so it cannot be told from a filled window by its bounds alone);
+// - another app's normal-level, full-width windows together run from the top bar to
+//   the bottom edge. One window for simple apps; Chrome uses a stack (toolbars from
+//   y = 33, the page from y = 155 to the bottom). On a notched screen they start
+//   below the notch, so bounds alone cannot tell full screen from a filled window;
 // - the Dock's window is gone (it is on screen in ordinary Spaces, absent in
 //   full-screen ones).
 // Checked when the active Space changes, not polled.
@@ -21,15 +22,12 @@ const TOP_BAR_MAX = 40; // menu bar or notch height, in points
 
 export function otherAppFullScreen(windows: WindowInfo[], display: Rect, ownPid: number): boolean {
   if (windows.some((w) => w.owner === "Dock" && w.layer === DOCK_LAYER)) return false;
-  return windows.some(
-    (w) =>
-      w.layer === 0 &&
-      w.pid !== ownPid &&
-      w.x === display.x &&
-      w.width === display.width &&
-      w.y >= display.y &&
-      w.y <= display.y + TOP_BAR_MAX &&
-      w.y + w.height === display.y + display.height,
+  const bottom = display.y + display.height;
+  const fullWidth = windows.filter(
+    (w) => w.layer === 0 && w.pid !== ownPid && w.x === display.x && w.width === display.width && w.y >= display.y && w.y + w.height <= bottom,
+  );
+  return fullWidth.some(
+    (top) => top.y <= display.y + TOP_BAR_MAX && fullWidth.some((w) => w.pid === top.pid && w.y + w.height === bottom),
   );
 }
 
