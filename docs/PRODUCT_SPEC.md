@@ -55,7 +55,7 @@ Rachel's choice (2026-11-10): the **cherub** delivers the news by default; the *
 | Carry, medium bag | Newest edition unread, 1–4 headlines | `fly_medium/0..3`, 110 ms, slower flight, medium shadow |
 | Carry, heavy bag (tired) | Newest edition unread, 5–7 | `fly_heavy/0..3`, 140 ms, slowest, large shadow |
 | Hover | Hovered, popover open, or turning around (420 ms) with nothing unread | `hover_light/0..3` + `hover_blink` every 3–6 s |
-| Rest on pile | An older edition is still unread (`restAfterEditions` 1) | `rest/rest_0`, blink `rest_1`, doze `rest_2`, on a newspaper mound (`pile/pile_1..5`, 80 px wide, drawn by `scripts/mound.mjs`: a dome of folded and rolled papers in his palette, level top for his feet) |
+| Rest on pile | An older edition is still unread (`restAfterEditions` 1) | `rest/rest_0`, blink `rest_1`, doze `rest_2`, on a pile of newspapers (`pile/pile_1..5`, 80 px wide, 9 px a layer, built by `scripts/newspapers.mjs` from Rachel's Perchance picture in his palette; his feet on its top row) |
 | Sleep on pile | More than 2 editions old | `sleep/0..1` + z's |
 | Buried | 8 or more unread, whatever the age (Rachel, 2026-11-10; first set at more than 10) | up to his neck in a big mound (`pile/buried.png`, 136x46, drawn in front of him, feet on the ground); blinks, or sleeps with z's after more than 2 editions. Wins over carry, rest and sleep |
 | Click while buried | Buried | climbs out (`buried.wake`: rest_1, hover up to 34 px = standing on the full pile), then the pile is tossed as usual |

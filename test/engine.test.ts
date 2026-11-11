@@ -347,6 +347,70 @@ describe("CatEngine with the cherub", cherubArt, () => {
     assert.deepEqual(e.getInputs(), { unread: 0, editionAge: 0 });
   });
 
+  it("climbing out: the mound settles into exactly the pile he then stands on, facing either way", () => {
+    const b = cm.buried as NonNullable<Manifest["buried"]>;
+    const wakeMs = b.wake.reduce((n, st) => n + st.ms, 0);
+    // Opaque pixels of the sprites matching `pick`, as "x,y" strip positions.
+    const pixels = (sprites: Sprite[], pick: (s: Sprite) => boolean) => {
+      const out = new Set<string>();
+      for (const s of sprites.filter(pick)) {
+        const img = cpng(s.sprite);
+        for (let y = 0; y < img.height; y++) {
+          for (let x = 0; x < img.width; x++) {
+            const sx = s.flip ? img.width - 1 - x : x;
+            if (img.data[(y * img.width + sx) * 4 + 3] > 0) out.add(`${s.x + x},${s.y + y},${img.data.subarray((y * img.width + sx) * 4, (y * img.width + sx) * 4 + 3).join(":")}`);
+          }
+        }
+      }
+      return out;
+    };
+    const facings: boolean[] = [];
+    for (const rng of [() => 0.5, () => 0.99]) {
+      const e = make(rng);
+      e.setInputs({ unread: 9, editionAge: 0 }); // 5 layers, and buried
+      e.tick(0);
+      // Face left for the second run: fly to the right edge first.
+      if (rng() > 0.9) {
+        e.setInputs({ unread: 0, editionAge: 0 });
+        let t = 0;
+        while (!e.tick(t).sprites.some((s) => s.hit && s.flip) && t < 60000) t += 200;
+        e.setInputs({ unread: 9, editionAge: 0 });
+      }
+      const t0 = 100000;
+      e.tick(t0);
+      e.click(t0);
+      const last = e.tick(t0 + wakeMs - 1).sprites;
+      const settled = last.find((s) => s.sprite === b.wake.at(-1)?.mound) as Sprite;
+      assert.ok(settled, "the last settling frame is drawn");
+      // What the pile would look like with him standing on it, before any roll leaves.
+      const standing = e.catBox(last) as { x: number };
+      const pileX = settled.flip ? standing.x + 96 - cm.pile.offsetX - cm.pile.width : standing.x + cm.pile.offsetX;
+      const pile5: Sprite = { sprite: cm.pile.files[4], x: pileX, y: strip.height - csizes[cm.pile.files[4]][1], flip: settled.flip, hit: true };
+      assert.deepEqual(pixels(last, (s) => s === settled), pixels([pile5], () => true), `facing ${settled.flip ? "left" : "right"}`);
+      facings.push(settled.flip);
+    }
+    assert.deepEqual(facings, [false, true], "tested facing right, then left");
+  });
+
+  it("climbing out: loose pages burst off, unclickable, and land before he is out; the box stays his", () => {
+    const b = cm.buried as NonNullable<Manifest["buried"]>;
+    const burst = b.burst as NonNullable<Manifest["buried"]>["burst"] & object;
+    const wakeMs = b.wake.reduce((n, st) => n + st.ms, 0);
+    assert.ok(burst.startMs + burst.flightMs <= wakeMs, "pages land before the wake ends");
+    const e = make();
+    e.setInputs({ unread: 12, editionAge: 0 });
+    e.tick(0);
+    e.click(0);
+    const mid = e.tick(burst.startMs + burst.flightMs / 2).sprites;
+    const pages = mid.filter((s) => burst.frames.includes(s.sprite));
+    assert.equal(pages.length, burst.count);
+    assert.ok(pages.every((p) => !p.hit));
+    assert.ok(pages.some((p) => p.flip) && pages.some((p) => !p.flip), "they fly both ways");
+    assert.equal(e.tick(burst.startMs + burst.flightMs).sprites.filter((s) => burst.frames.includes(s.sprite)).length, 0);
+    const box = e.catBox(mid) as { width: number; height: number };
+    assert.deepEqual([box.width, box.height], [96, 99], "the popover anchors on him, not a settling mound frame");
+  });
+
   it("click on the pile: wakes with the given sequence, then tosses", () => {
     const e = make();
     e.setInputs({ unread: 7, editionAge: 2 });

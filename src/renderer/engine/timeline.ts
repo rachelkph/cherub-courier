@@ -13,7 +13,7 @@ export function sequenceDuration(steps: SequenceStep[]): number {
 }
 
 // The step showing at elapsedMs, or null once the sequence is over.
-export function sequenceStep(steps: SequenceStep[], elapsedMs: number): SequenceStep | null {
+export function sequenceStep<S extends SequenceStep>(steps: S[], elapsedMs: number): S | null {
   let t = Math.max(0, elapsedMs);
   for (const s of steps) {
     if (t < s.ms) return s;

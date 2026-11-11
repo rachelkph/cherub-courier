@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "notes": "The cherub: flies above the Dock carrying the news, lands on the pile when an edition goes unread, then sleeps. Art pixels; faces right, the app flips him for left. Art is the user's own (cut from a Perchance image) and stays out of git; the pile is a newspaper mound drawn for him (scripts/mound.mjs). Original cut notes: source_manifest.json.",
+  "notes": "The cherub: flies above the Dock carrying the news, lands on the pile when an edition goes unread, then sleeps. Art pixels; faces right, the app flips him for left. Art is the user's own (cut from a Perchance image) and stays out of git; the newspapers (piles, buried mound, climbing-out frames, loose pages) are built by scripts/newspapers.mjs from Rachel's Perchance picture (assets/cherub/source/newspaper-pile.jpeg), repainted in his palette. Original cut notes: source_manifest.json.",
   "states": {
     "walk": {
       "frames": ["fly_light/fly_light_0.png", "fly_light/fly_light_1.png", "fly_light/fly_light_2.png", "fly_light/fly_light_3.png"],
@@ -71,12 +71,21 @@
     "mound": "pile/buried.png",
     "moundOffsetX": -20,
     "wake": [
-      { "frame": "rest/rest_1.png", "ms": 150, "y": 0 },
-      { "frame": "hover_light/hover_light_0.png", "ms": 110, "y": -12 },
-      { "frame": "hover_light/hover_light_1.png", "ms": 110, "y": -24 },
-      { "frame": "fly_light/fly_light_2.png", "ms": 160, "y": -34 }
+      { "frame": "rest/rest_1.png", "ms": 90, "y": 0 },
+      { "frame": "hover_light/hover_light_0.png", "ms": 70, "y": -12, "mound": "pile/unbury_1.png" },
+      { "frame": "hover_light/hover_light_1.png", "ms": 70, "y": -24, "mound": "pile/unbury_2.png" },
+      { "frame": "hover_light/hover_light_2.png", "ms": 70, "y": -36, "mound": "pile/unbury_3.png" },
+      { "frame": "fly_light/fly_light_2.png", "ms": 120, "y": -44, "mound": "pile/unbury_4.png" }
     ],
-    "note": "8 or more unread (Rachel, 2026-11-10): up to his neck in the mound, whatever the edition age; asleep inside it after sleepAfterEditions. Clicked, he climbs out onto the full pile (y -34 = standing on pile_5) and tosses it"
+    "burst": {
+      "frames": ["fx/page_0.png", "fx/page_1.png"],
+      "count": 4,
+      "startMs": 90,
+      "flightMs": 330,
+      "arcHeightPx": 26,
+      "distancePx": [34, 58]
+    },
+    "note": "8 or more unread (Rachel, 2026-11-10): up to his neck in the mound, whatever the edition age; asleep inside it after sleepAfterEditions. Clicked, he climbs out while the mound settles (unbury_1..4, built by scripts/newspapers.mjs; the last is pile_5 exactly where the pile is drawn, so the switch is seamless) and loose pages burst off; y -44 = standing on pile_5 (48 tall, catOverlap 4). Then he tosses the pile"
   },
   "sequences": {
     "wake_on_click": {
@@ -106,7 +115,7 @@
   "pile": {
     "files": ["pile/pile_1.png", "pile/pile_2.png", "pile/pile_3.png", "pile/pile_4.png", "pile/pile_5.png"],
     "width": 80,
-    "layerHeight": 7,
+    "layerHeight": 9,
     "basePad": 3,
     "offsetX": 7,
     "catOverlap": 4,

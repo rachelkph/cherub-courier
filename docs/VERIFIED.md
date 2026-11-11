@@ -305,3 +305,14 @@ NSRunningApplication (0 = Dock icon, 1 = accessory). Notched 1470x956 MacBook sc
 | Downloaded DMG with a quarantine flag, and the app inside it | PASS | `spctl`: accepted, source=Notarized Developer ID; stapled ticket valid |
 | Clean-Mac first launch | NOT done | needs a Mac or user account that never ran the app |
 | Repo renamed news-sprite -> cherub-courier | PASS | new and old raw sources.json URLs and release download URLs all return 200 (old ones via GitHub redirect); npr.org feed 200 with the new User-Agent |
+
+## 2026-11-11 — Newspapers from Rachel's Perchance picture; smooth climb-out
+| check | result | evidence |
+|---|---|---|
+| `scripts/newspapers.mjs` reproduces the approved art | PASS | all 10 pile/mound PNGs byte-identical to the versions Rachel approved live |
+| His feet on the top of every pile (9 px layers, pile_5 48 tall) | PASS | engine test "lands on the pile with his feet on the top paper" |
+| Buried mound (136x52) hides him below the neck, head shows | PASS | engine test; 0 uncovered body pixels after the patch step |
+| Last climbing-out frame equals the pile, facing right and left | PASS | engine test compares pixels (colour and position) both ways |
+| Loose pages: unclickable, fly both ways, land before he is out (0.42 s) | PASS | engine test |
+| Everything inside his 160 px strip in every state | PASS | engine test |
+| Looks right live (buried, click, climb out, toss) | PASS (Rachel) | test copy on a data copy with NEWSCAT_DEV_STATE="12,0" |

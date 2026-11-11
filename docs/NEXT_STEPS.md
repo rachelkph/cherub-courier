@@ -11,9 +11,9 @@ Start a new Claude Code session in `~/Desktop/Projects/cherub-courier` and say "
   - "Pixel Gazette" look with a top story.
   - The **cherub** delivers the news, shown at 2/3 size. The cat was removed 2026-11-11 (Rachel).
   - The newspaper is "The Cloud Nine Chronicle".
-  - A newspaper mound for the cherub to land on, drawn by `scripts/mound.mjs`.
+  - Newspapers (piles 9 px a layer, a 52 px buried mound, a smooth climb-out, loose pages) built by `scripts/newspapers.mjs` from Rachel's Perchance picture, repainted in his palette (2026-11-11).
   - Buried up to the neck at **8 or more** unread.
-- 138 tests pass (`npm test`); lint clean (`npm run lint`).
+- 128 tests pass (`npm test`); lint clean (`npm run lint`).
 
 ## After the macOS update: start the app again
 The development build does not start at login (only a packaged release does). To run it:
@@ -37,7 +37,7 @@ The art is not in git, so the only copies are on this Mac:
 
 Copy both somewhere safe (iCloud Drive, an external disk) before updating.
 
-The mound images (`assets/cherub/pile/`) can be redrawn any time with `node scripts/mound.mjs`.
+The newspaper images (`assets/cherub/pile/`, `fx/page_*`) can be rebuilt any time with `node scripts/newspapers.mjs` from `assets/cherub/source/newspaper-pile.jpeg` (back that picture up with the art).
 
 ## M7 — polish and hardening (Claude can do all of this; nothing needed from Rachel)
 1. **Popover accessibility:** SKIPPED (Rachel, 2026-11-11). The app centers on clicking a character
@@ -72,7 +72,7 @@ Then Claude runs `APPLE_KEYCHAIN_PROFILE=newscat-notary npm run release`, which 
 `[COST]` Only the Apple Developer Program ($99/yr, already paid).
 
 ## Small things noticed, not yet changed
-- **Toss jump:** when the cherub is clicked while buried, he climbs out on top of the big mound. When the rolls start flying, the scene switches to the smaller pile, a visible jump. It could ease into it with a mound-to-pile transition frame.
+- **Toss jump:** FIXED 2026-11-11. The mound now shrinks into the pile over 4 frames while he climbs out (0.42 s), ending exactly on the pile, with loose pages bursting off.
 - **Pile size:** the cherub's pile only reaches 4 layers before he is buried (8+ unread buries him). The 5-layer pile now shows only during the toss after he climbs out.
 - **Tray icon:** the menu-bar icon is the cherub's first hover frame shrunk to 18 px. A purpose-made icon would read better; it could come with the app icon.
 - **Art notes still unbuilt:** none. The mound and buried stage are done.

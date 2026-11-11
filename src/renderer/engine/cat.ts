@@ -3,7 +3,7 @@
 // Coordinates are art pixels in the overlay strip, origin top-left, ground at the
 // strip's bottom edge.
 
-import type { Extra, LoopState, Manifest } from "./manifest.ts";
+import type { BuriedStep, Extra, LoopState, Manifest } from "./manifest.ts";
 import { catMode, type Inputs, pileHeight, pileLayers, stack } from "./state.ts";
 import { arc, loopIndex, nextAt, type Rng, sequenceDuration, sequenceStep, tossPlan } from "./timeline.ts";
 
@@ -26,7 +26,8 @@ const REST_CADENCE_MS = 100;
 
 // airborne: clicked while carrying the news in flight (no pile to stand on).
 // buried: clicked while buried in the mound (he climbs out first).
-type Wake = { airborne: boolean; buried: boolean };
+// pages: loose pages that burst out of the mound as he breaks free.
+type Wake = { airborne: boolean; buried: boolean; pages?: { dir: 1 | -1; dist: number; frame: string }[] };
 type Phase =
   | { kind: "idle" }
   | { kind: "hop"; start: number }
@@ -118,7 +119,8 @@ export class CatEngine {
 
   // The cat's own sprite box (not the pile or effects), for anchoring the popover.
   catBox(sprites: Sprite[]): { x: number; y: number; width: number; height: number } | null {
-    const cat = sprites.filter((s) => s.hit && !this.m.pile.files.includes(s.sprite) && s.sprite !== this.m.buried?.mound).at(-1);
+    const mounds = new Set([this.m.buried?.mound, ...(this.m.buried?.wake.map((st) => st.mound) ?? [])]);
+    const cat = sprites.filter((s) => s.hit && !this.m.pile.files.includes(s.sprite) && !mounds.has(s.sprite)).at(-1);
     if (!cat) return null;
     const [w, h] = this.size(cat.sprite);
     return { x: cat.x, y: cat.y, width: w, height: h };
@@ -133,7 +135,7 @@ export class CatEngine {
     return catMode(this.inputs, b.sleepAfterEditions, b.restAfterEditions, this.m.buried?.minUnread);
   }
 
-  private wakeSteps(w: Wake) {
+  private wakeSteps(w: Wake): BuriedStep[] {
     const seq = this.m.sequences;
     if (w.buried && this.m.buried) return this.m.buried.wake;
     return w.airborne && seq.wake_in_flight ? seq.wake_in_flight.steps : seq.wake_on_click.steps;
@@ -153,6 +155,15 @@ export class CatEngine {
     if (layers > 0) {
       const mode = this.mode();
       this.phase = { kind: "waking", start: now, layers, airborne: mode === "carry", buried: mode === "buried" };
+      const burst = this.m.buried?.burst;
+      if (mode === "buried" && burst) {
+        const [lo, hi] = burst.distancePx;
+        this.phase.pages = Array.from({ length: burst.count }, (_, i) => ({
+          dir: (i % 2 === 0 ? 1 : -1) as 1 | -1,
+          dist: lo + Math.floor(this.rng() * (hi - lo + 1)),
+          frame: burst.frames[Math.floor(this.rng() * burst.frames.length)],
+        }));
+      }
       return "deliver";
     }
     this.phase = { kind: "hop", start: now };
@@ -319,16 +330,34 @@ export class CatEngine {
 
   // --- buried up to the neck ------------------------------------------------
 
-  // Him standing on the ground (lifted by `lift`) with the mound in front of him.
-  private inMound(frame: string, lift: number): Sprite[] {
+  // Him standing on the ground (lifted by `lift`) with the mound (or one of its
+  // settling frames, all the same size) in front of him.
+  private inMound(frame: string, lift: number, mound?: string): Sprite[] {
     const b = this.m.buried as NonNullable<Manifest["buried"]>;
     const [, h] = this.size(frame);
     const [mw, mh] = this.size(b.mound);
     const mx = this.facing === 1 ? b.moundOffsetX : this.catW() - b.moundOffsetX - mw;
     return [
       { sprite: frame, x: this.x, y: this.stripH - h + lift, flip: this.facing === -1, hit: true },
-      { sprite: b.mound, x: this.x + mx, y: this.stripH - mh, flip: this.facing === -1, hit: true },
+      { sprite: mound ?? b.mound, x: this.x + mx, y: this.stripH - mh, flip: this.facing === -1, hit: true },
     ];
+  }
+
+  // Loose pages flying off the mound on arcs, landing on the ground (then gone).
+  private burstPages(now: number, p: { start: number } & Wake): Sprite[] {
+    const burst = this.m.buried?.burst;
+    if (!burst || !p.pages) return [];
+    const t = (now - p.start - burst.startMs) / burst.flightMs;
+    if (t < 0 || t >= 1) return [];
+    const [, mh] = this.size((this.m.buried as NonNullable<Manifest["buried"]>).mound);
+    return p.pages.map((pg, i) => {
+      const [pw, ph] = this.size(pg.frame);
+      const startX = this.x + Math.round(this.catW() / 2 - pw / 2) + pg.dir * (24 + 6 * (i >> 1)); // beside him
+      const startY = this.stripH - mh - ph + 4 + 3 * (i >> 1); // off the top of the mound
+      const { dx, dy } = arc(t, pg.dir * pg.dist, burst.arcHeightPx);
+      const fall = Math.round((this.stripH - ph - startY) * t);
+      return { sprite: pg.frame, x: startX + dx, y: startY + dy + fall, flip: pg.dir === -1, hit: false };
+    });
   }
 
   // Awake (blinking) or, after enough editions, asleep with z's.
@@ -362,7 +391,7 @@ export class CatEngine {
   private drawWaking(now: number, p: { start: number; layers: number } & Wake): Sprite[] {
     const steps = this.wakeSteps(p);
     const s = sequenceStep(steps, now - p.start) ?? steps[steps.length - 1];
-    if (p.buried) return this.inMound(s.frame, s.y);
+    if (p.buried) return [...this.inMound(s.frame, s.y, s.mound), ...this.burstPages(now, p)];
     if (p.airborne) return this.inFlight(s.frame, s.y, this.moveLoop("carry").shadow);
     return this.onPile(s.frame, this.size(s.frame), p.layers, s.y);
   }

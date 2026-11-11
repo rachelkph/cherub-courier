@@ -16,6 +16,7 @@ files:
   - assets/cherub/**
   - "!assets/cherub/preview/**"
   - "!assets/cherub/source_manifest.json"
+  - "!assets/cherub/source/**" # the picture the newspapers are built from
 asar: true
 electronFuses:
   runAsNode: false

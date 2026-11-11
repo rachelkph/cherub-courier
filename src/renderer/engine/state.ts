@@ -33,13 +33,14 @@ export function pileHeight(m: Manifest, layers: number): number {
 export type Placed = { sprite: string; x: number; y: number; flip: boolean };
 
 // Cat on its pile, with the cat's box at (0, 0) and the ground at catH + pileH - overlap.
-// Facing left mirrors the pile's offset inside the cat's width.
+// Facing left mirrors the pile (and its offset inside the cat's width), as the buried
+// mound is mirrored, so the mound's last settling frame matches the pile exactly.
 export function stack(m: Manifest, cat: string, catSize: [number, number], layers: number, facing: 1 | -1): Placed[] {
   const [catW, catH] = catSize;
   const out: Placed[] = [{ sprite: cat, x: 0, y: 0, flip: facing === -1 }];
   if (layers > 0) {
     const px = facing === 1 ? m.pile.offsetX : catW - m.pile.offsetX - m.pile.width;
-    out.unshift({ sprite: m.pile.files[layers - 1], x: px, y: catH - m.pile.catOverlap, flip: false });
+    out.unshift({ sprite: m.pile.files[layers - 1], x: px, y: catH - m.pile.catOverlap, flip: facing === -1 });
   }
   return out;
 }
