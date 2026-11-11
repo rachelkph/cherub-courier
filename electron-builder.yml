@@ -11,8 +11,9 @@ files:
   - package.json
   - dist/**
   - data/sources.json
-  - assets/**
-  - "!assets/preview/**"
+  # Only the cherub and the fonts (any cat art left on disk stays out of the app).
+  - assets/fonts/**
+  - assets/cherub/**
   - "!assets/cherub/preview/**"
   - "!assets/cherub/source_manifest.json"
 asar: true

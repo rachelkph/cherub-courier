@@ -56,8 +56,7 @@ function bringToFront(w: BrowserWindow): void {
   w.focus();
 }
 
-// character: whose picture the welcome and "meet" screens show.
-export function openOnboarding(preloadDir: string, character: string): void {
+export function openOnboarding(preloadDir: string): void {
   if (win) {
     bringToFront(win);
     return;
@@ -86,7 +85,7 @@ export function openOnboarding(preloadDir: string, character: string): void {
   win.on("closed", () => {
     win = null;
   });
-  void win.loadURL(`${PAGE}?character=${encodeURIComponent(character)}`);
+  void win.loadURL(PAGE);
 }
 
 export function closeOnboarding(): void {

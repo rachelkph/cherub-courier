@@ -5,8 +5,8 @@ out/
 *.log
 .env*
 
-# Sprite art is not published (licensing of the current placeholder art is unchecked;
-# new art is planned). The app and its tests expect it on disk; see README.
+# Sprite art is not published. The cat's old art folders (the cat was removed
+# 2026-11-11) stay ignored in case they are still on disk.
 assets/walk/
 assets/walk_nobag/
 assets/loaf/

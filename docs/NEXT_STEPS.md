@@ -9,8 +9,8 @@ Start a new Claude Code session in `~/Desktop/Projects/newscat` and say "read do
 - Done since the M6 prep:
   - Front page popover (rolling 24 h).
   - "Pixel Gazette" look with a top story.
-  - The **cherub** as the default character, with the cat as an option (menu bar > Character), shown at 2/3 size.
-  - The newspaper is named per character: "The Cloud Nine Chronicle" for the cherub, "The Mewsletter" for the cat.
+  - The **cherub** delivers the news, shown at 2/3 size. The cat was removed 2026-11-11 (Rachel).
+  - The newspaper is "The Cloud Nine Chronicle".
   - A newspaper mound for the cherub to land on, drawn by `scripts/mound.mjs`.
   - Buried up to the neck at **8 or more** unread.
 - 138 tests pass (`npm test`); lint clean (`npm run lint`).
@@ -26,13 +26,13 @@ npm run dev
 Check:
 - The cherub flies above the Dock.
 - Clicking him opens the popover.
-- The menu bar icon has Character, Snooze, Set up, and Dev.
+- The menu bar icon has Hide, Snooze, Set up, and Dev.
 
 If `npm run dev` fails after the update, run `npm install` first (a new Xcode or Command Line Tools version can need a reinstall).
 
 ## Art: back it up
 The art is not in git, so the only copies are on this Mac:
-- `~/Desktop/Projects/newscat/assets/` (cat sprites at the top, cherub in `assets/cherub/`)
+- `~/Desktop/Projects/newscat/assets/cherub/`
 - `~/Downloads/cherub_anim_assets/` (the original cherub cut)
 
 Copy both somewhere safe (iCloud Drive, an external disk) before updating.
@@ -40,13 +40,13 @@ Copy both somewhere safe (iCloud Drive, an external disk) before updating.
 The mound images (`assets/cherub/pile/`) can be redrawn any time with `node scripts/mound.mjs`.
 
 ## M7 — polish and hardening (Claude can do all of this; nothing needed from Rachel)
-1. **Popover accessibility:**
-   - Full keyboard use: Tab through chips and headlines, Enter opens, Esc closes.
-   - VoiceOver labels on chips, headlines, the top story and the footer buttons.
-   - Check with VoiceOver on.
-2. **Reduced motion:**
-   - When macOS "Reduce motion" is on, the character moves less: no flying back and forth, no paper toss.
-   - The popover still opens.
+1. **Popover accessibility:** SKIPPED (Rachel, 2026-11-11). The app centers on clicking a character
+   above the Dock, so keyboard and VoiceOver work in the popover would help little; not required for
+   a free personal app. Revisit only for a public release.
+2. **Reduced motion:** BUILT 2026-11-11. With macOS "Reduce motion" on (read live from
+   `prefers-reduced-motion`), the character stays in place (wings still flap, blinks and z's stay), no hop,
+   and a click delivers at once with no wake-and-toss; the popover still opens. Engine tests cover
+   the cherub; Rachel's live check pending.
 3. **Error states:**
    - A friendly line when offline or when every feed failed.
    - A per-source note when one feed keeps failing or disappears (e.g. "Pitchfork hasn't loaded since Monday").
@@ -61,7 +61,6 @@ Full steps are in `docs/RELEASE.md`. Rachel does these herself; credentials neve
 1. **Developer ID certificate:** Xcode > Settings > Accounts > team > Manage Certificates > + > Developer ID Application.
 2. **Notarization login:** in Terminal, `xcrun notarytool store-credentials newscat-notary` (Apple ID, app-specific password, Team ID).
 3. **Art licensing**, before a public DMG (the art ships inside the app):
-   - Cat: check PixelLab's terms (the cat's head came from a free-trial generation).
    - Cherub: check Perchance's terms for the generator used.
    - Mound: our own art; no question.
 4. **Decisions:**

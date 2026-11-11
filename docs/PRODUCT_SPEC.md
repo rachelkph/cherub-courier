@@ -1,5 +1,7 @@
 # Product spec — Cherub Courier (formerly the working title NewsCat)
 
+> **2026-11-11:** the cherub is the only character; the cat was removed (Rachel). Where this spec says "the cat", read "the cherub" (he flies, carries the news in a satchel, lands on the pile, and is buried at 8+ unread).
+
 ## One-line pitch
 A pixel-art news cat who delivers your twice-daily headlines — and gets comfier on a growing pile of newspapers the longer you ignore him.
 

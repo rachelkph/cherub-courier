@@ -56,8 +56,7 @@ button.link { border: 0; background: none; padding: 0; height: auto; color: var(
 button:disabled { opacity: 0.45; cursor: default; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.cat { display: block; margin: 8px auto 16px; width: 126px; height: 116px; image-rendering: pixelated; }
-.cat.cherub { width: 96px; height: 99px; margin-bottom: 12px; } /* 1:1, he is drawn bigger */
+.cherub { display: block; margin: 8px auto 12px; width: 96px; height: 99px; image-rendering: pixelated; } /* 1:1 */
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
 .chip { height: 28px; padding: 0 10px; font-weight: 600; }

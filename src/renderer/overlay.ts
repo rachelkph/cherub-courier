@@ -23,11 +23,8 @@ declare global {
   }
 }
 
-// The character's art folder (main passes ?character=; it matches CHARACTERS in
-// shared/config.ts, which is not served to pages). The cat's art is at the top.
-const CHARACTER_DIRS: Record<string, string> = { cat: "", cherub: "cherub/" };
-const characterParam = new URLSearchParams(location.search).get("character") ?? "cat";
-const ASSETS = `app://newscat/assets/${Object.hasOwn(CHARACTER_DIRS, characterParam) ? CHARACTER_DIRS[characterParam] : ""}`;
+// The cherub's art folder (CHARACTER.dir in shared/config.ts, which is not served to pages).
+const ASSETS = "app://newscat/assets/cherub/";
 
 const canvas = document.getElementById("stage") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -238,6 +235,10 @@ const sizes: Sizes = Object.fromEntries([...images].map(([p, img]) => [p, [img.w
 if (bounds.width === 0) bounds = initialBounds;
 engine = new CatEngine(manifest, sizes, strip(), performance.now());
 engine.setInputs(latestState ?? initialState);
+// macOS System Settings > Accessibility > Display > Reduce motion, live.
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+engine.setReducedMotion(reduceMotion.matches);
+reduceMotion.addEventListener("change", (e) => engine?.setReducedMotion(e.matches));
 
 resize();
 start();

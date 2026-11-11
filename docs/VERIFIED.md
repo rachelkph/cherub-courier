@@ -284,3 +284,10 @@ NSRunningApplication (0 = Dock icon, 1 = accessory). Notched 1470x956 MacBook sc
 | Fix: one app's full-width windows together span top bar to bottom | PASS (replay) | the 5 window lists logged during Rachel's test replayed through the new rule: false, true, true, false, false (correct each time); unit test with Chrome's bounds |
 | Rachel re-test with full-screen Chrome after the fix | PASS (Rachel) | |
 | Dock auto-hide on | NOT done | |
+
+## 2026-11-11 — Reduced motion (M7)
+| check | result | evidence |
+|---|---|---|
+| Engine, cat: no walking, no hop, click delivers once with no paper toss, walks again when turned off | PASS | unit test |
+| Engine, cherub: stays in place in the air, empty-handed and carrying, wings still flap | PASS | unit test |
+| Live: macOS Reduce motion toggled while the app runs | NOT done | needs Rachel (System Settings > Accessibility > Display) |

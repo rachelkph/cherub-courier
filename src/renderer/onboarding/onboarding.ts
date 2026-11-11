@@ -110,13 +110,10 @@ function go(step: number): void {
   (app.querySelector("h1") as HTMLElement | null)?.focus?.();
 }
 
-// --- the character (main passes ?character=), walking on the welcome screen -------
+// --- the cherub, flying on the welcome screen --------------------------------------
 
 const ART = "app://newscat/assets/";
-const CHARACTER =
-  new URLSearchParams(location.search).get("character") === "cherub"
-    ? { noun: "cherub", moving: "flying", frame: (i: number) => `${ART}cherub/fly_light/fly_light_${i}.png`, frameMs: 130, cls: "cat cherub", idle: "I land on the pile and doze off" }
-    : { noun: "cat", moving: "walking", frame: (i: number) => `${ART}walk/walk_${i}.png`, frameMs: 140, cls: "cat", idle: "I curl up on the pile" };
+const CHARACTER = { noun: "cherub", moving: "flying", frame: (i: number) => `${ART}cherub/fly_light/fly_light_${i}.png`, frameMs: 130, cls: "cherub", idle: "I land on the pile and doze off" };
 
 let catTimer: number | undefined;
 function walkingCat(): HTMLImageElement {
@@ -423,7 +420,7 @@ function meet(): HTMLElement {
         ? h("p", { class: "lead" }, state.fetching ? "Your first edition is on its way. Watch the bottom of your screen." : "All set.")
         : h("p", { class: "lead" }, "No sources picked yet, so I have nothing to deliver. You can choose some anytime."),
       h("p", {}, `I deliver at ${clock(state.times.morning)} and ${clock(state.times.evening)}. Click me to read the headlines.`),
-      h("p", { class: "note" }, `To hide me, snooze me, switch to the ${CHARACTER.noun === "cat" ? "cherub" : "cat"}, or change these settings, use the ${CHARACTER.noun} icon in the menu bar at the top right of your screen.`),
+      h("p", { class: "note" }, `To hide me, snooze me, or change these settings, use the ${CHARACTER.noun} icon in the menu bar at the top right of your screen.`),
     ],
     [h("span", { class: "spacer" }), h("button", { class: "primary", type: "button", onclick: () => void window.setup.close() }, "Done")],
   );

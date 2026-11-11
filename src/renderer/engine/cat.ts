@@ -66,6 +66,10 @@ export class CatEngine {
   private facing: 1 | -1 = 1;
   private hovered = false;
   private paused = false; // popover open: stand still so it stays anchored
+  // macOS "Reduce motion": no travelling along the Dock, no hop, no wake-and-toss;
+  // in-place animation (flapping, blinks, z's) stays. A click still delivers.
+  private reducedMotion = false;
+  private deliverPending = false;
   private lastStepAt: number;
   private steps = 0;
   private phase: Phase = { kind: "idle" };
@@ -108,6 +112,10 @@ export class CatEngine {
     this.paused = paused;
   }
 
+  setReducedMotion(on: boolean): void {
+    this.reducedMotion = on;
+  }
+
   // The cat's own sprite box (not the pile or effects), for anchoring the popover.
   catBox(sprites: Sprite[]): { x: number; y: number; width: number; height: number } | null {
     const cat = sprites.filter((s) => s.hit && !this.m.pile.files.includes(s.sprite) && s.sprite !== this.m.buried?.mound).at(-1);
@@ -134,8 +142,14 @@ export class CatEngine {
   // Click on the cat or pile (or a flier carrying the news): wake and toss the
   // papers if there are any, else a small hop.
   click(now: number): "deliver" | "hop" | "ignored" {
-    if (this.phase.kind !== "idle") return "ignored";
+    if (this.phase.kind !== "idle" || this.deliverPending) return "ignored";
     const layers = pileLayers(this.inputs.unread, this.m.pile.unreadToLayers);
+    if (this.reducedMotion) {
+      if (layers === 0) return "hop";
+      // Deliver on the next tick, without the wake-and-toss.
+      this.deliverPending = true;
+      return "deliver";
+    }
     if (layers > 0) {
       const mode = this.mode();
       this.phase = { kind: "waking", start: now, layers, airborne: mode === "carry", buried: mode === "buried" };
@@ -147,6 +161,12 @@ export class CatEngine {
 
   tick(now: number): Frame {
     let delivered = false;
+    if (this.deliverPending) {
+      this.deliverPending = false;
+      this.inputs = { unread: 0, editionAge: 0 };
+      delivered = true;
+      this.lastStepAt = now;
+    }
     const p = this.phase;
 
     if (p.kind === "hop" && now - p.start >= HOP.ms) this.phase = { kind: "idle" };
@@ -224,7 +244,7 @@ export class CatEngine {
     if (n > 0) {
       this.lastStepAt += n * stepMs;
       if (n > 1000) n = 1000; // after a long pause, do not replay every step
-      if (!this.hovered && !this.paused && now >= this.turnUntil) {
+      if (!this.hovered && !this.paused && !this.reducedMotion && now >= this.turnUntil) {
         for (let i = 0; i < n; i++) {
           this.x += this.facing * b.walkStepPx;
           const maxX = this.stripW - this.catW();
@@ -241,7 +261,7 @@ export class CatEngine {
       }
     }
     // A flier keeps flapping when still; the cat's legs move only as it walks.
-    const still = this.hovered || this.paused || now < this.turnUntil;
+    const still = this.hovered || this.paused || this.reducedMotion || now < this.turnUntil;
     if (hover && still && mode === "walk") {
       const frame = withExtras(hover.extras, this.hoverExtras, now, hover.frames[loopIndex(hover.frames.length, hover.frameMs, now)], this.rng);
       return { sprites: this.inFlight(frame, lift, shadow), cadenceMs: Math.min(stepMs, hover.frameMs, REST_CADENCE_MS) };

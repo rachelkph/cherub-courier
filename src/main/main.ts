@@ -1,9 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, powerMonitor, protocol, screen, shell, systemPreferences, Tray } from "electron";
-import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { APP_NAME, CHARACTERS, type CharacterId, overlayHeight, SOURCES_REMOTE_URL } from "../shared/config.ts";
+import { APP_NAME, CHARACTER, OVERLAY_HEIGHT, SOURCES_REMOTE_URL } from "../shared/config.ts";
 import { realDeps } from "./feeds/client.ts";
 import { buildEdition } from "./feeds/edition.ts";
 import { safeUrl } from "./feeds/sanitize.ts";
@@ -83,49 +82,15 @@ function serveAppProtocol(): void {
   });
 }
 
-// --- character -----------------------------------------------------------------
-
-// Sprite art is not in git, so a checkout may lack a character's art.
-function hasArt(c: CharacterId): boolean {
-  return existsSync(path.join(ROOT, "assets", CHARACTERS[c].dir, CHARACTERS[c].icon));
-}
-
-// The chosen character, or the other one if its art is missing.
-function character(): CharacterId {
-  const want = settings?.character ?? "cat";
-  if (hasArt(want)) return want;
-  return (Object.keys(CHARACTERS) as CharacterId[]).find(hasArt) ?? want;
-}
-
 function overlayUrl(): string {
-  return `app://newscat/renderer/index.html?character=${character()}`;
-}
-
-function setCharacter(c: CharacterId): void {
-  if (c === settings.character) return;
-  settings = { ...settings, character: c };
-  void saveSettings(dataPaths().settings, settings);
-  showCharacter();
-}
-
-// Swap the overlay, menu-bar icon and newspaper name to the current character.
-function showCharacter(): void {
-  hidePopover();
-  pushPopoverView(popoverView());
-  if (overlay) {
-    // Strip height depends on the character; the renderer reads it at startup.
-    overlay.setBounds(overlayBounds());
-    void overlay.loadURL(overlayUrl());
-  }
-  tray?.setImage(trayIcon());
-  rebuildTrayMenu();
+  return "app://newscat/renderer/index.html";
 }
 
 // The strip sits on the bottom edge of the main display's usable area,
 // so it clears a bottom Dock and ignores side Docks.
 function overlayBounds(): Electron.Rectangle {
   const { workArea } = screen.getPrimaryDisplay();
-  const height = overlayHeight(character());
+  const height = OVERLAY_HEIGHT;
   return {
     x: workArea.x,
     y: workArea.y + workArea.height - height,
@@ -136,7 +101,7 @@ function overlayBounds(): Electron.Rectangle {
 
 function rendererBounds() {
   const b = overlayBounds();
-  return { width: b.width, height: b.height, scale: CHARACTERS[character()].scale };
+  return { width: b.width, height: b.height, scale: CHARACTER.scale };
 }
 
 function placeOverlay(reason: string): void {
@@ -350,7 +315,7 @@ function popoverView() {
     hasSources: sources.length > 0,
     refreshing,
     clock,
-    nameplate: CHARACTERS[character()].paper,
+    nameplate: CHARACTER.paper,
   });
 }
 
@@ -390,7 +355,7 @@ registerPopoverIpc({
   },
   settings: () => {
     hidePopover();
-    openOnboarding(__dirname, character());
+    openOnboarding(__dirname);
   },
   visibility: (visible) => overlay?.webContents.send("popover:visible", visible),
 });
@@ -449,14 +414,12 @@ async function resetEverything(): Promise<void> {
   const p = dataPaths();
   await Promise.all([p.state, p.settings, p.sourcesCache].map((f) => rm(f, { force: true })));
   verifiedFeeds.clear();
-  const was = character();
   settings = defaultSettings();
-  if (character() !== was) showCharacter();
   state = emptyState();
   hidePopover();
   applyLoginItem();
   setCatState({ unread: 0, editionAge: 0 });
-  openOnboarding(__dirname, character());
+  openOnboarding(__dirname);
 }
 
 function devMenu(): Electron.MenuItemConstructorOptions[] {
@@ -496,7 +459,7 @@ function snoozeMenu(): Electron.MenuItemConstructorOptions[] {
     const until = new Date(settings.snoozeUntil);
     const sameDay = until.toDateString() === new Date().toDateString();
     const when = `${sameDay ? "" : "tomorrow "}${clock(settings.snoozeUntil)}`;
-    return [{ label: `Snoozed until ${when}`, enabled: false }, { label: `Wake the ${CHARACTERS[character()].noun} now`, click: () => snooze(0) }];
+    return [{ label: `Snoozed until ${when}`, enabled: false }, { label: `Wake the ${CHARACTER.noun} now`, click: () => snooze(0) }];
   }
   return [
     {
@@ -514,25 +477,15 @@ function rebuildTrayMenu(): void {
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
-        label: `${hiddenByUser ? "Show" : "Hide"} ${CHARACTERS[character()].noun}`,
+        label: `${hiddenByUser ? "Show" : "Hide"} ${CHARACTER.noun}`,
         click: () => {
           hiddenByUser = !hiddenByUser;
           applyVisibility();
         },
       },
       ...snoozeMenu(),
-      {
-        label: "Character",
-        submenu: (Object.keys(CHARACTERS) as CharacterId[]).map((c) => ({
-          label: CHARACTERS[c].label,
-          type: "radio" as const,
-          checked: character() === c,
-          enabled: hasArt(c),
-          click: () => setCharacter(c),
-        })),
-      },
       { type: "separator" },
-      { label: "Set up…", click: () => openOnboarding(__dirname, character()) },
+      { label: "Set up…", click: () => openOnboarding(__dirname) },
       { label: "Reset everything…", click: () => void resetEverything() },
       ...devMenu(),
       { type: "separator" },
@@ -542,8 +495,7 @@ function rebuildTrayMenu(): void {
 }
 
 function trayIcon(): Electron.NativeImage {
-  const c = CHARACTERS[character()];
-  return nativeImage.createFromPath(path.join(ROOT, "assets", c.dir, c.icon)).resize({ height: 18 });
+  return nativeImage.createFromPath(path.join(ROOT, "assets", CHARACTER.dir, CHARACTER.icon)).resize({ height: 18 });
 }
 
 function createTray(): void {
@@ -573,7 +525,7 @@ app.whenReady().then(async () => {
   createOverlay();
   createTray();
   watchFullScreen();
-  if (!settings.onboarded) openOnboarding(__dirname, character());
+  if (!settings.onboarded) openOnboarding(__dirname);
   preparePopover(__dirname);
   // Unread headlines expire after 48h and the cat gets sleepier as editions pass.
   setInterval(updateCat, 10 * 60_000);

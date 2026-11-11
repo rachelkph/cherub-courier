@@ -13,4 +13,4 @@
   policy applies.
 - Your topics, keywords, sources and reading history stay in
   `~/Library/Application Support/Cherub Courier/` and are never uploaded.
-  Menu bar cat icon > Reset everything… deletes them.
+  Menu bar cherub icon > Reset everything… deletes them.

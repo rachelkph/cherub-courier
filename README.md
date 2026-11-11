@@ -1,6 +1,6 @@
 # Cherub Courier
 
-A pixel-art cherub who flies above the macOS Dock and delivers twice-daily headlines (a cat can deliver them instead).
+A pixel-art cherub who flies above the macOS Dock and delivers twice-daily headlines.
 Everything runs on your Mac: no accounts, no tracking, no AI.
 
 Status: in development (milestone M6 of `docs/BUILD_PLAN.md`). No public release yet.
@@ -11,11 +11,11 @@ Status: in development (milestone M6 of `docs/BUILD_PLAN.md`). No public release
 2. Open it and drag **Cherub Courier** to **Applications**.
 3. Open Cherub Courier from Applications. macOS asks once whether to open an app downloaded from
    the internet; choose Open. (Releases are signed and notarized by Apple.)
-4. Pick your topics and sources. The cat walks above your Dock and brings headlines
+4. Pick your topics and sources. The cherub flies above your Dock and brings headlines
    twice a day; click him to read them.
 
 Requires macOS 12 or later (Apple silicon or Intel). To uninstall, quit Cherub Courier from the
-menu bar cat icon, choose Reset everything… first if you want your data deleted, then
+menu bar cherub icon, choose Reset everything… first if you want your data deleted, then
 drag the app to the Trash.
 
 Privacy: nothing leaves your Mac except fetching the feeds you chose. See [PRIVACY.md](PRIVACY.md).
@@ -36,11 +36,11 @@ npm run dist:adhoc   # local test build in out/ (this Mac only)
 
 Releasing (signing, notarization, DMG): `docs/RELEASE.md`.
 
-Menu bar cat icon: Hide/Show, Set up… (re-run setup), Reset everything… (deletes local data).
+Menu bar cherub icon: Hide/Show, Set up… (re-run setup), Reset everything… (deletes local data).
 
 Dev-only controls (not in packaged builds):
-- Menu bar cat icon > Dev: set the unread count and the oldest unread edition's age.
-- Menu bar cat icon > Dev > Fetch edition now: fetch from your approved sources immediately.
+- Menu bar cherub icon > Dev: set the unread count and the oldest unread edition's age.
+- Menu bar cherub icon > Dev > Fetch edition now: fetch from your approved sources immediately.
 - `NEWSCAT_DEV_STATE="unread,editionAge" npm run dev`: start in a given state.
 - `NEWSCAT_DEV_FETCH=1 npm run dev`: fetch an edition on launch.
 - `node scripts/fetch-edition.ts /tmp/state.json [topics]`: build an edition from all recommended sources in the terminal.
@@ -48,11 +48,10 @@ Dev-only controls (not in packaged builds):
 Local data lives in `~/Library/Application Support/Cherub Courier/` (`settings.json`, `state.json`, `sources-cache.json`). On first launch they are copied from the old `NewsCat` folder, which is left in place.
 The curated source list is `data/sources.json`; a newer copy is fetched from this repo's `main` branch at most once a day.
 
-Two characters deliver the news; pick one under **Character** in the menu-bar menu (the cherub is the default):
-- the **cherub** flies above the Dock: `assets/cherub/manifest.json`, art under `assets/cherub/`;
-- the **cat** walks: `assets/manifest.json`, art at the top of `assets/`.
+The cherub delivers the news: `assets/cherub/manifest.json`, art under `assets/cherub/`.
+(A walking cat was the first character; it was removed on 2026-11-11.)
 
-Sprites and animation timings live in those manifests; swap art there without code changes.
+Sprites and animation timings live in the manifest; swap art there without code changes.
 The sprite PNGs themselves are **not in this repository** (licensing of the art is unchecked).
-Put them under `assets/` (folders listed in `.gitignore`) to run the app; without them, art-dependent tests are skipped and the menu offers only a character whose art is present.
+Put them under `assets/cherub/` (see `.gitignore`) to run the app; without them, art-dependent tests are skipped.
 Docs: `docs/PRODUCT_SPEC.md`, `docs/BUILD_PLAN.md`, `docs/RELEASE.md`, `docs/VERIFIED.md`.

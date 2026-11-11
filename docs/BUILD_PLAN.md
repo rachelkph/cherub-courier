@@ -45,7 +45,7 @@ Do a signing + notarization dry run with the empty app early (alongside M1) so a
 Acceptance: a clean Mac can open the DMG with no Gatekeeper override; app launches and the cat appears.
 
 ## M7 — Polish and hardening
-Accessibility basics for the popover (keyboard, VoiceOver labels), reduced-motion option, error states, weekly CI check that every feed in `sources.json` still resolves, docs update.
+~~Accessibility basics for the popover (keyboard, VoiceOver labels)~~ skipped (Rachel, 2026-11-11), reduced-motion option, error states, weekly CI check that every feed in `sources.json` still resolves, docs update.
 
 ## Always
 - Keep `npm test` green; add tests with each milestone.
