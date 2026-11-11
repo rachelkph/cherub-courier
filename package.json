@@ -2,7 +2,7 @@
   "name": "newscat",
   "version": "0.0.1",
   "private": true,
-  "description": "A pixel-art news cat that delivers twice-daily headlines on macOS.",
+  "description": "A pixel-art cherub who delivers twice-daily headlines on macOS.",
   "main": "dist/main/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json && node scripts/copy-static.mjs",
@@ -25,5 +25,5 @@
   "dependencies": {
     "fast-xml-parser": "5.12.0"
   },
-  "productName": "NewsCat"
+  "productName": "Cherub Courier"
 }

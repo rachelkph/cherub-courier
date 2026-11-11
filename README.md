@@ -1,20 +1,20 @@
-# NewsCat (working title)
+# Cherub Courier
 
-A pixel-art cat that walks above the macOS Dock and delivers twice-daily headlines.
+A pixel-art cherub who flies above the macOS Dock and delivers twice-daily headlines (a cat can deliver them instead).
 Everything runs on your Mac: no accounts, no tracking, no AI.
 
 Status: in development (milestone M6 of `docs/BUILD_PLAN.md`). No public release yet.
 
 ## Install
 
-1. Download `NewsCat-<version>.dmg` from the [Releases](https://github.com/rachelkph/news-sprite/releases) page.
-2. Open it and drag **NewsCat** to **Applications**.
-3. Open NewsCat from Applications. macOS asks once whether to open an app downloaded from
+1. Download `CherubCourier-<version>.dmg` from the [Releases](https://github.com/rachelkph/news-sprite/releases) page.
+2. Open it and drag **Cherub Courier** to **Applications**.
+3. Open Cherub Courier from Applications. macOS asks once whether to open an app downloaded from
    the internet; choose Open. (Releases are signed and notarized by Apple.)
 4. Pick your topics and sources. The cat walks above your Dock and brings headlines
    twice a day; click him to read them.
 
-Requires macOS 12 or later (Apple silicon or Intel). To uninstall, quit NewsCat from the
+Requires macOS 12 or later (Apple silicon or Intel). To uninstall, quit Cherub Courier from the
 menu bar cat icon, choose Reset everything… first if you want your data deleted, then
 drag the app to the Trash.
 
@@ -45,7 +45,7 @@ Dev-only controls (not in packaged builds):
 - `NEWSCAT_DEV_FETCH=1 npm run dev`: fetch an edition on launch.
 - `node scripts/fetch-edition.ts /tmp/state.json [topics]`: build an edition from all recommended sources in the terminal.
 
-Local data lives in `~/Library/Application Support/NewsCat/` (`settings.json`, `state.json`, `sources-cache.json`).
+Local data lives in `~/Library/Application Support/Cherub Courier/` (`settings.json`, `state.json`, `sources-cache.json`). On first launch they are copied from the old `NewsCat` folder, which is left in place.
 The curated source list is `data/sources.json`; a newer copy is fetched from this repo's `main` branch at most once a day.
 
 Two characters deliver the news; pick one under **Character** in the menu-bar menu (the cherub is the default):

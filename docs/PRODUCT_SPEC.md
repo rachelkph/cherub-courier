@@ -1,4 +1,4 @@
-# Product spec — NewsCat (working title)
+# Product spec — Cherub Courier (formerly the working title NewsCat)
 
 ## One-line pitch
 A pixel-art news cat who delivers your twice-daily headlines — and gets comfier on a growing pile of newspapers the longer you ignore him.

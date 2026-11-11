@@ -1,7 +1,7 @@
 // The setup window (first run, and "Set up…" from the menu bar). Sandboxed
 // renderer; every IPC call is checked to come from this window's page.
 
-import { BrowserWindow, ipcMain, type IpcMainInvokeEvent, shell } from "electron";
+import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent, shell } from "electron";
 import path from "node:path";
 import { APP_NAME } from "../../shared/config.ts";
 import type { LinkCheck } from "../sources/discover.ts";
@@ -48,11 +48,18 @@ export function registerOnboardingIpc(h: OnboardingHandlers): void {
   ipcMain.handle("setup:close", guard(() => win?.close()));
 }
 
+// With no Dock icon the app is never active by itself; activate it so setup opens
+// in front instead of behind the window the user was in.
+function bringToFront(w: BrowserWindow): void {
+  app.focus({ steal: true });
+  w.show();
+  w.focus();
+}
+
 // character: whose picture the welcome and "meet" screens show.
 export function openOnboarding(preloadDir: string, character: string): void {
   if (win) {
-    win.show();
-    win.focus();
+    bringToFront(win);
     return;
   }
   win = new BrowserWindow({
@@ -73,7 +80,9 @@ export function openOnboarding(preloadDir: string, character: string): void {
   win.webContents.on("will-navigate", (e) => e.preventDefault());
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   win.webContents.on("console-message", (e) => console.log(`[setup:${e.level}] ${e.message}`));
-  win.once("ready-to-show", () => win?.show());
+  win.once("ready-to-show", () => {
+    if (win) bringToFront(win);
+  });
   win.on("closed", () => {
     win = null;
   });

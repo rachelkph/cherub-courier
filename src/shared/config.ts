@@ -1,5 +1,5 @@
-// Working title. The final name is undecided; change it here only.
-export const APP_NAME = "NewsCat";
+// The app's name (Rachel's pick, 2026-11-11; was the working title "NewsCat").
+export const APP_NAME = "Cherub Courier";
 
 
 // Who delivers the news. Each has a manifest.json in assets/<dir> (the cat's art

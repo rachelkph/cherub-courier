@@ -266,3 +266,18 @@ Live (dev build, copy of Rachel's data, debug port 9335, closed afterwards): `?c
 - Newspaper mound (Rachel asked, same day): `scripts/mound.mjs` draws 5 stages (80 x 10/17/24/31/38) in the cherub's palette: folded papers (edge papers tilt down the slope), side and end-on rolls, coral twine, the bottom band shaded. The script reproduces the installed PNGs byte for byte. Manifest: width 80, layer 7, pad 3, offset 7 (centered under his feet), overlap 4. Tests (134): stage sizes; his lowest row sits on the mound's top row; everything inside the strip. Live on the data copy: stages 1, 2, 3, 4 resting and 5 asleep, screenshots at real size (2/3).
 - Buried (Rachel: neck deep, more than 10 unread): `scripts/mound.mjs` also draws `buried.png` (136x46, surface falls off as (dx/68)^3.5 so it stays high over his satchel); enclosed gaps between papers are filled dark (first version let 2 body pixels show; caught by the test). Tests (138): buried at 11 not 10 for every age; every pixel of him from frame row 60 down is covered, his head shows; asleep with z's; click climbs out, tosses, delivers once; fits the strip. Live on the data copy: buried awake (12 unread), asleep (age 3), clicked -> climbs out on top of the mound, rolls fly, popover opens.
 - Buried threshold lowered to 8 or more (Rachel). Tests (138) moved with it: buried at 8 not 7 for every age; heavy bag at 5 and 7. Live: 8 unread -> buried; 7 unread with an older edition -> resting on the pile.
+
+## 2026-11-11 — No Dock icon, full-screen apps still hidden (Rachel wants no Dock icon)
+Method: dev build on a copy of the data (`NEWSCAT_USER_DATA`), a throwaway Electron app put into real full screen
+with `setFullScreen`, our window's presence read from CGWindowList every 2 s; activation policy read from
+NSRunningApplication (0 = Dock icon, 1 = accessory). Notched 1470x956 MacBook screen.
+
+| check | result | evidence |
+|---|---|---|
+| `app.dock.hide()` alone | FAIL | policy 1 right after the call, 0 after `createOverlay()` |
+| Root cause | found | `setVisibleOnAllWorkspaces` switches the process back to a regular app unless `skipTransformProcessType: true` (set on overlay and popover) |
+| No Dock icon after launch and after a full-screen round trip | PASS | policy 1 both times |
+| Full-screen window bounds on a notched screen | measured | y 33, height 923 (below the notch), not the whole display; Dock (layer 20) and Finder desktop windows absent in the full-screen Space |
+| Cherub hidden while another app is full screen | PASS | on screen 1 before, 0 for the whole full-screen period, 1 after leaving; log shows hide then show |
+| Packaged build (`LSUIElement`) | NOT verified | needs `npm run dist:adhoc` |
+| Rachel re-test with full-screen Chrome, and with Dock auto-hide on | NOT done | |

@@ -4,7 +4,7 @@
 // Rough regex parsing on purpose: this is a liveness check, not the app's parser.
 import { readFile } from "node:fs/promises";
 
-const UA = "NewsCat-feedcheck/0.1 (+personal project; liveness check)";
+const UA = "CherubCourier-feedcheck/0.1 (+personal project; liveness check)";
 const file = process.argv.slice(2).find((a) => !a.startsWith("--")) ?? new URL("../data/sources.json", import.meta.url);
 const seed = JSON.parse(await readFile(file, "utf8"));
 

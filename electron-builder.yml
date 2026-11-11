@@ -1,8 +1,8 @@
 # Packaging for macOS. Signing and notarization credentials are never stored here:
 # the signing identity comes from Rachel's login keychain, and notarization reads the
 # notarytool keychain profile named in APPLE_KEYCHAIN_PROFILE (see docs/RELEASE.md).
-appId: io.github.rachelkph.newscat
-productName: NewsCat
+appId: io.github.rachelkph.cherubcourier
+productName: Cherub Courier
 copyright: Copyright © 2026 Rachel Pham
 directories:
   output: out
@@ -35,6 +35,9 @@ mac:
   entitlementsInherit: build/entitlements.mac.plist
   notarize: true
   minimumSystemVersion: "12.0"
+  # Menu-bar app: no Dock icon (Rachel, 2026-11-11).
+  extendInfo:
+    LSUIElement: true
 dmg:
   sign: true # notarized and stapled by scripts/release.sh
-  artifactName: NewsCat-${version}.dmg
+  artifactName: CherubCourier-${version}.dmg

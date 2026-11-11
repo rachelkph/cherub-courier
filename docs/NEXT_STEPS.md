@@ -65,7 +65,7 @@ Full steps are in `docs/RELEASE.md`. Rachel does these herself; credentials neve
    - Cherub: check Perchance's terms for the generator used.
    - Mound: our own art; no question.
 4. **Decisions:**
-   - **App name:** keep "NewsCat" now that the cherub is the default? It is one constant, `APP_NAME` in `src/shared/config.ts`. The repo name and bundle id are separate.
+   - **App name:** DONE 2026-11-11, **Cherub Courier** (bundle id `io.github.rachelkph.cherubcourier`; data copied from the old `NewsCat` folder on first launch). The repo stays `news-sprite`.
    - **App icon:** 1024x1024, probably the cherub; needed for the release.
    - **First version:** proposed 0.1.0.
    - **DMG:** one universal DMG (225 MB), or separate Apple-silicon and Intel ones.

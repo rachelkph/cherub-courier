@@ -15,7 +15,7 @@
 Rachel plans to replace the cat with a **news boy cycling along the Dock**. His **satchel grows** as unread news accumulates, until he is **covered in a pile of newspapers**. Implications when the art arrives:
 - "walk" becomes a cycling loop; the loaf/sleep-on-pile states and the separate pile sprites likely become satchel-size stages and a final "buried" state, still driven by the unread count.
 - Keep the engine data-driven from `assets/manifest.json` and keep unread -> stage mapping in data, so the change is mostly new sprites and a manifest edit, plus engine work where states differ (no pile under him; the click animation will need new art).
-- Name: "NewsCat" is still a placeholder (APP_NAME in `src/shared/config.ts`).
+- Name: DECIDED 2026-11-11 (Rachel): **Cherub Courier** (APP_NAME in `src/shared/config.ts`).
 
 ## Release (M6) — open
 - **App icon.** None yet; the build uses Electron's default icon. Needs a 1024x1024 icon (`build/icon.icns` or an Icon Composer `.icon`). It would likely reuse the character art, so it waits on the art/licensing decision.

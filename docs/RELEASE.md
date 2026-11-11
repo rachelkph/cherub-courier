@@ -1,4 +1,4 @@
-# Releasing NewsCat
+# Releasing Cherub Courier
 
 A release is a signed, notarized DMG attached to a GitHub Release. Credentials never
 go in this repository or through Claude: Rachel enters them herself, and they live in
@@ -29,13 +29,13 @@ her login keychain.
 3. `APPLE_KEYCHAIN_PROFILE=newscat-notary npm run release`
    - lint + tests, universal build, hardened runtime, signing, notarization and stapling
      of the app and the DMG, then Gatekeeper checks (`spctl`) on both.
-   - Output: `out/NewsCat-<version>.dmg` and its `.sha256`.
-4. Test on a Mac that has never run NewsCat (or a fresh user account): download the DMG
+   - Output: `out/CherubCourier-<version>.dmg` and its `.sha256`.
+4. Test on a Mac that has never run Cherub Courier (or a fresh user account): download the DMG
    from the release page (so it gets the quarantine flag), drag to Applications, open.
    It must open with no Gatekeeper warning beyond the normal "downloaded from the
    internet" prompt, and the cat must appear.
 5. Tag and publish: `git tag v<version> && git push origin v<version>`, then
-   `gh release create v<version> out/NewsCat-<version>.dmg out/NewsCat-<version>.dmg.sha256`.
+   `gh release create v<version> out/CherubCourier-<version>.dmg out/CherubCourier-<version>.dmg.sha256`.
 
 ## Local test build (no Apple account needed)
 

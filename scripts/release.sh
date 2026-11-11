@@ -22,8 +22,8 @@ rm -rf out
 npm run dist # builds, signs with hardened runtime, notarizes and staples the app
 
 version=$(node -p 'require("./package.json").version')
-dmg="out/NewsCat-${version}.dmg"
-app="out/mac-universal/NewsCat.app"
+dmg="out/CherubCourier-${version}.dmg"
+app="out/mac-universal/Cherub Courier.app"
 
 echo "Notarizing the DMG…"
 xcrun notarytool submit "$dmg" --keychain-profile "$APPLE_KEYCHAIN_PROFILE" --wait
@@ -37,6 +37,6 @@ spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg
 mnt=$(mktemp -d)
 hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$dmg" >/dev/null
 trap 'hdiutil detach "$mnt" >/dev/null 2>&1 || true' EXIT
-spctl --assess --type execute --verbose=2 "$mnt/NewsCat.app"
+spctl --assess --type execute --verbose=2 "$mnt/Cherub Courier.app"
 shasum -a 256 "$dmg" | tee "$dmg.sha256"
 echo "Ready: $dmg"

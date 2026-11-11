@@ -1,6 +1,6 @@
 # CLAUDE.md — project rules for Claude Code
 
-Working title: **NewsCat** (placeholder; the final app name is undecided — keep it in one config constant so it is easy to change).
+App name: **Cherub Courier** (decided 2026-11-11; was the working title "NewsCat"). It lives in one constant, `APP_NAME` in `src/shared/config.ts`. Internal identifiers (the `app://newscat` scheme host, `NEWSCAT_*` env vars, the npm package name) keep the old name on purpose.
 
 ## What this is
 A macOS desktop app. A small pixel-art cat walks along the bottom of the main display, above the Dock. Twice a day (a "morning edition" at 8am and an "evening edition" at 6pm local time) he delivers up to 7 news headlines. If the user ignores them, a pile of newspapers grows and the cat loafs on top of it. Clicking the cat opens a small popover with the headlines. Everything runs on the user's computer.

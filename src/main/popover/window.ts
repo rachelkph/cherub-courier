@@ -88,7 +88,7 @@ function create(preloadDir: string): BrowserWindow {
     },
   });
   w.setAlwaysOnTop(true, "floating", 1);
-  w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
+  w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false, skipTransformProcessType: true }); // keep no Dock icon
   w.webContents.on("will-navigate", (e) => e.preventDefault());
   w.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   w.webContents.on("console-message", (e) => console.log(`[popover:${e.level}] ${e.message}`));

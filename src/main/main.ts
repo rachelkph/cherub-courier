@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, powerMonitor, protocol, screen, shell, Tray } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, powerMonitor, protocol, screen, shell, systemPreferences, Tray } from "electron";
 import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
@@ -8,6 +8,8 @@ import { realDeps } from "./feeds/client.ts";
 import { buildEdition } from "./feeds/edition.ts";
 import { safeUrl } from "./feeds/sanitize.ts";
 import { emptyState, loadState, readJsonOrSetAside, type State, saveState, writeJsonAtomic } from "./feeds/store.ts";
+import { listWindows, otherAppFullScreen } from "./fullscreen.ts";
+import { migrateDataDir, OLD_DATA_DIR_NAME } from "./migrate.ts";
 import { applyFinish, applySkip, buildModel, type VerifiedFeeds } from "./onboarding/model.ts";
 import { closeOnboarding, openOnboarding, registerOnboardingIpc } from "./onboarding/window.ts";
 import { buildView, catInputs, clearPile, linkFor, markOpened } from "./popover/view.ts";
@@ -34,6 +36,10 @@ if (app.isPackaged && (app.commandLine.hasSwitch("remote-debugging-port") || app
 
 // Dev only: run against a separate data folder (testing without touching real data).
 if (!app.isPackaged && process.env.NEWSCAT_USER_DATA) app.setPath("userData", process.env.NEWSCAT_USER_DATA);
+else {
+  const copied = migrateDataDir(path.join(app.getPath("appData"), OLD_DATA_DIR_NAME), app.getPath("userData"));
+  if (copied.length > 0) console.log("[migrate] copied from the NewsCat folder:", copied.join(", "));
+}
 
 // One cat at a time: a second launch (with the same data folder) just quits.
 if (!app.requestSingleInstanceLock()) app.exit(0);
@@ -161,10 +167,11 @@ function createOverlay(): void {
     },
   });
   // 'floating' sits above normal windows but below the Dock, so a revealed or
-  // magnified Dock covers the cat. Not joining full-screen Spaces hides the cat
-  // over full-screen apps (Rachel's decision, 2026-11-08).
+  // magnified Dock covers the cat. Not joining full-screen Spaces is not enough to
+  // keep him off full-screen apps without a Dock icon; see watchFullScreen().
   overlay.setAlwaysOnTop(true, "floating");
-  overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
+  // skipTransformProcessType: otherwise Electron turns us back into a Dock app.
+  overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false, skipTransformProcessType: true });
   overlay.setIgnoreMouseEvents(true, { forward: true });
 
   // No navigation or new windows, ever.
@@ -273,6 +280,7 @@ const scheduler = new Scheduler({
 // --- hide and snooze -------------------------------------------------------------
 
 let hiddenByUser = false;
+let otherFullScreen = false;
 let snoozeTimer: NodeJS.Timeout | undefined;
 
 // The cat is shown unless the user hid him or he is snoozed. Snoozing hides him;
@@ -286,7 +294,7 @@ function applyVisibility(): void {
     settings = { ...settings, snoozeUntil: 0 };
     void saveSettings(dataPaths().settings, settings);
   }
-  const visible = !hiddenByUser && !snoozed;
+  const visible = !hiddenByUser && !snoozed && !otherFullScreen;
   if (overlay) {
     if (visible && !overlay.isVisible()) overlay.showInactive();
     if (!visible && overlay.isVisible()) overlay.hide();
@@ -294,6 +302,29 @@ function applyVisibility(): void {
   }
   if (!visible) hidePopover();
   rebuildTrayMenu();
+}
+
+// No full-screen apps under the cherub (Rachel, 2026-11-08), with no Dock icon
+// (Rachel, 2026-11-11). Entering, leaving or switching to a full-screen app changes
+// the active Space; check then, and again once the Space animation has settled.
+let fullScreenCheck = 0;
+async function checkFullScreen(): Promise<void> {
+  const seq = ++fullScreenCheck;
+  const full = otherAppFullScreen(await listWindows(), screen.getPrimaryDisplay().bounds, process.pid);
+  if (seq !== fullScreenCheck || full === otherFullScreen) return;
+  otherFullScreen = full;
+  console.log("[fullscreen]", full ? "another app is full screen: hiding" : "no full-screen app: showing");
+  applyVisibility();
+}
+
+function watchFullScreen(): void {
+  let settle: NodeJS.Timeout | undefined;
+  systemPreferences.subscribeWorkspaceNotification("NSWorkspaceActiveSpaceDidChangeNotification", () => {
+    void checkFullScreen();
+    clearTimeout(settle);
+    settle = setTimeout(() => void checkFullScreen(), 1000);
+  });
+  void checkFullScreen();
 }
 
 function snooze(until: number): void {
@@ -531,8 +562,9 @@ ipcMain.handle("cat:get-state", () => catState);
 
 app.whenReady().then(async () => {
   app.setName(APP_NAME);
-  // Do not hide the Dock icon: as an accessory app, macOS shows our all-Spaces
-  // window over full-screen apps too, which Rachel does not want (tested 2026-11-08).
+  // No Dock icon (Rachel, 2026-11-11). Packaged builds also set LSUIElement, so the
+  // icon never appears at launch. Full-screen apps are handled by watchFullScreen().
+  app.dock?.hide();
   serveAppProtocol();
   await loadSourcesList(false);
   settings = await loadSettings(dataPaths().settings, sourcesFile);
@@ -540,6 +572,7 @@ app.whenReady().then(async () => {
   catState = devStartState() ?? catInputs(state, Date.now());
   createOverlay();
   createTray();
+  watchFullScreen();
   if (!settings.onboarded) openOnboarding(__dirname, character());
   preparePopover(__dirname);
   // Unread headlines expire after 48h and the cat gets sleepier as editions pass.
