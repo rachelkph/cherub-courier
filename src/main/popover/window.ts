@@ -8,7 +8,7 @@ import { anchorPopover, type Rect } from "./anchor.ts";
 import type { View } from "./view.ts";
 
 const PAGE = "app://newscat/renderer/popover/index.html";
-export const POPOVER_WIDTH = 380;
+export const POPOVER_WIDTH = 420; // wide enough for the nameplate at a good size (Rachel, 2026-11-11)
 
 export type PopoverHandlers = {
   view: () => View;

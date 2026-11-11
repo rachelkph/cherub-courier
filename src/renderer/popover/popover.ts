@@ -158,6 +158,12 @@ function fitNameplate(): void {
 function reportHeight(): void {
   window.popover.height(frame.getBoundingClientRect().height);
 }
+// Refit once the pixel font has actually loaded: the first render measures with a
+// fallback font, and fonts.ready can settle before the nameplate's font starts loading.
+document.fonts.addEventListener("loadingdone", () => {
+  fitNameplate();
+  reportHeight();
+});
 void document.fonts.ready.then(() => {
   fitNameplate();
   reportHeight();

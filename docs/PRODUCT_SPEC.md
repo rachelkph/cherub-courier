@@ -79,7 +79,7 @@ Rachel's choice (2026-11-10): the **cherub** delivers the news by default; the *
 
 ## Popover (click the cat)
 Chosen layout: "Option 1 — topic sections" in the mockup https://claude.ai/artifact/RPvxYiLrPD37X7wAsX55fb (private), decided 2026-11-08.
-- Anchored above the cat, kept on screen near edges, aware of the Dock position. About 380 pt wide; the list scrolls past ~430 pt.
+- Anchored above the cat, kept on screen near edges, aware of the Dock position. About 420 pt wide (380 until 2026-11-11); the list scrolls past ~430 pt.
 - **Front page (decided 2026-11-09, mockup https://claude.ai/artifact/4Yi1QqFKH46rv9oFv7C5YZ):** the popover shows what's top right now, not only the latest delivery. The cat's pile is what's new; the popover is the front page.
   - Stories: everything your approved sources' latest feeds list that was published in the last 24 hours (a rolling window: each story leaves 24 hours after it was published, or sooner if its publisher drops it from the feed), plus what the cat brought most recently, which stays for up to 48 hours even if dropped.
   - Same link, or nearly the same headline from another outlet, is one story; the row credits the others ("BBC News +1 more"). Several feeds from one website count as one outlet.
