@@ -9,7 +9,7 @@ import { isPrivateAddress, safeFeedUrl } from "./sanitize.ts";
 
 // Name, purpose and a contact link, the usual form for automated clients. (A longer
 // phrase, "fetches only feeds its user subscribed to", got us blocked by npr.org.)
-export const USER_AGENT = `${APP_NAME}/0.1 (macOS desktop RSS reader; +https://github.com/rachelkph/news-sprite)`;
+export const USER_AGENT = `${APP_NAME}/0.1 (macOS desktop RSS reader; +https://github.com/rachelkph/cherub-courier)`;
 export const TIMEOUT_MS = 15_000;
 export const MAX_BYTES = 5 * 1024 * 1024;
 export const MAX_REDIRECTS = 5;

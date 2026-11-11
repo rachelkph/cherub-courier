@@ -5,7 +5,7 @@ Start a new Claude Code session in `~/Desktop/Projects/newscat` and say "read do
 
 ## Where things stand
 - Milestones M0–M5 are done. M6 (release) is built except the parts that need Rachel's credentials. M7 has not started.
-- Everything is on GitHub (`main`, github.com/rachelkph/news-sprite) except the art, which stays off on purpose (see "Art" below).
+- Everything is on GitHub (`main`, github.com/rachelkph/cherub-courier) except the art, which stays off on purpose (see "Art" below).
 - Done since the M6 prep:
   - Front page popover (rolling 24 h).
   - "Pixel Gazette" look with a top story.
@@ -61,7 +61,7 @@ Full steps are in `docs/RELEASE.md`. Rachel does these herself; credentials neve
    - Cherub: check Perchance's terms for the generator used.
    - Mound: our own art; no question.
 4. **Decisions:**
-   - **App name:** DONE 2026-11-11, **Cherub Courier** (bundle id `io.github.rachelkph.cherubcourier`; data copied from the old `NewsCat` folder on first launch). The repo stays `news-sprite`.
+   - **App name:** DONE 2026-11-11, **Cherub Courier** (bundle id `io.github.rachelkph.cherubcourier`; data copied from the old `NewsCat` folder on first launch). The repo was renamed to `cherub-courier` on 2026-11-11 (GitHub redirects the old `news-sprite` URLs; never reuse that name, since 0.1.0 fetches its source list through the redirect).
    - **App icon:** DONE 2026-11-11. `node scripts/icon.mjs` draws `build/icon.png` and `build/icon.icns` (the cherub over a pixel cloud in a Cloud Nine sky); not in git, since it contains his art. `npm run release` regenerates it.
    - **First version:** proposed 0.1.0.
    - **DMG:** one universal DMG (225 MB), or separate Apple-silicon and Intel ones.

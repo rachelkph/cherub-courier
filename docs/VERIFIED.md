@@ -301,4 +301,7 @@ NSRunningApplication (0 = Dock icon, 1 = accessory). Notched 1470x956 MacBook sc
 | App and DMG notarized and stapled | PASS | `stapler validate`: worked, for both |
 | Gatekeeper accepts the DMG and the app inside it | PASS | `spctl`: accepted, source=Notarized Developer ID |
 | First run failed: notarytool profile not found | FIXED | the script forced `APPLE_KEYCHAIN=login.keychain-db`; `store-credentials` saved the profile elsewhere on this macOS. Left unset now |
-| Clean-Mac test (download from GitHub, open) | NOT done | needs a GitHub Release and a Mac or user account that never ran the app |
+| Published as GitHub Release v0.1.0 (Rachel) | PASS | downloaded DMG's SHA-256 matches the build and the attached .sha256 (faf4dc18…97a0) |
+| Downloaded DMG with a quarantine flag, and the app inside it | PASS | `spctl`: accepted, source=Notarized Developer ID; stapled ticket valid |
+| Clean-Mac first launch | NOT done | needs a Mac or user account that never ran the app |
+| Repo renamed news-sprite -> cherub-courier | PASS | new and old raw sources.json URLs and release download URLs all return 200 (old ones via GitHub redirect); npr.org feed 200 with the new User-Agent |

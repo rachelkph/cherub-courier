@@ -21,4 +21,4 @@ export const OVERLAY_HEIGHT = Math.ceil(CHARACTER.stripArtHeight * CHARACTER.sca
 
 // Newer copies of the curated source list are published here. Fetched at most once
 // a day; the copy bundled in the app is the fallback. Empty string turns it off.
-export const SOURCES_REMOTE_URL = "https://raw.githubusercontent.com/rachelkph/news-sprite/main/data/sources.json";
+export const SOURCES_REMOTE_URL = "https://raw.githubusercontent.com/rachelkph/cherub-courier/main/data/sources.json";
