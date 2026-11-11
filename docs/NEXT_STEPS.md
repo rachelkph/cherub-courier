@@ -48,9 +48,10 @@ The mound images (`assets/cherub/pile/`) can be redrawn any time with `node scri
    and a click delivers at once with no wake-and-toss; the popover still opens. Engine tests cover
    the cherub; Rachel's live check pending.
 3. **Error states:** SKIPPED (Rachel, 2026-11-11).
-4. **Weekly feed check in CI:**
-   - A GitHub Actions workflow runs `node scripts/check-feeds.mjs` weekly and fails if a bundled feed stops resolving.
-   - `[COST]` $0 on a public repo (free Actions minutes) `[Likely]`; confirm before adding.
+4. **Weekly feed check in CI:** BUILT 2026-11-11. `.github/workflows/check-feeds.yml` runs
+   `scripts/check-feeds.mjs --max-age-hours=504` Mondays 15:00 UTC (and by hand from the Actions
+   tab); fails if a feed is gone, broken, or silent for 3 weeks. `[COST]` $0 (public repo).
+   GitHub pauses scheduled workflows after 60 days with no commits; re-enable from the Actions tab.
 5. **Docs pass:** README, PRODUCT_SPEC, and VERIFIED brought up to date.
 
 ## M6 — release (needs Rachel first)

@@ -2,11 +2,16 @@
 // Checks every feed in data/sources.json: reachable, parses as RSS/Atom,
 // has recent items. For http URLs, also tries the https upgrade.
 // Rough regex parsing on purpose: this is a liveness check, not the app's parser.
+// --max-age-hours=N: how old the newest item may be (default 72). The weekly CI run
+// uses three weeks, so slow feeds (Pitchfork's best albums) do not fail it.
 import { readFile } from "node:fs/promises";
 
 const UA = "CherubCourier-feedcheck/0.1 (+personal project; liveness check)";
 const file = process.argv.slice(2).find((a) => !a.startsWith("--")) ?? new URL("../data/sources.json", import.meta.url);
 const seed = JSON.parse(await readFile(file, "utf8"));
+const maxAgeArg = process.argv.find((a) => a.startsWith("--max-age-hours="));
+const MAX_AGE_H = maxAgeArg ? Number(maxAgeArg.split("=")[1]) : 72;
+if (!(MAX_AGE_H > 0)) throw new Error(`bad ${maxAgeArg}`);
 
 async function probe(url) {
   const ctrl = new AbortController();
@@ -43,7 +48,7 @@ for (const s of seed.sources) {
     const h = await probe(s.feedUrl.replace(/^http:/, "https:"));
     r.httpsUpgrade = h.error ? `fail: ${h.error}` : `${h.status} ${h.kind} ${h.items} items`;
   }
-  r.ok = r.status === 200 && r.kind !== "none" && r.items > 0 && r.newestAgeH !== null && r.newestAgeH <= 72;
+  r.ok = r.status === 200 && r.kind !== "none" && r.items > 0 && r.newestAgeH !== null && r.newestAgeH <= MAX_AGE_H;
   results.push(r);
   await new Promise((res) => setTimeout(res, 500)); // be polite
 }

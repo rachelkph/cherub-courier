@@ -1,0 +1,24 @@
+# Weekly: does every bundled feed in data/sources.json still answer, parse, and
+# post? Fails (and GitHub emails the repo owner) if a feed is gone, broken, or
+# silent for three weeks. Free on a public repo. Run by hand from the Actions tab.
+name: Check feeds
+
+on:
+  schedule:
+    - cron: "0 15 * * 1" # Mondays 15:00 UTC (7-8am Pacific)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Only Node built-ins: no npm install.
+      - run: node scripts/check-feeds.mjs --max-age-hours=504
