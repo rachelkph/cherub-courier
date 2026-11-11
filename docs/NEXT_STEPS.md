@@ -1,7 +1,7 @@
 # Next steps (written 2026-11-10, before Rachel's macOS update)
 
 Where things stand, and what is left, so work can pick up in a new session.
-Start a new Claude Code session in `~/Desktop/Projects/newscat` and say "read docs/NEXT_STEPS.md".
+Start a new Claude Code session in `~/Desktop/Projects/cherub-courier` and say "read docs/NEXT_STEPS.md".
 
 ## Where things stand
 - Milestones M0–M5 are done. M6 (release) is built except the parts that need Rachel's credentials. M7 has not started.
@@ -19,7 +19,7 @@ Start a new Claude Code session in `~/Desktop/Projects/newscat` and say "read do
 The development build does not start at login (only a packaged release does). To run it:
 
 ```sh
-cd ~/Desktop/Projects/newscat
+cd ~/Desktop/Projects/cherub-courier
 npm run dev
 ```
 
@@ -32,7 +32,7 @@ If `npm run dev` fails after the update, run `npm install` first (a new Xcode or
 
 ## Art: back it up
 The art is not in git, so the only copies are on this Mac:
-- `~/Desktop/Projects/newscat/assets/cherub/`
+- `~/Desktop/Projects/cherub-courier/assets/cherub/`
 - `~/Downloads/cherub_anim_assets/` (the original cherub cut)
 
 Copy both somewhere safe (iCloud Drive, an external disk) before updating.
