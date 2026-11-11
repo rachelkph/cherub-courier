@@ -74,7 +74,6 @@ input[type="time"] { width: 120px; }
 .tabs button + button { border-left: 2px solid var(--ink); }
 .tabs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 
-.callout { border: 1px solid var(--rule); padding: 10px 12px; margin: 0 0 14px; font-family: var(--serif); font-style: italic; color: var(--muted); }
 h2.topic { font: 700 10.5px var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 16px 0 4px; }
 .row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--rule); }
 .row input[type="checkbox"] { margin-top: 3px; accent-color: var(--ink); width: 16px; height: 16px; flex: none; }

@@ -16,7 +16,7 @@ Two paths:
 2. **Customize.** Same list, nothing pre-checked, plus an input: paste an RSS link or a site link.
 
 Rules for the recommended screen:
-- Header note: "No news source is unbiased. These are well-regarded and mixed on purpose. Independent raters sometimes disagree."
+- Header note: removed 2026-11-11 (Rachel). (It read: "No news source is unbiased. These are well-regarded and mixed on purpose. Independent raters sometimes disagree.")
 - Each row: source name, short description, and a small "rated by <rater>: <label>, <date>" line **only where the source file has a rating with an evidence link**; link to the rater instead of copying their data.
 - Do not include paywalled or terms-restricted sources in the recommended set; label "paywall" where shown.
 - For news topics, include at least three sources with differing ratings when available. The seed list currently has no confirmed center-right feed (see OPEN_QUESTIONS); the screen must still work without one.

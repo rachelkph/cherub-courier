@@ -370,7 +370,6 @@ function sources(): HTMLElement {
         h("button", { type: "button", "aria-pressed": String(state.mode === "recommended"), onclick: () => setMode("recommended") }, "Recommended"),
         h("button", { type: "button", "aria-pressed": String(state.mode === "custom"), onclick: () => setMode("custom") }, "Customize"),
       ),
-      h("p", { class: "callout" }, "No news source is unbiased. These are well-regarded and mixed on purpose. Independent raters sometimes disagree."),
       state.mode === "recommended" ? h("p", { class: "note" }, "Uncheck anything you don't want. Nothing is downloaded until you approve.") : h("p", { class: "note" }, "Check the sources you want, or add your own."),
       ...sections,
       pasteBox(),
