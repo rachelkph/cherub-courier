@@ -78,6 +78,22 @@
       ]
     },
     {
+      "id": "npr-world",
+      "name": "NPR World",
+      "description": "International news from NPR.",
+      "topics": [
+        "world-news"
+      ],
+      "feedUrl": "https://feeds.npr.org/1004/rss.xml",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
       "id": "bbc-news-top",
       "name": "BBC News: Top stories",
       "description": "The BBC's top stories across all sections.",
@@ -168,13 +184,13 @@
       ],
       "feedUrl": "https://www.theguardian.com/world/rss",
       "paywall": "unknown",
-      "recommendedDefault": false,
+      "recommendedDefault": true,
       "userOptInOnly": false,
       "unofficialFeed": false,
       "verified": true,
-      "verifiedOn": "2026-11-08",
+      "verifiedOn": "2026-11-11",
       "ratings": [],
-      "note": "No rating captured."
+      "note": "Recommended from 2026-11-11 (Rachel); no bias rating captured."
     },
     {
       "id": "nyt-home",
