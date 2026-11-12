@@ -5,7 +5,7 @@ import { buildEdition, type Source } from "../src/main/feeds/edition.ts";
 import { urlKey } from "../src/main/feeds/select.ts";
 import { type Edition, type EditionItem, emptyState, type State } from "../src/main/feeds/store.ts";
 import { anchorPopover } from "../src/main/popover/anchor.ts";
-import { buildView, catInputs, clearPile, editionNote, linkFor, markOpened, outletOf, unread } from "../src/main/popover/view.ts";
+import { buildView, catInputs, clearPile, linkFor, markOpened, outletOf, stampFor, unread } from "../src/main/popover/view.ts";
 import { currentEdition } from "../src/main/schedule.ts";
 
 const H = 3600_000;
@@ -122,11 +122,14 @@ describe("popover front page", () => {
     assert.equal(v.newLabel, "2 new");
     assert.equal(v.countLabel, "5 stories");
     const us = view(monday(), M9 + H, { filter: "us-news" }).sections[0];
-    assert.deepEqual(us.items.map((i) => [i.headline, i.fresh, i.note]), [
-      [words(3), true, null],
-      [words(1), false, "last night"],
-      [words(5), false, "yesterday afternoon"], // never delivered: named after when it was published (3 PM)
+    assert.deepEqual(us.items.map((i) => [i.headline, i.fresh]), [
+      [words(3), true],
+      [words(1), false],
+      [words(5), false], // never delivered: still stamped with when it was published
     ]);
+    // Every story carries its publish time, through the app's clock.
+    const clocked = view(monday(), M9 + H, { filter: "us-news", clock: (t) => new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) });
+    for (const it of clocked.sections[0].items) assert.match(it.stamp, /^(Yest |[A-Z][a-z]{2} )?\d{1,2}:\d{2} [AP]M$/, it.headline);
     assert.deepEqual(view(monday(), M9 + H, { filter: "music" }).sections[0].items.map((i) => i.headline), [words(4)], "older than 24 hours: gone");
     assert.equal(v.fetchedLabel, "Fetched 8:05 AM");
   });
@@ -144,9 +147,9 @@ describe("popover front page", () => {
     next = clearPile(next, E9 + 60_000);
     assert.equal(view(next, E9 + H).newLabel, "1 new");
     const ve = view(next, E9 + H, { filter: "us-news" });
-    assert.deepEqual(ve.sections[0].items.map((i) => [i.headline, i.fresh, i.note]), [
-      [words(7), true, null],
-      [words(3), false, "this morning"],
+    assert.deepEqual(ve.sections[0].items.map((i) => [i.headline, i.fresh]), [
+      [words(7), true],
+      [words(3), false],
     ]);
   });
 
@@ -263,10 +266,12 @@ describe("popover front page", () => {
     assert.equal(view(quiet, M9 + H, { filter: "us-news" }).countLabel, "4 stories");
   });
 
-  it("names older editions, and finds the link behind any story", () => {
-    assert.equal(editionNote("morning", M9, M9 + 3 * H), "this morning");
-    assert.equal(editionNote("evening", E8, M9 + H), "last night");
-    assert.equal(editionNote("morning", M8, local(2026, 11, 10, 9)), "Sunday morning");
+  it("stamps each story with when it was published, and finds the link behind any story", () => {
+    const clock = (t: number) => new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    assert.equal(stampFor(M9 - H, M9 + 3 * H, clock), "7:00 AM", "today: the time");
+    assert.equal(stampFor(E8 + 3 * H + 53 * 60_000, M9 + H, clock), "Yest 9:53 PM");
+    assert.equal(stampFor(M8, local(2026, 11, 10, 9), clock), "Sun 8:00 AM", "older: the weekday");
+    assert.equal(stampFor(local(2026, 11, 8, 23, 59), local(2026, 11, 9, 0, 1), clock), "Yest 11:59 PM", "just past midnight");
     assert.equal(linkFor(monday(), urlKey("https://npr.example/5")), "https://npr.example/5", "a feed story never delivered");
     assert.equal(linkFor(monday(), urlKey("https://bb.example/4")), "https://bb.example/4");
     assert.equal(linkFor(monday(), "evil.example.com/x"), null);

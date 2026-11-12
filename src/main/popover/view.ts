@@ -62,7 +62,7 @@ export type ViewItem = {
   source: string;
   alsoIn: number; // other outlets running nearly the same headline ("+1 more")
   paywall: boolean;
-  note: string | null; // which earlier edition it is from; null for current ones
+  stamp: string; // when it was published: "8:30 AM", "Yest 9:53 PM", "Mon 6:10 PM"
   opened: boolean;
   fresh: boolean; // in the cat's pile: shown with a NEW tag
 };
@@ -101,12 +101,13 @@ const dayStart = (t: number) => {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 };
 
-// "this morning", "last night", "Friday evening"…
-export function editionNote(slot: "morning" | "evening", scheduledFor: number, now: number): string {
-  const days = Math.round((dayStart(now) - dayStart(scheduledFor)) / 86_400_000);
-  if (days <= 0) return slot === "morning" ? "this morning" : "this evening";
-  if (days === 1) return slot === "morning" ? "yesterday morning" : "last night";
-  return `${new Date(scheduledFor).toLocaleDateString("en-US", { weekday: "long" })} ${slot}`;
+// When a story was published, as a wire-service stamp (Rachel chose this, 2026-11-11):
+// the time today, "Yest" and the time yesterday, else the weekday and the time.
+export function stampFor(t: number, now: number, clock: (t: number) => string): string {
+  const days = Math.round((dayStart(now) - dayStart(t)) / 86_400_000);
+  if (days <= 0) return clock(t);
+  if (days === 1) return `Yest ${clock(t)}`;
+  return `${new Date(t).toLocaleDateString("en-US", { weekday: "short" })} ${clock(t)}`;
 }
 
 // What the cat brought most recently: the unread pile, plus what the pile held at
@@ -118,17 +119,6 @@ function freshItems(state: State, now: number): Located[] {
   const inPile = new Set(pile.map((l) => l.key));
   const clicked = allItems(state).filter((l) => last.has(l.key) && !inPile.has(l.key) && now - l.item.addedAt <= CARRY_OVER_MS);
   return [...pile, ...clicked];
-}
-
-// When a story the cat never delivered was published: "this afternoon", "last night",
-// "Friday morning"… (edition periods would call a 3 PM story "morning").
-export function publishedNote(t: number, now: number): string {
-  const h = new Date(t).getHours();
-  const part = h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
-  const days = Math.round((dayStart(now) - dayStart(t)) / 86_400_000);
-  if (days <= 0) return `this ${part}`;
-  if (days === 1) return part === "evening" ? "last night" : `yesterday ${part}`;
-  return `${new Date(t).toLocaleDateString("en-US", { weekday: "long" })} ${part}`;
 }
 
 // The outlet behind a link, so several feeds from one site count once:
@@ -163,7 +153,7 @@ export type FrontPageOptions = {
   filter: string;
   editionTimes: EditionTimes;
   refreshing: boolean;
-  clock: (t: number) => string; // formats a time for "Fetched …"
+  clock: (t: number) => string; // formats a time: "Fetched …" and the story stamps
   nameplate?: string; // the newspaper's name (default: the cherub's)
 };
 
@@ -222,25 +212,15 @@ function rankStories(stories: Story[], keywords: string[]): Story[] {
 export function buildView(state: State, opts: FrontPageOptions & { hasSources: boolean }): View {
   const { now } = opts;
   const current = currentEdition(now, opts.editionTimes);
-  const deliveredIn = new Map<string, { slot: "morning" | "evening"; scheduledFor: number }>();
-  for (const e of state.editions) for (const i of e.items) deliveredIn.set(urlKey(i.link), { slot: e.slot, scheduledFor: e.scheduledFor });
   const opened = new Set(state.opened.map((o) => o.key));
 
-  // Older stories say where they came from: the edition that delivered them, or
-  // else when they were published. Nothing for stories from the current edition.
-  const note = (st: Story): string | null => {
-    if (st.fresh) return null;
-    const from = deliveredIn.get(st.key);
-    if (from) return from.scheduledFor >= current.scheduledFor ? null : editionNote(from.slot, from.scheduledFor, now);
-    return st.item.publishedAt >= current.scheduledFor ? null : publishedNote(st.item.publishedAt, now);
-  };
   const toItem = (st: Story): ViewItem => ({
     key: st.key,
     headline: st.item.headline,
     source: st.item.source,
     alsoIn: st.outlets.size - 1,
     paywall: st.item.paywall,
-    note: note(st),
+    stamp: stampFor(st.item.publishedAt, now, opts.clock),
     opened: opened.has(st.key),
     fresh: st.fresh,
   });

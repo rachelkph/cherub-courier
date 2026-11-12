@@ -4,7 +4,7 @@
 
 import { pixelIcon } from "./icons.ts";
 
-type ViewItem = { key: string; headline: string; source: string; alsoIn: number; paywall: boolean; note: string | null; opened: boolean; fresh: boolean };
+type ViewItem = { key: string; headline: string; source: string; alsoIn: number; paywall: boolean; stamp: string; opened: boolean; fresh: boolean };
 type View = {
   nameplate: string;
   edition: string;
@@ -61,10 +61,10 @@ function button(cls: string, label: string, onClick: () => void, ...kids: (Node 
 const expanded = new Set<string>();
 let lastView: View | null = null;
 
-// Source line: NEW tag, source (+ other outlets), which edition, paywall.
+// Source line: NEW tag, source (+ other outlets), paywall; the publish time on the right.
 function meta(it: ViewItem): HTMLElement {
   const source = it.alsoIn > 0 ? `${it.source} +${it.alsoIn} more` : it.source;
-  return el("span", "meta", it.fresh ? el("span", "new", "new") : null, el("span", undefined, it.note ? `${source} · ${it.note}` : source), it.paywall ? el("span", "paywall", "paywall") : null);
+  return el("span", "meta", it.fresh ? el("span", "new", "new") : null, el("span", undefined, source), it.paywall ? el("span", "paywall", "paywall") : null, el("span", "stamp", it.stamp));
 }
 
 function row(it: ViewItem): HTMLButtonElement {
