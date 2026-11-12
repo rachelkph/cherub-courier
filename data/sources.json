@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastReviewed": "2026-11-08",
+  "lastReviewed": "2026-11-11",
   "language": "en-US",
   "readme": "Curated source list. Validated by src/main/sources/schema.ts on every load. 'ratings' are third-party ratings shown only as a link to the rater (terms for copying rater data not checked). No source here is described as unbiased. recommendedDefault sources may not be paywalled, user-opt-in-only or unofficial.",
   "topics": [
@@ -497,6 +497,662 @@
       "unofficialFeed": false,
       "verified": true,
       "verifiedOn": "2026-11-08",
+      "ratings": []
+    },
+    {
+      "id": "bbc-news-business",
+      "name": "BBC News: Business",
+      "description": "Business and economy news from the BBC.",
+      "topics": [
+        "business-markets"
+      ],
+      "feedUrl": "https://feeds.bbci.co.uk/news/business/rss.xml",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "npr-business",
+      "name": "NPR Business",
+      "description": "Business and economy coverage from NPR.",
+      "topics": [
+        "business-markets"
+      ],
+      "feedUrl": "https://feeds.npr.org/1006/rss.xml",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "cnbc-top-news",
+      "name": "CNBC Top News",
+      "description": "Markets and business headlines from CNBC.",
+      "topics": [
+        "business-markets"
+      ],
+      "feedUrl": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "marketwatch-top-stories",
+      "name": "MarketWatch Top Stories",
+      "description": "Markets, investing and personal finance news from MarketWatch.",
+      "topics": [
+        "business-markets"
+      ],
+      "feedUrl": "https://feeds.content.dowjones.io/public/rss/mw_topstories",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "guardian-business",
+      "name": "The Guardian: Business",
+      "description": "Business news from The Guardian.",
+      "topics": [
+        "business-markets"
+      ],
+      "feedUrl": "https://www.theguardian.com/business/rss",
+      "paywall": false,
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "npr-science",
+      "name": "NPR Science",
+      "description": "Science and health stories from NPR.",
+      "topics": [
+        "science"
+      ],
+      "feedUrl": "https://feeds.npr.org/1007/rss.xml",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "bbc-news-science",
+      "name": "BBC News: Science and Environment",
+      "description": "Science and environment news from the BBC.",
+      "topics": [
+        "science"
+      ],
+      "feedUrl": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "nasa-news",
+      "name": "NASA News Releases",
+      "description": "Official news releases from NASA.",
+      "topics": [
+        "science"
+      ],
+      "feedUrl": "https://www.nasa.gov/news-release/feed/",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "quanta-magazine",
+      "name": "Quanta Magazine",
+      "description": "In-depth stories on math, physics, biology and computer science.",
+      "topics": [
+        "science"
+      ],
+      "feedUrl": "https://www.quantamagazine.org/feed/",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "sciencedaily-top",
+      "name": "ScienceDaily: Top Science",
+      "description": "Research news summaries from ScienceDaily.",
+      "topics": [
+        "science"
+      ],
+      "feedUrl": "https://www.sciencedaily.com/rss/top/science.xml",
+      "paywall": false,
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "ars-technica-science",
+      "name": "Ars Technica: Science",
+      "description": "Science coverage from Ars Technica.",
+      "topics": [
+        "science"
+      ],
+      "feedUrl": "https://feeds.arstechnica.com/arstechnica/science",
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "new-scientist",
+      "name": "New Scientist",
+      "description": "Science news from New Scientist (many articles need a subscription).",
+      "topics": [
+        "science"
+      ],
+      "feedUrl": "https://www.newscientist.com/feed/home/",
+      "paywall": true,
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "polygon",
+      "name": "Polygon",
+      "description": "Video game news, reviews and culture from Polygon.",
+      "topics": [
+        "gaming"
+      ],
+      "feedUrl": "https://www.polygon.com/rss/index.xml",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "ign-all",
+      "name": "IGN",
+      "description": "Games, movies and TV news from IGN.",
+      "topics": [
+        "gaming"
+      ],
+      "feedUrl": "https://feeds.ign.com/ign/all",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "eurogamer",
+      "name": "Eurogamer",
+      "description": "Video game news and reviews from Eurogamer.",
+      "topics": [
+        "gaming"
+      ],
+      "feedUrl": "https://www.eurogamer.net/feed",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "gamespot-news",
+      "name": "GameSpot News",
+      "description": "Video game news from GameSpot.",
+      "topics": [
+        "gaming"
+      ],
+      "feedUrl": "https://www.gamespot.com/feeds/news/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "kotaku",
+      "name": "Kotaku",
+      "description": "Video game news and culture from Kotaku.",
+      "topics": [
+        "gaming"
+      ],
+      "feedUrl": "https://kotaku.com/rss",
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "rock-paper-shotgun",
+      "name": "Rock Paper Shotgun",
+      "description": "PC gaming news and reviews from Rock Paper Shotgun.",
+      "topics": [
+        "gaming"
+      ],
+      "feedUrl": "https://www.rockpapershotgun.com/feed",
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "the-verge-games",
+      "name": "The Verge: Games",
+      "description": "Gaming coverage from The Verge.",
+      "topics": [
+        "gaming"
+      ],
+      "feedUrl": "https://www.theverge.com/rss/games/index.xml",
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "espn-top",
+      "name": "ESPN Top Headlines",
+      "description": "Top sports headlines from ESPN.",
+      "topics": [
+        "sports"
+      ],
+      "feedUrl": "https://www.espn.com/espn/rss/news",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "cbs-sports",
+      "name": "CBS Sports",
+      "description": "Sports headlines from CBS Sports.",
+      "topics": [
+        "sports"
+      ],
+      "feedUrl": "https://www.cbssports.com/rss/headlines/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "yahoo-sports",
+      "name": "Yahoo Sports",
+      "description": "Sports news from Yahoo Sports.",
+      "topics": [
+        "sports"
+      ],
+      "feedUrl": "https://sports.yahoo.com/rss/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "npr-sports",
+      "name": "NPR Sports",
+      "description": "Sports stories from NPR.",
+      "topics": [
+        "sports"
+      ],
+      "feedUrl": "https://feeds.npr.org/1055/rss.xml",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "bbc-sport",
+      "name": "BBC Sport",
+      "description": "Sports news from the BBC, with a lot of UK and European coverage.",
+      "topics": [
+        "sports"
+      ],
+      "feedUrl": "https://feeds.bbci.co.uk/sport/rss.xml",
+      "paywall": false,
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "guardian-sport",
+      "name": "The Guardian: Sport",
+      "description": "Sports news from The Guardian.",
+      "topics": [
+        "sports"
+      ],
+      "feedUrl": "https://www.theguardian.com/sport/rss",
+      "paywall": false,
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "npr-books",
+      "name": "NPR Books",
+      "description": "Book news, reviews and author interviews from NPR.",
+      "topics": [
+        "culture-books"
+      ],
+      "feedUrl": "https://feeds.npr.org/1032/rss.xml",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "guardian-books",
+      "name": "The Guardian: Books",
+      "description": "Book news and reviews from The Guardian.",
+      "topics": [
+        "culture-books"
+      ],
+      "feedUrl": "https://www.theguardian.com/books/rss",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "lithub",
+      "name": "Literary Hub",
+      "description": "Essays, excerpts and book news from Literary Hub.",
+      "topics": [
+        "culture-books"
+      ],
+      "feedUrl": "https://lithub.com/feed/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "book-riot",
+      "name": "Book Riot",
+      "description": "Book news and recommendations from Book Riot.",
+      "topics": [
+        "culture-books"
+      ],
+      "feedUrl": "https://bookriot.com/feed/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "electric-literature",
+      "name": "Electric Literature",
+      "description": "Literary essays and fiction from Electric Literature.",
+      "topics": [
+        "culture-books"
+      ],
+      "feedUrl": "https://electricliterature.com/feed/",
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "guardian-culture",
+      "name": "The Guardian: Culture",
+      "description": "Arts and culture coverage from The Guardian.",
+      "topics": [
+        "culture-books"
+      ],
+      "feedUrl": "https://www.theguardian.com/culture/rss",
+      "paywall": false,
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "dezeen",
+      "name": "Dezeen",
+      "description": "Architecture, interiors and design news from Dezeen.",
+      "topics": [
+        "design"
+      ],
+      "feedUrl": "https://www.dezeen.com/feed/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "colossal",
+      "name": "Colossal",
+      "description": "Art, craft and visual culture from Colossal.",
+      "topics": [
+        "design"
+      ],
+      "feedUrl": "https://www.thisiscolossal.com/feed/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "designboom",
+      "name": "designboom",
+      "description": "Architecture and design news from designboom.",
+      "topics": [
+        "design"
+      ],
+      "feedUrl": "https://www.designboom.com/feed/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "creative-bloq",
+      "name": "Creative Bloq",
+      "description": "Graphic design, illustration and digital art news from Creative Bloq.",
+      "topics": [
+        "design"
+      ],
+      "feedUrl": "https://www.creativebloq.com/feeds/all",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "github-blog",
+      "name": "The GitHub Blog",
+      "description": "Product news and engineering posts from GitHub.",
+      "topics": [
+        "creative-coding-devtools"
+      ],
+      "feedUrl": "https://github.blog/feed/",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "css-tricks",
+      "name": "CSS-Tricks",
+      "description": "Articles on CSS and front-end development.",
+      "topics": [
+        "creative-coding-devtools"
+      ],
+      "feedUrl": "https://css-tricks.com/feed/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "simon-willison",
+      "name": "Simon Willison's Weblog",
+      "description": "Notes on software, tools and AI from developer Simon Willison.",
+      "topics": [
+        "creative-coding-devtools"
+      ],
+      "feedUrl": "https://simonwillison.net/atom/everything/",
+      "paywall": false,
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "hackaday",
+      "name": "Hackaday",
+      "description": "Hardware hacks, electronics and maker projects.",
+      "topics": [
+        "creative-coding-devtools"
+      ],
+      "feedUrl": "https://hackaday.com/blog/feed/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "stack-overflow-blog",
+      "name": "The Stack Overflow Blog",
+      "description": "Posts about programming and developer tools from Stack Overflow.",
+      "topics": [
+        "creative-coding-devtools"
+      ],
+      "feedUrl": "https://stackoverflow.blog/feed/",
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
+      "ratings": []
+    },
+    {
+      "id": "javascript-weekly",
+      "name": "JavaScript Weekly",
+      "description": "A weekly roundup of JavaScript news and articles.",
+      "topics": [
+        "creative-coding-devtools"
+      ],
+      "feedUrl": "https://cprss.s3.amazonaws.com/javascriptweekly.com.xml",
+      "paywall": "unknown",
+      "recommendedDefault": false,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-11",
       "ratings": []
     }
   ],

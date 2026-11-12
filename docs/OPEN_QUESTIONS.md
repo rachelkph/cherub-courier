@@ -9,7 +9,7 @@
 5. **Item age window** — proposed 48 hours; confirm.
 6. **When the cat falls asleep** — proposed after more than 2 editions are unread; confirm.
 7. **Sprite look** — Rachel may iterate on the pixel art later. Keep the manifest-driven design so art can be swapped without code changes.
-8. **Opt-in topics beyond the first five** — only US news, world news, AI and tech, film and TV, and music have researched seed sources. The others are empty placeholders.
+8. **Opt-in topics beyond the first five** — DONE 2026-11-11: business, science, gaming, sports, culture and books, design, and creative coding each have 4–7 verified sources, 4 recommended (Rachel asked). Open: world news still has only one recommended source (BBC World); Guardian World was left unrecommended for lack of a rating.
 
 ## Planned art change (told 2026-11-08, no assets yet)
 Rachel plans to replace the cat with a **news boy cycling along the Dock**. His **satchel grows** as unread news accumulates, until he is **covered in a pile of newspapers**. Implications when the art arrives:

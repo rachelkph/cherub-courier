@@ -39,7 +39,12 @@ function fake(routes: Record<string, () => Response>, opts: { private?: string[]
 
 describe("sources schema", () => {
   it("accepts the bundled list, and its recommended sources follow the rules", () => {
-    assert.equal(file.sources.length, 24);
+    assert.equal(file.sources.length, 65);
+    // No built-in topic is left without recommended sources (Rachel, 2026-11-11).
+    for (const t of file.topics) {
+      const n = file.sources.filter((x) => x.recommendedDefault && x.topics.includes(t.id)).length;
+      assert.ok(n >= 1, `${t.id} has no recommended sources`);
+    }
     for (const s of file.sources.filter((x) => x.recommendedDefault)) {
       assert.notEqual(s.paywall, true, s.id);
       assert.ok(!s.userOptInOnly && !s.unofficialFeed, s.id);
@@ -213,7 +218,7 @@ describe("settings and setup", () => {
     assert.ok(!s.approvedSourceIds.includes("variety"), "film-tv not picked");
     assert.deepEqual(editionSources(s, file).map((x) => x.id).sort(), recommended.sort());
     assert.deepEqual(s.keywords, ["synth", "open source"]);
-    assert.ok(model.topics.find((t) => t.id === "science")?.recommendedCount === 0);
+    assert.ok(model.topics.every((t) => t.recommendedCount >= 1), "no topic without recommended sources");
   });
 
   it("only accepts pasted feeds that were verified this session", () => {

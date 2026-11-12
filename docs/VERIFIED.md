@@ -316,3 +316,10 @@ NSRunningApplication (0 = Dock icon, 1 = accessory). Notched 1470x956 MacBook sc
 | Loose pages: unclickable, fly both ways, land before he is out (0.42 s) | PASS | engine test |
 | Everything inside his 160 px strip in every state | PASS | engine test |
 | Looks right live (buried, click, climb out, toss) | PASS (Rachel) | test copy on a data copy with NEWSCAT_DEV_STATE="12,0" |
+
+## 2026-11-11 — Sources for the seven empty topics
+`node scripts/check-feeds.mjs --json` (72 h freshness) on 49 candidate feeds. 41 passed and were added
+(`verifiedOn` 2026-11-11), 4 per topic recommended. Rejected: Yahoo Finance and It's Nice That (404),
+AP business via Google News (0 items), Core77 (no dates), Smashing Magazine (139 h), The Changelog (174 h),
+web.dev (980 h), CreativeApplications.Net (dead since 2025). Paywall marked true for New Scientist (never
+recommended); "unknown" where not checked. No bias ratings added.
