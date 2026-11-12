@@ -292,6 +292,14 @@ function watchFullScreen(): void {
   void checkFullScreen();
 }
 
+// Paused: he stays where he is, still visible and clickable (Rachel, 2026-11-11).
+function setPaused(paused: boolean): void {
+  settings = { ...settings, paused };
+  void saveSettings(dataPaths().settings, settings);
+  overlay?.webContents.send("overlay:paused", paused);
+  rebuildTrayMenu();
+}
+
 function snooze(until: number): void {
   settings = { ...settings, snoozeUntil: until };
   void saveSettings(dataPaths().settings, settings);
@@ -483,6 +491,10 @@ function rebuildTrayMenu(): void {
           applyVisibility();
         },
       },
+      {
+        label: `${settings.paused ? "Resume" : "Pause"} ${CHARACTER.noun}`,
+        click: () => setPaused(!settings.paused),
+      },
       ...snoozeMenu(),
       { type: "separator" },
       { label: "Set up…", click: () => openOnboarding(__dirname) },
@@ -510,6 +522,7 @@ ipcMain.on("overlay:set-interactive", (_e, interactive: unknown) => {
 // The renderer pulls bounds at startup; pushed updates can arrive before its listener exists.
 ipcMain.handle("overlay:get-bounds", () => rendererBounds());
 ipcMain.handle("cat:get-state", () => catState);
+ipcMain.handle("overlay:get-paused", () => settings?.paused === true);
 
 
 app.whenReady().then(async () => {

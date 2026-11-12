@@ -14,4 +14,7 @@ contextBridge.exposeInMainWorld("overlay", {
   clicked: (box: { x: number; y: number; width: number; height: number }) => ipcRenderer.send("cat:clicked", box),
   delivered: (box: { x: number; y: number; width: number; height: number }) => ipcRenderer.send("cat:delivered", box),
   onPopoverVisible: (cb: (visible: boolean) => void) => ipcRenderer.on("popover:visible", (_e, v) => cb(v === true)),
+  // Paused from the menu bar: he stays where he is.
+  getPaused: (): Promise<boolean> => ipcRenderer.invoke("overlay:get-paused"),
+  onPaused: (cb: (paused: boolean) => void) => ipcRenderer.on("overlay:paused", (_e, v) => cb(v === true)),
 });

@@ -318,4 +318,13 @@ describe("settings and setup", () => {
     assert.equal(s.editionTimes.morning, "08:00");
     assert.equal(cleanSettings("garbage", file).onboarded, false);
   });
+
+  it("remembers that he is paused; anything but true is not paused; setup keeps it", () => {
+    assert.equal(defaultSettings().paused, false);
+    assert.equal(cleanSettings({ paused: true }, file).paused, true);
+    assert.equal(cleanSettings({ paused: "yes" }, file).paused, false);
+    const prev = { ...defaultSettings(), paused: true };
+    assert.equal(applySkip(prev).paused, true, "skipping setup");
+    assert.equal(applyFinish({ topics: ["music"], approvedSourceIds: [] }, file, prev, new Map()).paused, true, "finishing setup");
+  });
 });

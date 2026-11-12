@@ -19,6 +19,8 @@ declare global {
       clicked(box: CatBox): void;
       delivered(box: CatBox): void;
       onPopoverVisible(cb: (visible: boolean) => void): void;
+      getPaused(): Promise<boolean>;
+      onPaused(cb: (paused: boolean) => void): void;
     };
   }
 }
@@ -221,12 +223,24 @@ window.overlay.onCatState((s) => {
   engine?.setInputs(s);
 });
 window.overlay.onVisible((v) => (v ? start() : stop()));
-window.overlay.onPopoverVisible((v) => engine?.setPaused(v));
+// He stands still while the popover is open (so it stays anchored) or while paused.
+let popoverOpen = false;
+let pausedByUser = false;
+const hold = () => engine?.setPaused(popoverOpen || pausedByUser);
+window.overlay.onPopoverVisible((v) => {
+  popoverOpen = v;
+  hold();
+});
+window.overlay.onPaused((p) => {
+  pausedByUser = p;
+  hold();
+});
 
 const manifest = parseManifest(await (await fetch(`${ASSETS}manifest.json`)).json());
-const [initialBounds, initialState] = await Promise.all([
+const [initialBounds, initialState, initialPaused] = await Promise.all([
   window.overlay.getBounds(),
   window.overlay.getCatState(),
+  window.overlay.getPaused(),
   ...spritePaths(manifest).map(async (p) => images.set(p, await load(p))),
 ]);
 for (const [p, img] of images) masks.set(p, alphaMask(img));
@@ -235,6 +249,8 @@ const sizes: Sizes = Object.fromEntries([...images].map(([p, img]) => [p, [img.w
 if (bounds.width === 0) bounds = initialBounds;
 engine = new CatEngine(manifest, sizes, strip(), performance.now());
 engine.setInputs(latestState ?? initialState);
+pausedByUser ||= initialPaused;
+hold();
 // macOS System Settings > Accessibility > Display > Reduce motion, live.
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 engine.setReducedMotion(reduceMotion.matches);
