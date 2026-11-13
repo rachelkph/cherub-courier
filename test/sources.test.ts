@@ -39,7 +39,8 @@ function fake(routes: Record<string, () => Response>, opts: { private?: string[]
 
 describe("sources schema", () => {
   it("accepts the bundled list, and its recommended sources follow the rules", () => {
-    assert.equal(file.sources.length, 67);
+    assert.equal(file.sources.length, 64);
+    assert.ok(!file.sources.some((s) => s.paywall === true), "no paywalled sources (Rachel, 2026-11-13)");
     // No built-in topic is left without recommended sources (Rachel, 2026-11-11).
     for (const t of file.topics) {
       const n = file.sources.filter((x) => x.recommendedDefault && x.topics.includes(t.id)).length;
@@ -52,12 +53,11 @@ describe("sources schema", () => {
       assert.ok(!s.userOptInOnly && !s.unofficialFeed, s.id);
       assert.ok(s.feedUrl.startsWith("https://"), s.id);
     }
-    assert.ok(!file.sources.find((s) => s.id === "nyt-home")?.recommendedDefault);
   });
 
   const broken: [string, (d: ReturnType<typeof raw>) => void, RegExp][] = [
     ["wrong schema version", (d) => { d.schemaVersion = 2; }, /schemaVersion/],
-    ["paywalled source recommended", (d) => { d.sources.find((s: { id: string }) => s.id === "nyt-home").recommendedDefault = true; }, /recommended by default but is paywalled/],
+    ["paywalled source recommended", (d) => { d.sources.find((s: { id: string }) => s.id === "bbc-news-world").paywall = true; }, /recommended by default but is paywalled/],
     ["unofficial source recommended", (d) => { d.sources.find((s: { id: string }) => s.id === "reuters-google-news").recommendedDefault = true; }, /unofficial/],
     ["unknown topic", (d) => { d.sources[0].topics = ["cooking"]; }, /unknown topic "cooking"/],
     ["duplicate id", (d) => { d.sources[1].id = d.sources[0].id; }, /duplicates/],

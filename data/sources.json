@@ -193,54 +193,6 @@
       "note": "Recommended from 2026-11-11 (Rachel); no bias rating captured."
     },
     {
-      "id": "nyt-home",
-      "name": "The New York Times: Home page",
-      "description": "Home page stories from The New York Times.",
-      "topics": [
-        "us-news"
-      ],
-      "feedUrl": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
-      "paywall": true,
-      "recommendedDefault": false,
-      "userOptInOnly": true,
-      "unofficialFeed": false,
-      "verified": true,
-      "verifiedOn": "2026-11-08",
-      "ratings": [
-        {
-          "rater": "AllSides",
-          "label": "Lean Left",
-          "asOf": "2026-03",
-          "evidenceUrl": "https://www.allsides.com/blog/google-news-bias-2026-new-data-shows-rising-left-leaning-coverage"
-        }
-      ],
-      "note": "Never pre-select. Terms of use for RSS not checked; user-added only."
-    },
-    {
-      "id": "nyt-world",
-      "name": "The New York Times: World",
-      "description": "World news from The New York Times.",
-      "topics": [
-        "world-news"
-      ],
-      "feedUrl": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-      "paywall": true,
-      "recommendedDefault": false,
-      "userOptInOnly": true,
-      "unofficialFeed": false,
-      "verified": true,
-      "verifiedOn": "2026-11-08",
-      "ratings": [
-        {
-          "rater": "AllSides",
-          "label": "Lean Left",
-          "asOf": "2026-03",
-          "evidenceUrl": "https://www.allsides.com/blog/google-news-bias-2026-new-data-shows-rising-left-leaning-coverage"
-        }
-      ],
-      "note": "Never pre-select. Terms of use for RSS not checked; user-added only."
-    },
-    {
       "id": "reuters-google-news",
       "name": "Reuters (via Google News search feed)",
       "description": "Reuters stories found through a Google News search feed (unofficial).",
@@ -702,22 +654,6 @@
       ],
       "feedUrl": "https://feeds.arstechnica.com/arstechnica/science",
       "paywall": "unknown",
-      "recommendedDefault": false,
-      "userOptInOnly": false,
-      "unofficialFeed": false,
-      "verified": true,
-      "verifiedOn": "2026-11-11",
-      "ratings": []
-    },
-    {
-      "id": "new-scientist",
-      "name": "New Scientist",
-      "description": "Science news from New Scientist (many articles need a subscription).",
-      "topics": [
-        "science"
-      ],
-      "feedUrl": "https://www.newscientist.com/feed/home/",
-      "paywall": true,
       "recommendedDefault": false,
       "userOptInOnly": false,
       "unofficialFeed": false,

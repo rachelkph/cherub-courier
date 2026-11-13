@@ -34,7 +34,7 @@ Headlines stay reachable while they are still top news: the popover is a front p
 ## Unverified facts (test before relying on them)
 - **Feed URLs in `data/sources.json`:** all 24 verified live on 2026-11-08 (see docs/VERIFIED.md). Re-check periodically (`npm run check-feeds`; weekly CI planned for M7).
 - **Reuters and AP have no official RSS.** Reuters stopped its public feeds in June 2020; AP's feeds are unreliable and apnews.com blocks automated tools (per third-party reports). The Google News search-feed workaround is unofficial and undocumented; its terms of use have not been checked. Treat these as optional, off by default.
-- **NYT RSS terms.** An older case suggests the NYT objects to apps preloading its feed. Current terms were not checked. Do not pre-select it; allow user-added only.
+- **NYT RSS terms.** Moot since 2026-11-13: Rachel removed every paywalled source (NYT Home, NYT World, New Scientist) from the list. Users can still paste any feed themselves.
 - **Displaying bias ratings (AllSides, Ad Fontes).** Whether their ratings can be shown in-app is unknown. Link to the raters; do not copy their data until terms are checked.
 - **Keyword-to-feed discovery** (e.g. via news search feeds). Not verified as free or permitted. Out of v1.
 - **Electron behaviors**: click-through windows with per-pixel hit testing, behavior over full-screen apps and across Spaces, Dock-position detection. Not tested yet — M0 verifies.

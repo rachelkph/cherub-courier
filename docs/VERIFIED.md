@@ -341,3 +341,8 @@ from a local server (generic provider, `latest-mac.yml` + zip), the same files a
 ## 2026-11-13 — Hacker News
 `https://news.ycombinator.com/rss` (official): 200, RSS, 30 items, newest 1 h. robots.txt allows it (crawl delay 30 s;
 the app fetches twice a day). Added to AI and tech and to Creative coding, recommended; paywall "unknown" (links go anywhere).
+
+## 2026-11-13 — Paywalled sources removed (Rachel)
+Removed the three sources marked `paywall: true`: nyt-home, nyt-world, new-scientist (64 left). Test: no source
+in the list is paywalled. Installed apps drop them from approved sources on the next daily list update
+(cleanSettings keeps only ids that exist); nobody had them pre-checked.
