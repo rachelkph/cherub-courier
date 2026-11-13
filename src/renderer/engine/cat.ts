@@ -71,6 +71,9 @@ export class CatEngine {
   // in-place animation (flapping, blinks, z's) stays. A click still delivers.
   private reducedMotion = false;
   private deliverPending = false;
+  // Put to sleep from the menu bar: asleep (on his pile, or in the mound if buried)
+  // until woken from the menu. A click still delivers, and he dozes off again.
+  private asleep = false;
   private lastStepAt: number;
   private steps = 0;
   private phase: Phase = { kind: "idle" };
@@ -117,6 +120,10 @@ export class CatEngine {
     this.reducedMotion = on;
   }
 
+  setAsleep(on: boolean): void {
+    this.asleep = on;
+  }
+
   // The cat's own sprite box (not the pile or effects), for anchoring the popover.
   catBox(sprites: Sprite[]): { x: number; y: number; width: number; height: number } | null {
     const mounds = new Set([this.m.buried?.mound, ...(this.m.buried?.wake.map((st) => st.mound) ?? [])]);
@@ -132,7 +139,8 @@ export class CatEngine {
 
   private mode() {
     const b = this.m.behavior;
-    return catMode(this.inputs, b.sleepAfterEditions, b.restAfterEditions, this.m.buried?.minUnread);
+    const mode = catMode(this.inputs, b.sleepAfterEditions, b.restAfterEditions, this.m.buried?.minUnread);
+    return this.asleep && mode !== "buried" ? "sleep" : mode;
   }
 
   private wakeSteps(w: Wake): BuriedStep[] {
@@ -166,6 +174,7 @@ export class CatEngine {
       }
       return "deliver";
     }
+    if (this.asleep) return "hop"; // nothing to deliver: the popover opens, he sleeps on
     this.phase = { kind: "hop", start: now };
     return "hop";
   }
@@ -363,7 +372,7 @@ export class CatEngine {
   // Awake (blinking) or, after enough editions, asleep with z's.
   private drawBuried(now: number): Sprite[] {
     const elapsed = now - this.restingSince;
-    if (this.inputs.editionAge <= this.m.behavior.sleepAfterEditions) return this.inMound(this.loafFrame(now), 0);
+    if (!this.asleep && this.inputs.editionAge <= this.m.behavior.sleepAfterEditions) return this.inMound(this.loafFrame(now), 0);
     const sleep = this.m.states.sleep;
     const sprites = this.inMound(sleep.frames[loopIndex(sleep.frames.length, sleep.frameMs, elapsed)], 0);
     return [...sprites, ...this.zzz(sprites[0], elapsed)];

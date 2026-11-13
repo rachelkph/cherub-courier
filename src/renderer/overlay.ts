@@ -21,6 +21,8 @@ declare global {
       onPopoverVisible(cb: (visible: boolean) => void): void;
       getPaused(): Promise<boolean>;
       onPaused(cb: (paused: boolean) => void): void;
+      getSleeping(): Promise<boolean>;
+      onSleeping(cb: (sleeping: boolean) => void): void;
     };
   }
 }
@@ -235,12 +237,18 @@ window.overlay.onPaused((p) => {
   pausedByUser = p;
   hold();
 });
+let asleep = false;
+window.overlay.onSleeping((v) => {
+  asleep = v;
+  engine?.setAsleep(v);
+});
 
 const manifest = parseManifest(await (await fetch(`${ASSETS}manifest.json`)).json());
-const [initialBounds, initialState, initialPaused] = await Promise.all([
+const [initialBounds, initialState, initialPaused, initialAsleep] = await Promise.all([
   window.overlay.getBounds(),
   window.overlay.getCatState(),
   window.overlay.getPaused(),
+  window.overlay.getSleeping(),
   ...spritePaths(manifest).map(async (p) => images.set(p, await load(p))),
 ]);
 for (const [p, img] of images) masks.set(p, alphaMask(img));
@@ -251,6 +259,7 @@ engine = new CatEngine(manifest, sizes, strip(), performance.now());
 engine.setInputs(latestState ?? initialState);
 pausedByUser ||= initialPaused;
 hold();
+engine.setAsleep(asleep || initialAsleep);
 // macOS System Settings > Accessibility > Display > Reduce motion, live.
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 engine.setReducedMotion(reduceMotion.matches);

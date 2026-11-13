@@ -327,4 +327,13 @@ describe("settings and setup", () => {
     assert.equal(applySkip(prev).paused, true, "skipping setup");
     assert.equal(applyFinish({ topics: ["music"], approvedSourceIds: [] }, file, prev, new Map()).paused, true, "finishing setup");
   });
+
+  it("remembers that he was put to sleep, through setup too", () => {
+    assert.equal(defaultSettings().sleeping, false);
+    assert.equal(cleanSettings({ sleeping: true }, file).sleeping, true);
+    assert.equal(cleanSettings({ sleeping: 1 }, file).sleeping, false);
+    const prev = { ...defaultSettings(), sleeping: true };
+    assert.equal(applySkip(prev).sleeping, true);
+    assert.equal(applyFinish({ topics: ["music"], approvedSourceIds: [] }, file, prev, new Map()).sleeping, true);
+  });
 });

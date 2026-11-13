@@ -302,6 +302,14 @@ function setPaused(paused: boolean): void {
   rebuildTrayMenu();
 }
 
+// Asleep: he sleeps (on his pile, or in the mound) until woken from the menu (Rachel, 2026-11-13).
+function setSleeping(sleeping: boolean): void {
+  settings = { ...settings, sleeping };
+  void saveSettings(dataPaths().settings, settings);
+  overlay?.webContents.send("overlay:sleeping", sleeping);
+  rebuildTrayMenu();
+}
+
 function snooze(until: number): void {
   settings = { ...settings, snoozeUntil: until };
   void saveSettings(dataPaths().settings, settings);
@@ -493,10 +501,10 @@ function rebuildTrayMenu(): void {
           applyVisibility();
         },
       },
-      {
-        label: `${settings.paused ? "Resume" : "Pause"} ${CHARACTER.noun}`,
-        click: () => setPaused(!settings.paused),
-      },
+      settings.sleeping
+        ? { label: `Wake ${CHARACTER.noun}`, click: () => setSleeping(false) }
+        : { label: `Put ${CHARACTER.noun} to sleep`, click: () => setSleeping(true) },
+      ...(settings.sleeping ? [] : [{ label: `${settings.paused ? "Resume" : "Pause"} ${CHARACTER.noun}`, click: () => setPaused(!settings.paused) }]),
       ...snoozeMenu(),
       { type: "separator" },
       { label: "Set up…", click: () => openOnboarding(__dirname) },
@@ -532,6 +540,7 @@ ipcMain.on("overlay:set-interactive", (_e, interactive: unknown) => {
 ipcMain.handle("overlay:get-bounds", () => rendererBounds());
 ipcMain.handle("cat:get-state", () => catState);
 ipcMain.handle("overlay:get-paused", () => settings?.paused === true);
+ipcMain.handle("overlay:get-sleeping", () => settings?.sleeping === true);
 
 
 app.whenReady().then(async () => {

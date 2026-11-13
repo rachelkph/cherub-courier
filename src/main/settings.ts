@@ -30,6 +30,7 @@ export type Settings = {
   popoverFilter: string; // "all" or a topic id: the popover's selected chip
   snoozeUntil: number; // ms since epoch; the cat is hidden until then (0 = not snoozed)
   paused: boolean; // he stays where he is (still visible and clickable) until resumed
+  sleeping: boolean; // put to sleep from the menu bar: asleep until woken
 };
 
 // What a fresh install (or "skip setup") gets: default topics, but no sources,
@@ -48,6 +49,7 @@ export function defaultSettings(): Settings {
     popoverFilter: "all",
     snoozeUntil: 0,
     paused: false,
+    sleeping: false,
   };
 }
 
@@ -132,6 +134,7 @@ export function cleanSettings(raw: unknown, sources: SourcesFile): Settings {
     popoverFilter: typeof raw.popoverFilter === "string" && (raw.popoverFilter === "all" || topics.includes(raw.popoverFilter)) ? raw.popoverFilter : "all",
     snoozeUntil: typeof raw.snoozeUntil === "number" && Number.isFinite(raw.snoozeUntil) && raw.snoozeUntil > 0 ? raw.snoozeUntil : 0,
     paused: raw.paused === true,
+    sleeping: raw.sleeping === true,
   };
 }
 

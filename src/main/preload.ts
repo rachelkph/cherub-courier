@@ -17,4 +17,7 @@ contextBridge.exposeInMainWorld("overlay", {
   // Paused from the menu bar: he stays where he is.
   getPaused: (): Promise<boolean> => ipcRenderer.invoke("overlay:get-paused"),
   onPaused: (cb: (paused: boolean) => void) => ipcRenderer.on("overlay:paused", (_e, v) => cb(v === true)),
+  // Put to sleep from the menu bar.
+  getSleeping: (): Promise<boolean> => ipcRenderer.invoke("overlay:get-sleeping"),
+  onSleeping: (cb: (sleeping: boolean) => void) => ipcRenderer.on("overlay:sleeping", (_e, v) => cb(v === true)),
 });

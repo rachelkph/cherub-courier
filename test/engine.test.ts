@@ -191,6 +191,50 @@ describe("CatEngine with the cherub", cherubArt, () => {
     assert.notEqual(him(e.tick(9000).sprites).x, a.x, "flies again when the setting is turned off");
   });
 
+  it("put to sleep: sleeps with z's where he is, on the ground or his pile, and wakes from the menu", () => {
+    const e = make();
+    const flying = him(e.tick(0).sprites);
+    e.setAsleep(true);
+    const zs = (sp: Sprite[]) => sp.filter((x) => x.sprite.startsWith("fx/z_")).length;
+    const a = e.tick(100).sprites;
+    assert.ok(cm.states.sleep.frames.includes(him(a).sprite), "asleep with nothing unread");
+    assert.equal(bottom(him(a)), strip.height, "on the ground");
+    assert.equal(zs(a), cm.states.sleep.zzz.count);
+    assert.equal(him(e.tick(4000).sprites).x, him(a).x, "does not move");
+    e.setInputs({ unread: 3, editionAge: 0 }); // normally: flying with the news
+    const p = e.tick(4100).sprites;
+    assert.ok(cm.states.sleep.frames.includes(him(p).sprite), "asleep on his pile");
+    assert.ok(p.some((x) => x.sprite.startsWith("pile/pile_")));
+    e.setInputs({ unread: 12, editionAge: 0 }); // normally: buried and awake
+    const b = e.tick(4200).sprites;
+    assert.ok(b.some((x) => x.sprite === cm.buried?.mound) && b.some((x) => cm.states.sleep.frames.includes(x.sprite)), "asleep in the mound");
+    assert.equal(zs(b), cm.states.sleep.zzz.count);
+    e.setInputs({ unread: 0, editionAge: 0 });
+    e.setAsleep(false);
+    assert.ok(cm.states.walk.frames.includes(him(e.tick(5000).sprites).sprite), "woken: flying again");
+    assert.notEqual(him(e.tick(7000).sprites).x, flying.x);
+  });
+
+  it("put to sleep: a click still delivers, then he dozes off again; with nothing new, no hop", () => {
+    const e = make();
+    e.setAsleep(true);
+    e.tick(0);
+    assert.equal(e.click(0), "hop");
+    assert.equal(bottom(him(e.tick(50).sprites)), strip.height, "no hop: he sleeps on");
+    e.setInputs({ unread: 5, editionAge: 0 });
+    e.tick(100);
+    assert.equal(e.click(100), "deliver");
+    let t = 100;
+    let delivered = false;
+    while (!delivered && t < 10000) {
+      t += 25;
+      delivered = e.tick(t).delivered;
+    }
+    assert.ok(delivered);
+    assert.deepEqual(e.getInputs(), { unread: 0, editionAge: 0 });
+    assert.ok(cm.states.sleep.frames.includes(him(e.tick(t + 100).sprites).sprite), "back to sleep");
+  });
+
   it("keeps flapping in place (hover, with a blink) while hovered or paused", () => {
     const e = make(() => 0);
     const a = him(e.tick(0).sprites);
