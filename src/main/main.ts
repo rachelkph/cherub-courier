@@ -9,6 +9,8 @@ import { safeUrl } from "./feeds/sanitize.ts";
 import { emptyState, loadState, readJsonOrSetAside, type State, saveState, writeJsonAtomic } from "./feeds/store.ts";
 import { listWindows, otherAppFullScreen } from "./fullscreen.ts";
 import { migrateDataDir, OLD_DATA_DIR_NAME } from "./migrate.ts";
+import { updateMenuItems } from "./updateMenu.ts";
+import { checkForUpdates, installUpdate, startUpdater, updateState } from "./updater.ts";
 import { applyFinish, applySkip, buildModel, type VerifiedFeeds } from "./onboarding/model.ts";
 import { closeOnboarding, openOnboarding, registerOnboardingIpc } from "./onboarding/window.ts";
 import { buildView, catInputs, clearPile, linkFor, markOpened } from "./popover/view.ts";
@@ -498,6 +500,13 @@ function rebuildTrayMenu(): void {
       ...snoozeMenu(),
       { type: "separator" },
       { label: "Set up…", click: () => openOnboarding(__dirname) },
+      ...(app.isPackaged
+        ? updateMenuItems(updateState()).map((u) => ({
+            label: u.label,
+            enabled: u.enabled,
+            click: u.action === "check" ? () => checkForUpdates(true) : u.action === "install" ? installUpdate : undefined,
+          }))
+        : []),
       { label: "Reset everything…", click: () => void resetEverything() },
       ...devMenu(),
       { type: "separator" },
@@ -538,6 +547,7 @@ app.whenReady().then(async () => {
   createOverlay();
   createTray();
   watchFullScreen();
+  startUpdater(rebuildTrayMenu);
   if (!settings.onboarded) openOnboarding(__dirname);
   preparePopover(__dirname);
   // Unread headlines expire after 48h and the cat gets sleepier as editions pass.

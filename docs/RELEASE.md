@@ -31,13 +31,19 @@ her login keychain.
 3. `APPLE_KEYCHAIN_PROFILE=newscat-notary npm run release`
    - lint + tests, universal build, hardened runtime, signing, notarization and stapling
      of the app and the DMG, then Gatekeeper checks (`spctl`) on both.
-   - Output: `out/CherubCourier-<version>.dmg` and its `.sha256`.
+   - Also checks the update zip the same way, and that `out/latest-mac.yml` is for this version.
+   - Output, all attached to the release: `CherubCourier-<version>.dmg` and its `.sha256`
+     (for new installs), `CherubCourier-<version>-mac.zip`, its `.blockmap`, and
+     `latest-mac.yml` (for automatic updates, from 0.4.0). The script lists them.
 4. Test on a Mac that has never run Cherub Courier (or a fresh user account): download the DMG
    from the release page (so it gets the quarantine flag), drag to Applications, open.
    It must open with no Gatekeeper warning beyond the normal "downloaded from the
    internet" prompt, and the cherub must appear.
-5. Tag and publish: `git tag v<version> && git push origin v<version>`, then
-   `gh release create v<version> out/CherubCourier-<version>.dmg out/CherubCourier-<version>.dmg.sha256`.
+5. Publish on GitHub (Releases > Draft a new release, tag `v<version>` on `main`), attach the
+   five files, and publish as a full release (not a draft or pre-release: the updater only
+   sees published releases). Installed copies from 0.4.0 on find it within about 6 hours,
+   download it, and install it the next time they quit, or at once from "Restart to update".
+   **Never attach `latest-mac.yml` without the zip it names**: apps would try to download it.
 
 ## Local test build (no Apple account needed)
 

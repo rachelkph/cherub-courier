@@ -323,3 +323,17 @@ NSRunningApplication (0 = Dock icon, 1 = accessory). Notched 1470x956 MacBook sc
 AP business via Google News (0 items), Core77 (no dates), Smashing Magazine (139 h), The Changelog (174 h),
 web.dev (980 h), CreativeApplications.Net (dead since 2025). Paywall marked true for New Scientist (never
 recommended); "unknown" where not checked. No bias ratings added.
+
+## 2026-11-12 — Automatic updates (electron-updater, before shipping them)
+Two signed (Developer ID, not notarized) arm64 test builds, 0.3.90 and 0.3.91, under a separate name and
+app id ("Cherub Courier Updtest") so nothing touched the real app, data or login items; updates served
+from a local server (generic provider, `latest-mac.yml` + zip), the same files a GitHub release carries.
+
+| check | result | evidence |
+|---|---|---|
+| 0.3.90 finds the newer version ~30 s after launch and downloads it | PASS | log "[update] downloading 0.3.91", "ready 0.3.91"; server log GET latest-mac.yml, GET zip |
+| Quitting installs it | PASS | app bundle on disk reads 0.3.91 after a normal quit |
+| Installed update is still Developer ID signed | PASS | `codesign --verify --deep --strict`; TeamIdentifier UBJH7LSLYN |
+| Settings survive the update | PASS | settings.json byte-identical before/after (topics, sources, onboarded) |
+| Updated app starts and does not update again | PASS | overlay placed; one check, no download |
+| Real GitHub release (notarized, universal) updating an installed 0.4.0 | NOT done | needs 0.4.0 and a later release |

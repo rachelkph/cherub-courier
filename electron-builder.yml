@@ -31,16 +31,27 @@ mac:
   target:
     - target: dmg
       arch: universal
+    # The zip is what the app's updater downloads (Rachel chose automatic updates, 2026-11-12).
+    - target: zip
+      arch: universal
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   notarize: true
   minimumSystemVersion: "12.0"
+  artifactName: CherubCourier-${version}-mac.${ext} # the zip; the dmg sets its own name
   icon: build/icon.icns # drawn by scripts/icon.mjs (not in git)
   # Menu-bar app: no Dock icon (Rachel, 2026-11-11).
   extendInfo:
     LSUIElement: true
+# Where updates come from: the app reads latest-mac.yml from the newest GitHub release.
+# Nothing is uploaded by the build; Rachel attaches the files to the release herself.
+publish:
+  provider: github
+  owner: rachelkph
+  repo: cherub-courier
+  releaseType: release
 dmg:
   sign: true # notarized and stapled by scripts/release.sh
   artifactName: CherubCourier-${version}.dmg

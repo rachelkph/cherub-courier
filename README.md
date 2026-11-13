@@ -14,6 +14,8 @@ Status: in development (milestone M6 of `docs/BUILD_PLAN.md`). No public release
 4. Pick your topics and sources. The cherub flies above your Dock and brings headlines
    twice a day; click him to read them.
 
+From 0.4.0 the app updates itself: it checks GitHub for a newer release, downloads it in the background, and installs it when you quit (or from "Restart to update" in the menu bar). Versions before 0.4.0 need one manual download.
+
 Requires macOS 12 or later (Apple silicon or Intel). To uninstall, quit Cherub Courier from the
 menu bar cherub icon, choose Reset everything… first if you want your data deleted, then
 drag the app to the Trash.

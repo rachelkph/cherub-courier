@@ -8,7 +8,7 @@ A macOS desktop app. A small pixel-art cherub flies along the bottom of the main
 Read `docs/PRODUCT_SPEC.md` first, then `docs/BUILD_PLAN.md`. Do not add features that are not in the spec. If something is ambiguous, ask Rachel before building it.
 
 ## Hard constraints (do not violate)
-1. **No server, no accounts, no analytics, no tracking.** The only network traffic allowed: fetching RSS/Atom feeds the user subscribed to, and fetching the curated source list file (`sources.json`) from its hosted URL. Nothing else.
+1. **No server, no accounts, no analytics, no tracking.** The only network traffic allowed: fetching RSS/Atom feeds the user subscribed to, fetching the curated source list file (`sources.json`) from its hosted URL, and (packaged app only) checking this repo's GitHub releases for app updates and downloading them (Rachel, 2026-11-12). Nothing else.
 2. **No AI/LLM calls, no API keys anywhere in the repo or app.** Ranking is "newest first, max 3 per topic" (see spec).
 3. **Store only headline, source name, link, timestamp.** Never store or display article body text or images from publishers.
 4. **Treat all feed content as untrusted.** Strip HTML, escape text, validate URLs (https only; upgrade http where possible), open links only via the OS default browser after a scheme check. Follow Electron security practice: `contextIsolation: true`, `nodeIntegration: false`, sandboxed renderer, strict CSP, no remote code.

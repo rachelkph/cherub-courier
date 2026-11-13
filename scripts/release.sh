@@ -41,4 +41,15 @@ hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$dmg" >/dev/null
 trap 'hdiutil detach "$mnt" >/dev/null 2>&1 || true' EXIT
 spctl --assess --type execute --verbose=2 "$mnt/Cherub Courier.app"
 shasum -a 256 "$dmg" | tee "$dmg.sha256"
-echo "Ready: $dmg"
+
+# The update zip (what installed apps download): its app must be signed, notarized and stapled too.
+zip="out/CherubCourier-${version}-mac.zip"
+unz=$(mktemp -d)
+ditto -x -k "$zip" "$unz"
+codesign --verify --deep --strict "$unz/Cherub Courier.app"
+xcrun stapler validate "$unz/Cherub Courier.app"
+spctl --assess --type execute --verbose=2 "$unz/Cherub Courier.app"
+grep -q "^version: ${version}$" out/latest-mac.yml || { echo "out/latest-mac.yml is not for ${version}" >&2; exit 1; }
+
+echo "Ready. Attach all of these to the GitHub release v${version}:"
+ls -1 "$dmg" "$dmg.sha256" "$zip" "$zip.blockmap" out/latest-mac.yml
