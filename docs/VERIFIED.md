@@ -349,3 +349,11 @@ in the list is paywalled. Installed apps drop them from approved sources on the 
 
 ## 2026-11-13 — The Hollywood Reporter
 `https://www.hollywoodreporter.com/feed/`: 200, RSS, 10 items, newest under 1 h, ETag and Last-Modified. Added to Film and TV, recommended (Rachel).
+
+## 2026-11-13 — 0.4.1 update files; release auto-publish
+- 0.4.1 was published with only the DMG and its checksum, then the blockmap and latest-mac.yml; the zip upload
+  was missing (installed 0.4.0 apps would have failed to download). Uploaded with `gh release upload`; all five
+  files now on the release; latest-mac.yml on GitHub byte-identical to the build; zip downloadable, size as listed.
+- `scripts/release.sh` now publishes with `gh release create` (draft, upload all, then publish, per gh's docs) and
+  verifies every file. Guard tested: re-running for the already-released 0.4.1 exits at once. The publish step
+  itself runs for the first time with the next release.

@@ -21,29 +21,33 @@ her login keychain.
      --apple-id "<your Apple ID email>" --team-id "<TEAMID>"
    ```
    It prompts for the app-specific password.
+4. **GitHub CLI** (publishes the release): `brew install gh`, then `gh auth login`
+   (GitHub.com, HTTPS, log in with a web browser). Done 2026-11-13.
 
 ## Each release
 
 1. Make sure the cherub art in `assets/cherub/` is cleared for distribution (it ships inside
    the app, and the app icon is drawn from it; `npm run release` redraws the icon with
    `node scripts/icon.mjs`).
-2. Bump `version` in `package.json`, commit.
+2. Bump `version` in `package.json`, commit, push. Optionally write the notes in
+   `docs/release-notes/<version>.md` (else GitHub writes them from the commits).
 3. `APPLE_KEYCHAIN_PROFILE=newscat-notary npm run release`
+   - Refuses to start if this version is already released, or the code is not committed
+     and pushed.
    - lint + tests, universal build, hardened runtime, signing, notarization and stapling
-     of the app and the DMG, then Gatekeeper checks (`spctl`) on both.
-   - Also checks the update zip the same way, and that `out/latest-mac.yml` is for this version.
-   - Output, all attached to the release: `CherubCourier-<version>.dmg` and its `.sha256`
-     (for new installs), `CherubCourier-<version>-mac.zip`, its `.blockmap`, and
-     `latest-mac.yml` (for automatic updates, from 0.4.0). The script lists them.
-4. Test on a Mac that has never run Cherub Courier (or a fresh user account): download the DMG
-   from the release page (so it gets the quarantine flag), drag to Applications, open.
+     of the app and the DMG, Gatekeeper checks (`spctl`) on the DMG, its app and the
+     update zip's app, and a check that `latest-mac.yml` is for this version.
+   - Publishes GitHub release `v<version>` on the pushed commit with all five files:
+     the DMG and its `.sha256` (new installs), the update zip, its `.blockmap` and
+     `latest-mac.yml` (automatic updates). gh uploads them all before the release goes
+     public. Then it checks each file's size on GitHub and that `latest-mac.yml` matches.
+   - `NO_PUBLISH=1` stops after the checks without publishing.
+   Installed copies from 0.4.0 on find the release within about 6 hours, download it,
+   and install it on quit, or at once from "Restart to update".
+4. Test on a Mac that has never run Cherub Courier (or a fresh user account): download the
+   DMG from the release page (so it gets the quarantine flag), drag to Applications, open.
    It must open with no Gatekeeper warning beyond the normal "downloaded from the
    internet" prompt, and the cherub must appear.
-5. Publish on GitHub (Releases > Draft a new release, tag `v<version>` on `main`), attach the
-   five files, and publish as a full release (not a draft or pre-release: the updater only
-   sees published releases). Installed copies from 0.4.0 on find it within about 6 hours,
-   download it, and install it the next time they quit, or at once from "Restart to update".
-   **Never attach `latest-mac.yml` without the zip it names**: apps would try to download it.
 
 ## Local test build (no Apple account needed)
 
