@@ -39,7 +39,7 @@ function fake(routes: Record<string, () => Response>, opts: { private?: string[]
 
 describe("sources schema", () => {
   it("accepts the bundled list, and its recommended sources follow the rules", () => {
-    assert.equal(file.sources.length, 66);
+    assert.equal(file.sources.length, 67);
     // No built-in topic is left without recommended sources (Rachel, 2026-11-11).
     for (const t of file.topics) {
       const n = file.sources.filter((x) => x.recommendedDefault && x.topics.includes(t.id)).length;

@@ -337,3 +337,7 @@ from a local server (generic provider, `latest-mac.yml` + zip), the same files a
 | Settings survive the update | PASS | settings.json byte-identical before/after (topics, sources, onboarded) |
 | Updated app starts and does not update again | PASS | overlay placed; one check, no download |
 | Real GitHub release (notarized, universal) updating an installed 0.4.0 | NOT done | needs 0.4.0 and a later release |
+
+## 2026-11-13 — Hacker News
+`https://news.ycombinator.com/rss` (official): 200, RSS, 30 items, newest 1 h. robots.txt allows it (crawl delay 30 s;
+the app fetches twice a day). Added to AI and tech and to Creative coding, recommended; paywall "unknown" (links go anywhere).

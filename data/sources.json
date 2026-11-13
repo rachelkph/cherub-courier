@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastReviewed": "2026-11-11",
+  "lastReviewed": "2026-11-13",
   "language": "en-US",
   "readme": "Curated source list. Validated by src/main/sources/schema.ts on every load. 'ratings' are third-party ratings shown only as a link to the rater (terms for copying rater data not checked). No source here is described as unbiased. recommendedDefault sources may not be paywalled, user-opt-in-only or unofficial.",
   "topics": [
@@ -386,6 +386,24 @@
       "verifiedOn": "2026-11-08",
       "ratings": [],
       "note": "Primary-source lab blog. Left off by default; Rachel decides which lab blogs to include (note: the assistant that drafted this list is made by Anthropic)."
+    },
+    {
+      "id": "hacker-news",
+      "name": "Hacker News",
+      "description": "The front page of Hacker News: tech, science and startup links ranked by readers.",
+      "topics": [
+        "ai-tech",
+        "creative-coding-devtools"
+      ],
+      "feedUrl": "https://news.ycombinator.com/rss",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-13",
+      "ratings": [],
+      "note": "Official front-page feed. Links go to many sites, some paywalled. robots.txt asks for a 30 s crawl delay; the app fetches it twice a day."
     },
     {
       "id": "variety",
