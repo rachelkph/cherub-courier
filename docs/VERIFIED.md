@@ -346,3 +346,6 @@ the app fetches twice a day). Added to AI and tech and to Creative coding, recom
 Removed the three sources marked `paywall: true`: nyt-home, nyt-world, new-scientist (64 left). Test: no source
 in the list is paywalled. Installed apps drop them from approved sources on the next daily list update
 (cleanSettings keeps only ids that exist); nobody had them pre-checked.
+
+## 2026-11-13 — The Hollywood Reporter
+`https://www.hollywoodreporter.com/feed/`: 200, RSS, 10 items, newest under 1 h, ETag and Last-Modified. Added to Film and TV, recommended (Rachel).

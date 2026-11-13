@@ -39,7 +39,7 @@ function fake(routes: Record<string, () => Response>, opts: { private?: string[]
 
 describe("sources schema", () => {
   it("accepts the bundled list, and its recommended sources follow the rules", () => {
-    assert.equal(file.sources.length, 64);
+    assert.equal(file.sources.length, 65);
     assert.ok(!file.sources.some((s) => s.paywall === true), "no paywalled sources (Rachel, 2026-11-13)");
     // No built-in topic is left without recommended sources (Rachel, 2026-11-11).
     for (const t of file.topics) {

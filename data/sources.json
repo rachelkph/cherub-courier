@@ -406,6 +406,22 @@
       "ratings": []
     },
     {
+      "id": "hollywood-reporter",
+      "name": "The Hollywood Reporter",
+      "description": "Film, TV and entertainment industry news from The Hollywood Reporter.",
+      "topics": [
+        "film-tv"
+      ],
+      "feedUrl": "https://www.hollywoodreporter.com/feed/",
+      "paywall": "unknown",
+      "recommendedDefault": true,
+      "userOptInOnly": false,
+      "unofficialFeed": false,
+      "verified": true,
+      "verifiedOn": "2026-11-13",
+      "ratings": []
+    },
+    {
       "id": "npr-music",
       "name": "NPR Music",
       "description": "Music stories from NPR.",
