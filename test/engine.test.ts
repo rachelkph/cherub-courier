@@ -235,6 +235,17 @@ describe("CatEngine with the cherub", cherubArt, () => {
     assert.ok(cm.states.sleep.frames.includes(him(e.tick(t + 100).sprites).sprite), "back to sleep");
   });
 
+  it("dragging moves him along the strip, never off either end", () => {
+    const e = make();
+    e.tick(0);
+    e.setX(250);
+    assert.equal(him(e.tick(10).sprites).x, 250);
+    e.setX(-80);
+    assert.equal(e.getX(), 0, "left edge");
+    e.setX(5000);
+    assert.equal(e.getX(), strip.width - 96, "right edge");
+  });
+
   it("keeps flapping in place (hover, with a blink) while hovered or paused", () => {
     const e = make(() => 0);
     const a = him(e.tick(0).sprites);

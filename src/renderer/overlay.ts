@@ -146,7 +146,7 @@ function hit(px: number, py: number): boolean {
 }
 
 function updateInteractive(): void {
-  const next = mouse !== null && hit(mouse.x, mouse.y);
+  const next = (mouse !== null && hit(mouse.x, mouse.y)) || press !== null; // keep the mouse while dragging
   if (next !== interactive) {
     interactive = next;
     engine?.setHovered(next);
@@ -199,8 +199,34 @@ function catBoxCss(): CatBox | null {
   return { x: b.x * s, y: b.y * s, width: b.width * s, height: b.height * s };
 }
 
+// Press on him and move to drag him along the Dock (Rachel, 2026-11-15); press and
+// release without moving is a normal click.
+let press: { x: number; catX: number; dragging: boolean } | null = null;
 window.addEventListener("mousedown", (e) => {
   if (!engine || !hit(e.clientX, e.clientY)) return;
+  press = { x: e.clientX, catX: engine.getX(), dragging: false };
+  window.overlay.setInteractive(true); // keep the mouse while dragging
+});
+window.addEventListener("mousemove", (e) => {
+  if (!engine || !press) return;
+  if (!press.dragging && Math.abs(e.clientX - press.x) > 4) {
+    press.dragging = true;
+    engine.setHovered(true); // hold still while carried
+  }
+  if (press.dragging) {
+    engine.setX(press.catX + (e.clientX - press.x) / bounds.scale);
+    tick();
+  }
+});
+window.addEventListener("mouseup", () => {
+  if (!engine || !press) return;
+  const wasDrag = press.dragging;
+  press = null;
+  if (wasDrag) {
+    engine.setHovered(false);
+    updateInteractive();
+    return;
+  }
   // With a pile: wake, toss the papers, then main opens the popover (on "delivered").
   // Without one: hop, and open (or close) the popover right away.
   const result = engine.click(performance.now());

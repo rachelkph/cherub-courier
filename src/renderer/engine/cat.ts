@@ -94,6 +94,14 @@ export class CatEngine {
     this.hoverExtras = startExtras(m.states.hover?.extras ?? [], now, rng);
   }
 
+  // Where he is along the strip, in art px (dragging moves him; kept on screen).
+  getX(): number {
+    return this.x;
+  }
+  setX(x: number): void {
+    this.x = Math.max(0, Math.min(Math.round(x), this.stripW - this.catW()));
+  }
+
   setStrip(strip: { width: number; height: number }): void {
     this.stripW = strip.width;
     this.stripH = strip.height;
